@@ -1,0 +1,150 @@
+ID_sample,muestra,Segmento,Actividad,Úlceras,microDNA_EXTRACTION,Date,microDNa concentr,260/280,Sent to,Shipping date,Concentración,RIN,Rack,Observaciones,Biopsies_RNA_sobrants,Responder
+17,002-w000,íleon,Activo,Sí,Si,5/9/2017,167.02,1.81,Munich / Macrogen,10/05/2017 & 06/06/2017,125.77,6.9,A23319-C9,"caixa1-RNA / caixa1-PRO, mostres estenosi ileal",TRUE,Responder
+12,002-w014,íleon,Activo,No,Si,5/9/2017,17.09,1.54,Munich / Macrogen,10/05/2017 & 06/06/2017,164.82,7.2,A23319-C11,caixa1-RNA / caixa1-PRO,TRUE,Responder
+10,002-w046,íleon,Inactivo,No,Si,5/9/2017,100.18,1.77,Munich / Macrogen,10/05/2017 & 06/06/2017,214.86,6.6,A23318-H3,caixa1-RNA / caixa2-PRO,TRUE,Responder
+19,010-w000,ascendente,Activo,Sí,Si,5/11/2017,233.29,1.81,Macrogen,6/6/2017,200.65,7.2,A23318-A1,acabada / caixa1-PRO,FALSE,Responder
+20,010-w014,ascendente,Activo,Sí,Si,5/11/2017,287.33,1.8,Macrogen,6/6/2017,809.79,8,A23319-F11,caixa1-RNA / caixa1-PRO,TRUE,Responder
+21,010-w046,ascendente,Activo,No,Si,5/11/2017,177.45,1.83,Macrogen,6/6/2017,529.62,8.3,A23318-H11,caixa1-RNA / caixa1-PRO,TRUE,Responder
+22,012-w000,íleon,Activo,Sí,Si,5/11/2017,67.42,1.84,Macrogen,6/6/2017,155.82,7.4,A23319-D1,caixa1-RNA / caixa1-PRO,TRUE,Responder
+23,012-w014,íleon,Inactivo,No,Si,5/11/2017,34.56,1.8,Macrogen,6/6/2017,162.5,8.7,A23319-D3,acabada / caixa1-PRO,FALSE,Responder
+24,012-w046,íleon,Inactivo,No,Si,5/11/2017,70.58,1.84,Macrogen,6/6/2017,72.23,6.4,A23317-H9,caixa1-RNA / caixa2-PRO,TRUE,Responder
+25,017-w000,descendente,Activo,Sí,Si,5/11/2017,235.62,1.82,Macrogen,6/6/2017,280.31,7.5,A23319-G1,caixa1-RNA / caixa1-PRO,TRUE,Responder
+13,017-w014,descendente,Activo,No,Si,5/9/2017,80.6,0.61,Macrogen,6/6/2017,107.91,8.3,A23319-G3,"caixa1-RNA / caixa1-PRO, rotulat com 17-w6?",TRUE,Responder
+26,017-w046,descendente,Inactivo,No,Si,5/11/2017,85.1,1.81,Macrogen,6/6/2017,283.83,9.1,A23317-H7,caixa1-RNA / caixa2-PRO,TRUE,Responder
+9,018-w000,íleon,Activo,No,Si,5/9/2017,211.58,1.83,Macrogen,6/6/2017,141.4,2.5,A23319_B9,"acabada / caixa1-PRO, mala qualitat",FALSE,Responder
+2,018-w014,íleon,Inactivo,No,Si,5/9/2017,82.77,1.74,Macrogen,6/6/2017,228.59,7.3,A23319-H1,caixa1-RNA / caixa1-PRO,TRUE,Responder
+3,018-w046,íleon,Inactivo,No,Si,5/9/2017,172.59,1.87,Macrogen,6/6/2017,129.9,8.6,A23317-H5,caixa1-RNA / caixa1-PRO,TRUE,Responder
+14,021-w000,recto,Activo,Sí,Si,5/9/2017,280.06,1.71,Macrogen,6/6/2017,341.61,7.5,A23319-G5,caixa1-RNA / caixa1-PRO,TRUE,Responder
+34,021-w014,recto,Inactivo,No,Si,5/22/2017,96.2,1.8,Macrogen,6/6/2017,116.94,7.3,A23319-G7,caixa1-RNA / caixa1-PRO,TRUE,Responder
+35,021-w046,recto,,,Si,5/22/2017,132.54,1.83,Macrogen,6/6/2017,80.36,8.2,A23316-A3,caixa1-RNA / caixa2-PRO,TRUE,Responder
+39,029-w000,ascendente,Activo,,Si,5/22/2017,190.52,1.84,Macrogen,6/6/2017,178.3,8.1,A23317-A7,acabada / caixa1-PRO,FALSE,Responder
+40,029-w014,ascendente,Inactivo,No,Si,5/22/2017,158.42,1.84,Macrogen,6/6/2017,144.24,8.5,A23319-E3,caixa1-RNA / caixa1-PRO,TRUE,Responder
+41,029-w046,ascendente,,,Si,5/22/2017,8.01,1.88,Macrogen,6/6/2017,216.84,8,A23316-A1,caixa1-RNA / caixa2-PRO,TRUE,Responder
+45,035-w000,recto,Activo,Sí,Si,5/22/2017,325.01,1.86,Macrogen,6/6/2017,122.04,6.8,A23318-A9,acabada / caixa1-PRO,FALSE,Responder
+46,035-w014,recto,Inactivo,No,Si,5/22/2017,87.32,1.85,Macrogen,6/6/2017,144.48,6.7,A23319-F9,caixa1-RNA / caixa1-PRO,TRUE,Responder
+47,035-w046,recto,Activo,No,Si,5/22/2017,24.82,1.85,Macrogen,6/6/2017,269.1,7.4,A23316_E9,acabada / caixa2-PRO,FALSE,Responder
+15,041-w000,íleon,Activo,No,Si,5/9/2017,144.02,1.78,Macrogen,6/6/2017,156.47,8.8,A23318-B3,"caixa1-RNA / caixa1-PRO, vàlvula ileocecal",TRUE,Responder
+8,041-w014,íleon,,,Si,5/9/2017,185.87,1.85,Macrogen,6/6/2017,94.42,7.9,A23317_B5,acabada / caixa1-PRO,FALSE,Responder
+11,041-w046,íleon,,,Si,5/9/2017,133.99,1.86,Macrogen,6/6/2017,247.08,6.6,A23316_E5,acabada / caixa2-PRO,FALSE,Responder
+27,044-w000,sigma,Activo,No,Si,5/11/2017,192.98,1.82,Macrogen,6/6/2017,208.65,6.7,A23319-E7,caixa1-RNA / caixa1-PRO,TRUE,Responder
+28,044-w014,sigma,,,Si,5/11/2017,68.17,1.81,Macrogen,6/6/2017,210.09,9,A23317_C7,acabada / caixa2-PRO,FALSE,Responder
+6,044-w046,sigma,,,Si,5/9/2017,226.56,1.83,Macrogen,6/6/2017,392,7.1,A23314_A1,acabada / caixa2-PRO,FALSE,Responder
+69,046-w014,íleon,,,Si,5/23/2017,118.85,1.77,Macrogen,6/6/2017,157.73,7.1,A23317_B11,acabada / caixa1-PRO,FALSE,Responder
+70,046-w046,íleon,,No,Si,5/23/2017,37.84,1.78,Macrogen,6/6/2017,282.2,7.3,A23316_G3,caixa2-RNA / caixa2-PRO,TRUE,Responder
+42,048-w000,íleon,Activo,Sí,Si,5/22/2017,82.27,1.84,Macrogen,6/6/2017,142.43,6.7,A23319_F7,acabada / caixa1-PRO,FALSE,Responder
+43,048-w014,íleon,,,Si,5/22/2017,166.54,1.85,Macrogen,6/6/2017,96.97,7.7,A23317_A9,"acabada / caixa2-PRO, no mirem RIN, possiblement s'haurà de concentrar",FALSE,Responder
+44,048-w046,íleon,Inactivo,No,Si,5/22/2017,149.14,1.87,Macrogen,6/6/2017,131.7,8.7,A23316_F5,caixa2-RNA / caixa2-PRO,TRUE,Responder
+31,051-w000,íleon,Activo,Sí,Si,5/22/2017,222.75,1.86,Macrogen,6/6/2017,166.14,8.7,A23317_D3,caixa1-RNA / caixa1-PRO,TRUE,Responder
+32,051-w014,íleon,,,Si,5/22/2017,37.87,1.89,Macrogen,6/6/2017,110.8,7.6,A23317_G11,caixa2-RNA / caixa2-PRO,TRUE,Responder
+33,051-w046,íleon,Inactivo,No,Si,5/22/2017,66.64,1.87,Macrogen,6/6/2017,97,3.5,A23316_F3,acabada / caixa2-PRO,FALSE,Responder
+48,054-w000,ascendente,Activo,Sí,Si,5/22/2017,85.03,1.84,Macrogen,6/6/2017,86.92,7.8,A23317_D7,acabada / caixa1-PRO,FALSE,Responder
+49,054-w014,ascendente,Inactivo,No,Si,5/22/2017,82.43,1.85,Macrogen,6/6/2017,455.36,7.1,A23317_H1,caixa2-RNA / caixa2-PRO,TRUE,Responder
+50,054-w046,ascendente,Inactivo,No,Si,5/22/2017,48.14,1.88,Macrogen,6/6/2017,29.59,7.8,3000104210_B9,acabada / caixa2-PRO; segona extracció.,TRUE,Responder
+36,067-w000,íleon,Activo,Sí,Si,5/22/2017,236.31,1.85,Macrogen,6/6/2017,440,7.8,A23317_F7,acabada / caixa2-PRO,FALSE,Responder
+37,067-w014,íleon,Activo,Sí,Si,5/22/2017,18.35,1.85,Macrogen,6/6/2017,261.75,7.2,A23316_C11,acabada / caixa2-PRO,FALSE,Responder
+38,067-w046,íleon,,,Si,5/22/2017,29.04,1.88,Macrogen,6/6/2017,232.75,8,A23316_H1,caixa2-RNA / caixa2-PRO,TRUE,Responder
+71,073-w000,sigma,Activo,Sí,Si,5/23/2017,161.35,1.83,Macrogen,6/6/2017,423.47,7.9,A23317_G1,caixa2-RNA / caixa2-PRO,TRUE,Responder
+4,073-w014,sigma,Inactivo,No,Si,5/9/2017,114.04,1.78,Macrogen,6/6/2017,381.84,8.9,A23316_C9,caixa2-RNA / caixa2-PRO,TRUE,Responder
+16,073-w046,sigma,Inactivo,No,Si,5/9/2017,21.95,1.8,Macrogen,6/6/2017,254.85,8.2,A23314_B3,caixa2-RNA / caixa2-PRO,TRUE,Responder
+51,076-w000,íleon,,,Si,5/22/2017,213.9,1.86,Macrogen,6/6/2017,212.88,4.2,A23316_B9,"acabada / caixa2-PRO, Es torna a extreure, anteriorment rin dolent (5.3), conc=158,4ng/ul, posicio A23317_H3",FALSE,Responder
+52,076-w014,íleon,Activo,Sí,Si,5/22/2017,19.11,2.2,Macrogen,6/6/2017,274.71,2.2,A23316_B11,acabada / caixa2-PRO,FALSE,Responder
+53,076-w046,íleon,Inactivo,No,Si,5/22/2017,4.55,1,Macrogen,6/6/2017,181.65,8.3,A23314_A7,caixa2-RNA / caixa2-PRO,TRUE,Responder
+1,080-w000,recto,Activo,No,Si,5/9/2017,205.85,1.84,Macrogen,6/6/2017,418.74,8.1,A23316_D5,caixa2-RNA / caixa2-PRO,TRUE,Responder
+29,080-w014,recto,Inactivo,No,Si,5/11/2017,96.87,1.75,Macrogen,6/6/2017,178.4,8.2,A23316_D1,caixa2-RNA / caixa2-PRO,TRUE,Responder
+30,080-w046,recto,Inactivo,No,Si,5/11/2017,198.82,1.82,Macrogen,6/6/2017,384.47,9.3,A23314_D11,caixa2-RNA / caixa3-PRO,TRUE,Responder
+72,088-w000,íleon,Activo,Sí,Si,5/23/2017,216.65,1.84,Macrogen,6/6/2017,426.76,6.7,A23316_D7,acabada / caixa2-PRO,FALSE,Responder
+73,088-w014,íleon,Inactivo,No,Si,5/23/2017,32.04,1.73,Macrogen,6/6/2017,272.8,9.2,A23314_A5,acabada / caixa2-PRO,FALSE,Responder
+55,108-w000,recto,Activo,Sí,Si,5/23/2017,217.38,1.8,Macrogen,6/6/2017,335.59,8.1,A23314-C7,caixa2-RNA / caixa3-PRO,TRUE,Responder
+56,108-w046,,,,Si,5/23/2017,171.62,1.82,Macrogen,6/6/2017,154.41,8.1,A23304_H1,caixa3-RNA / caixa3-PRO,TRUE,Responder
+57,116-w000,íleon,Activo,Sí,Si,5/23/2017,171.89,1.82,Macrogen,6/6/2017,105.19,7.6,A23314_G11,caixa2-RNA / caixa3-PRO,TRUE,Responder
+58,116-w014,íleon,Inactivo,No,Si,5/23/2017,132.31,1.83,Macrogen,6/6/2017,7.23,999999,A23314_G5,"caixa3-RNA / caixa3-PRO, 2ona extracció 181,83 ; 3000104210_A3; RIN:8,5",TRUE,Responder
+59,116-w046,íleon,,,Si,5/23/2017,103.37,1.74,Macrogen,6/6/2017,141.79,8.5,3000104210_A9,caixa3-RNA / caixa4-PRO,TRUE,Responder
+54,123-w000,descendente,Activo,Sí,Si,5/22/2017,49.93,1.96,Macrogen,6/6/2017,262.4,8.7,A23309_A3,acabada/ caixa3-PRO,FALSE,Responder
+60,123-w014,descendente,Inactivo,,Si,5/23/2017,83.87,1.77,Macrogen,6/6/2017,150.64,8.5,A23309_G1,caixa3-RNA / caixa3-PRO,TRUE,Responder
+61,123-w046,,,,Si,5/23/2017,80.8,1.82,Macrogen,6/6/2017,313.39,8,3000104210_A1,caixa3-RNA / caixa4-PRO,TRUE,Responder
+62,138-w000,sigma,Activo,,Si,5/23/2017,224.75,1.83,Macrogen,6/6/2017,311.77,8.8,A23309_C5,caixa3-RNA / caixa3-PRO,TRUE,Responder
+63,138-w014,,,,Si,5/23/2017,146.28,1.85,Macrogen,6/6/2017,128.91,8.5,A23309_G7,caixa3-RNA / caixa3-PRO,TRUE,Responder
+64,138-w046,,,,Si,5/23/2017,125.17,1.84,Macrogen,6/6/2017,,,,caixa4-RNA / caixa4-PRO,FALSE,Responder
+65,145-w000,descendente,Activo,,Si,5/23/2017,156.3,1.79,Macrogen,6/6/2017,531.85,8.3,A23309_E3,caixa3-RNA / caixa3-PRO,FALSE,Responder
+66,145-w014,descendente,Inactivo,No,Si,5/23/2017,106.89,1.83,Macrogen,6/6/2017,28.82,8.7,3000104210_B5,caixa3-RNA / caixa4-PRO,TRUE,Responder
+78,145-w046,,,,Si,5/23/2017,33.44,1.66,Macrogen,6/6/2017,,,,,,Responder
+67,151-w000,,,,Si,5/23/2017,253.9,1.82,Macrogen,6/6/2017,980.45,7.5,A23309_E5,caixa3-RNA / caixa3-PRO,FALSE,Responder
+68,151-w014,sigma,,,Si,5/23/2017,74.24,1.64,Macrogen,6/6/2017,65.36,9.1,A23304_D7-8,caixa3-RNA / caixa4-PRO,TRUE,Responder
+7,001-w000,sigma,Activo,Sí,Si,5/9/2017,46.53,1.75,Munich / Macrogen,10/05/2017 & 06/06/2017,110.14,8.3,A23319-E11,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+5,001-w014,sigma,Activo,Sí,Si,5/9/2017,44.58,1.71,Munich / Macrogen,10/05/2017 & 06/06/2017,89.46,9.3,A23318-B7,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+18,001-w046,sigma,Activo,Sí,Si,5/9/2017,176.83,1.84,Munich / Macrogen,10/05/2017 & 06/06/2017,143.89,8.3,A23318-G9,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+74,004-w000,sigma,Activo,Sí,Si,5/23/2017,173.31,1.8,Macrogen,6/6/2017,101.37,6.3,A23319-F1,"acabada / caixa1-PRO, mala qualitat",FALSE,Non-responder
+75,004-w014,sigma,Activo,Sí,Si,5/23/2017,258.47,1.83,Macrogen,6/6/2017,408.12,8.1,A23319-F3,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+76,004-w046,sigma,Activo,Sí,Si,5/23/2017,164.49,1.82,Macrogen,6/6/2017,731.14,8.7,A23318-H1,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+82,015-w000,íleon,Activo,Sí,Si,5/24/2017,112.46,1.82,Macrogen,6/6/2017,138.87,7.9,A23318-C6,"acabada / caixa1-PRO, tractament DNAsa fet",FALSE,Non-responder
+83,015-w014,íleon,Activo,Sí,Si,5/24/2017,151.37,1.84,Macrogen,6/6/2017,105.76,7.3,A23319-D10,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+84,015-w046,íleon,Activo,Sí,Si,5/24/2017,220.19,1.8,Macrogen,6/6/2017,169.88,6,A23318-H5,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+85,019-w014,íleon,Activo,Sí,Si,5/24/2017,273.9,1.82,Macrogen,6/6/2017,217.46,7,A23318-B5,"caixa1-RNA / caixa1-PRO, ili no exporat, s'agafen a través de l'estenosi",TRUE,Non-responder
+86,019-w046,íleon,,,Si,5/24/2017,24.01,1.61,Macrogen,6/6/2017,360.67,7.9,A23316-A5,"acabada / caixa2-PRO, bx recollides a través de la vàlvula",FALSE,Non-responder
+87,052-w000,transverso,Activo,Sí,Si,5/24/2017,321.94,1.84,Macrogen,6/6/2017,250.44,7.7,A23317_D5,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+88,052-w014,transverso,Activo,Sí,Si,5/24/2017,197.13,1.8,Macrogen,6/6/2017,408.54,8.4,A23317_G5,caixa2-RNA / caixa2-PRO,TRUE,Non-responder
+89,065-w000,íleon,Activo,Sí,Si,5/24/2017,47.7,1.8,Macrogen,6/6/2017,368.86,8.1,A23317_F1,acabada / caixa2-PRO,FALSE,Non-responder
+90,065-w014,íleon,Activo,Sí,Si,5/24/2017,61.38,1.8,Macrogen,6/6/2017,166.91,5.6,A23316_D9,acabada / caixa2-PRO,FALSE,Non-responder
+91,065-w046,íleon,Activo,Sí,Si,5/24/2017,112.4,1.79,Macrogen,6/6/2017,158.49,8.1,A23316_G11,acabada / caixa2-PRO,FALSE,Non-responder
+92,070-w014,íleon,Inactivo,No,Si,5/24/2017,132.6,1.81,Macrogen,6/6/2017,241.5,2.9,A23316_C3,caixa2-RNA / caixa2-PRO,TRUE,Non-responder
+93,070-w046,íleon,Activo,Sí,Si,5/24/2017,55.64,1.79,Macrogen,6/6/2017,326.08,7.4,A23316_H3,acabada / caixa2-PRO,TRUE,Non-responder
+77,103-w014,,,,Si,5/23/2017,154.53,1.79,Macrogen,6/6/2017,177.3,9.3,A23314_E3,"fem una segona extracció per error (32,35ng/uL, A23314_H1) / caixa3-PRO",FALSE,Non-responder
+79,122-w000,sigma,Activo,Sí,Si,5/24/2017,223.35,1.85,Macrogen,6/6/2017,250.56,8.7,A23309_B3,caixa2-RNA / caixa3-PRO,TRUE,Non-responder
+80,122-w014,sigma,Activo,Sí,Si,5/24/2017,192.81,1.83,Macrogen,6/6/2017,301.76,7.4,A23309_F7,caixa3-RNA / caixa3-PRO,TRUE,Non-responder
+81,132-w014,íleon,Activo,Sí,Si,5/24/2017,71.99,1.77,Macrogen,6/6/2017,476.86,7.9,A23304_G5,acabada / caixa3-PRO,FALSE,Non-responder
+146,037-w000,sigma,Activo,Sí,Si ,5/29/2017,274.51,1.86,Macrogen,6/6/2017,202.9,7.3,A23319-F9,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+147,037-w014,sigma,,,Si ,5/29/2017,280.08,1.87,Macrogen,6/6/2017,77.11,8.2,A23317_B1,"caixa1-RNA / caixa2-PRO, data real FCS: w20!!!",TRUE,Non-responder
+148,037-w046,sigma,Activo,No,Si ,5/29/2017,83.16,1.77,Macrogen,6/6/2017,240.44,7.7,A23316_E1,caixa2-RNA / caixa2-PRO,TRUE,Non-responder
+128,042-w000,sigma,Activo,Sí,Si ,5/29/2017,270.01,1.85,Macrogen,6/6/2017,324.2,8.6,A23319-G1,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+129,042-w014,sigma,,,Si ,5/29/2017,264.97,1.84,Macrogen,6/6/2017,198.15,7.5,A23317_C1,caixa1-RNA / caixa1-PRO,TRUE,Non-responder
+131,064-w000,sigma,Activo,Sí,Si ,5/29/2017,209.37,1.83,Macrogen,6/6/2017,437.79,8.2,A23317_F3,caixa1-RNA / caixa2-PRO,TRUE,Non-responder
+132,064-w014,sigma,Activo,Sí,Si ,5/29/2017,331.18,1.85,Macrogen,6/6/2017,253.22,999999,acabada,acabada / caixa2-PRO (x2),FALSE,Non-responder
+134,066-w000,sigma,Activo,Sí,Si ,5/29/2017,353.19,1.85,Macrogen,6/6/2017,411.96,7.2,A23317_F5,caixa1-RNA / caixa2-PRO,TRUE,Non-responder
+135,066-w014,sigma,Activo,Sí,Si ,5/29/2017,65.03,1.78,Macrogen,6/6/2017,310.64,9,A23316_B7,caixa1-RNA,TRUE,Non-responder
+136,083-w000,sigma,Activo,Sí,Si ,5/29/2017,288.45,1.82,Macrogen,6/6/2017,40.67,5.3,A23316_H7,"acabada / caixa2-PRO, no mirem RIN, segurament s'haurà de concentrar, ESTÀ A LA CAIXA LILA",FALSE,Non-responder
+137,083-w014,sigma,Activo,Sí,Si ,5/29/2017,161.59,1.85,Macrogen,6/6/2017,233.37,9.2,A23316_H5,acabada / caixa2-PRO,FALSE,Non-responder
+138,083-w046,sigma,,,Si ,5/29/2017,192.55,1.86,Macrogen,6/6/2017,281.55,9.1,A23314_D9,caixa2-RNA / caixa3-PRO,TRUE,Non-responder
+139,084-w000,sigma,Activo,Sí,Si ,5/29/2017,298.33,1.86,Macrogen,6/6/2017,281.25,7,A23316_C5,acabada / caixa2-PRO,FALSE,Non-responder
+140,086-w000,sigma,Activo,Sí,Si ,5/29/2017,8.95,1,Macrogen,6/6/2017,130.61,7.2,A23316_C1,acabada / caixa2-PRO,FALSE,Non-responder
+141,086-w014,sigma,Activo,Sí,Si ,5/29/2017,242.3,1.85,Macrogen,6/6/2017,177.06,8.8,A23316_H9,acabada / caixa2-PRO,FALSE,Non-responder
+142,086-w046,sigma,,,Si ,5/29/2017,206.64,1.82,Macrogen,6/6/2017,305.72,8.4,A23314_E1,caixa2-RNA / caixa3-PRO,TRUE,Non-responder
+143,092-w000,sigma,,,Si ,5/29/2017,118.72,1.85,Macrogen,6/6/2017,359.46,8.3,A23316_D3,caixa2-RNA / caixa2-PRO,TRUE,Non-responder
+144,092-w014,sigma,Activo,Sí,Si ,5/29/2017,95.81,1.8,Macrogen,6/6/2017,240.17,7.4,A23314_B7,caixa2-RNA / caixa3-PRO,TRUE,Non-responder
+145,092-w046,sigma,,,Si ,5/29/2017,221.03,1.86,Macrogen,6/6/2017,27.57,2.2,A23309_D5,caixa3-RNA / caixa3-PRO,TRUE,Non-responder
+124,101-w014,,,,Si ,5/26/2017,344.22,1.81,Macrogen,6/6/2017,147.44,8.9,A23314_F3,"caixa2-RNA (es fa una segona extracció per error, 85,19ng/uL, RIN:N.A.;  A23314_H9) / caixa3-PRO",TRUE,Non-responder
+125,109-w000,sigma,Activo,Sí,Si ,5/26/2017,75.93,1.75,Macrogen,6/6/2017,429.94,8.1,A23314-C1,caixa2-RNA / caixa3-PRO,TRUE,Non-responder
+126,109-w014,sigma,,,Si ,5/26/2017,103.03,1.63,Macrogen,6/6/2017,305.81,7.1,A23314_E5,caixa3-RNA / caixa3-PRO,FALSE,Non-responder
+127,109-w046,sigma,,,Si ,5/26/2017,158.78,1.78,Macrogen,6/6/2017,30.27,5.9,A23309_E1,caixa3-RNA / caixa3-PRO,FALSE,Non-responder
+149,111-w000,sigma,Activo,,Si ,5/29/2017,195.28,1.86,Macrogen,6/6/2017,363.16,7.9,A23314-D5,caixa2-RNA / caixa3-PRO,TRUE,Non-responder
+150,111-w014,sigma,Activo,Sí,Si ,5/29/2017,114.62,1.8,Macrogen,6/6/2017,151.64,8.1,A23314_F9,caixa3-RNA / caixa3-PRO,TRUE,Non-responder
+151,111-w038,sigma,Activo,Sí,Si ,5/29/2017,108.52,1.84,Macrogen,6/6/2017,63.05,7.3,A23304_E1-2,caixa3-RNA / caixa3-PRO,TRUE,Non-responder
+152,127-w000,sigma,Activo,,Si ,5/29/2017,48.19,1.88,Macrogen,6/6/2017,452.84,8.9,A23309_F5,caixa3-RNA / caixa3-PRO,TRUE,Non-responder
+153,127-w014,sigma,Inactivo,No,Si ,5/29/2017,118.95,1.85,Macrogen,6/6/2017,158.52,8,A23304_F3,"caixa3-RNA / caixa3-PRO, però recte actiu",TRUE,Non-responder
+94,009-w014,sigma,Activo,No,Si,5/24/2017,213.97,1.83,Macrogen,6/6/2017,101.09,7.3,A23318-E7,caixa1-RNA / caixa1-PRO,TRUE,Responder
+95,009-w046,sigma,,No,Si,5/24/2017,19.19,1.2,Macrogen,6/6/2017,103.4,7.4,A23318-G11,acabada / caixa1-PRO,FALSE,Responder
+96,013-w000,sigma,Activo,Sí,Si,5/26/2017,153.6,1.8,Macrogen,6/6/2017,327.14,8.6,A23318-E11,caixa1-RNA / caixa1-PRO,TRUE,Responder
+97,013-w014,sigma,Inactivo,No,Si,5/26/2017,227.66,1.8,Macrogen,6/6/2017,173.87,999999,remove,"caixa1-RNA / caixa1-PRO, no mirem RIN, segurament s'haurà de concentrar",TRUE,Responder
+98,013-w046,sigma,,,Si,5/26/2017,64.73,1.69,Macrogen,6/6/2017,179.83,8.8,A23318-H7,caixa1-RNA / caixa1-PRO,TRUE,Responder
+99,039-w000,recto,Activo,Sí,Si,5/26/2017,239.9,1.81,Macrogen,6/6/2017,126.4,7.7,A23319_G3,caixa1-RNA / caixa1-PRO,TRUE,Responder
+100,039-w014,recto,Inactivo,No,Si,5/26/2017,51.01,1.77,Macrogen,6/6/2017,120.28,9.1,A23317_C9,caixa1-RNA / caixa1-PRO,TRUE,Responder
+101,039-w046,recto,Inactivo,No,Si,5/26/2017,101.94,1.74,Macrogen,6/6/2017,217.41,7.6,A23316_D11,caixa2-RNA / caixa2-PRO,TRUE,Responder
+102,045-w000,sigma,Activo,No,Si,5/26/2017,146.85,1.78,Macrogen,6/6/2017,224.06,8.4,A23317_A11,caixa1-RNA / caixa1-PRO,TRUE,Responder
+103,045-w014,sigma,,,Si,5/26/2017,68.61,1.75,Macrogen,6/6/2017,326.55,8.8,A23317_C3,caixa1-RNA / caixa1-PRO,TRUE,Responder
+104,045-w046,sigma,Inactivo,No,Si,5/26/2017,114.71,1.75,Macrogen,6/6/2017,192.9,7.8,A23316_G1,"acabada / caixa2-PRO (codi canviat a C, els tubs tenen I)",FALSE,Responder
+105,099-w000,sigma,Activo,Sí,Si,5/26/2017,205.64,1.83,Macrogen,6/6/2017,258.3,8.8,A23314_B9,caixa2-RNA / caixa3-PRO,TRUE,Responder
+107,099-w014,sigma,,,Si,5/26/2017,19.63,1.39,Macrogen,6/6/2017,77.22,8.5,A23314_F5,caixa2-RNA / caixa3-PRO,TRUE,Responder
+108,099-w046,sigma,Inactivo,No,Si,5/26/2017,172.28,1.83,Macrogen,6/6/2017,81.29,8.6,A23309_D9,caixa3-RNA / caixa3-PRO,FALSE,Responder
+109,105-w000,sigma,,,Si,5/24/2017,291.28,1.81,Macrogen,6/6/2017,581.83,7.1,A23314-B11, caixa2-RNA / caixa3-PRO,TRUE,Responder
+110,105-w014,,,,Si,5/24/2017,206.71,1.82,Macrogen,6/6/2017,79.88,8.9,A23314-D7,caixa2-RNA / caixa3-PRO,TRUE,Responder
+111,105-w046,sigma,Inactivo,No,Si,5/24/2017,44.93,1.73,Macrogen,6/6/2017,74.33,6.5,A23309_E9,caixa3-RNA / caixa3-PRO,FALSE,Responder
+112,110-w000,descendente,Activo,Sí,Si,5/24/2017,108.21,1.84,Macrogen,6/6/2017,165.97,9.2,A23314-C11,caixa2-RNA / caixa3-PRO,TRUE,Responder
+114,110-w014,descendente,Inactivo,No,Si,5/24/2017,101.12,1.81,Macrogen,6/6/2017,73.66,7.5,A23314_G1,caixa3-RNA / caixa3-PRO,FALSE,Responder
+115,110-w046,descendente,Inactivo,No,Si,5/24/2017,82.05,1.84,Macrogen,6/6/2017,231.99,8.9,A23309_D11,caixa3-RNA / caixa3-PRO,FALSE,Responder
+116,113-w000,sigma,,,Si,5/26/2017,222.51,1.8,Macrogen,6/6/2017,740.21,8.9,A23314-C3,caixa2-RNA / caixa3-PRO,TRUE,Responder
+117,113-w014,sigma,Inactivo,No,Si,5/26/2017,161.26,1.78,Macrogen,6/6/2017,108.67,2.4,A23314_G9,"caixa3-RNA / caixa3-PRO, segona extracció 148,33, pos A23304_G7; RIN:7,6",FALSE,Responder
+118,113-w046,,,,Si,5/26/2017,68.82,1.71,Macrogen,6/6/2017,242.36,9,A23304_G9,caixa3-RNA / caixa4-PRO,TRUE,Responder
+119,118-w000,sigma,Activo,,Si,5/26/2017,275.33,1.8,Macrogen,6/6/2017,72.09,7.6,A23314_H5,caixa2-RNA / caixa3-PRO,TRUE,Responder
+120,118-w046,,,,Si,5/26/2017,86.23,1.56,Macrogen,6/6/2017,32.02,8.2,3000104210_B7,caixa3-RNA / caixa4-PRO,TRUE,Responder
+121,119-w000,,,,Si,5/26/2017,219.34,1.77,Macrogen,6/6/2017,80.66,8.9,A23314_H3,caixa2-RNA / caixa3-PRO,TRUE,Responder
+122,119-w014,sigma,,,Si,5/26/2017,137.85,1.74,Macrogen,6/6/2017,51.48,9.1,A23309_G3,caixa3-RNA / caixa3-PRO,TRUE,Responder
+123,119-w046,,,,Si,5/26/2017,207.46,1.78,Macrogen,6/6/2017,209.05,9.3,3000104210_A7,caixa3-RNA / caixa4-PRO,TRUE,Responder
