@@ -8,22 +8,16 @@ names2 <- read_xlsx(Names, range = anchored("A21", dim = c(9, 13)))
 names3 <- read_xlsx(Names, range = anchored("A38", dim = c(9, 13)))
 names4 <- read_xlsx(Names, range = anchored("A55", dim = c(9, 13)))
 
-n1 <- names1 %>%
-  gather("Column", "Name", 2:13, convert = TRUE) %>%
-  rename(Row = `X__1`) %>%
-  mutate(Plate = 1)
-n2 <- names2 %>%
-  gather("Column", "Name", 2:13, convert = TRUE) %>%
-  rename(Row = `X__1`) %>%
-  mutate(Plate = 2)
-n3 <- names3 %>%
-  gather("Column", "Name", 2:13, convert = TRUE) %>%
-  rename(Row = `X__1`) %>%
-  mutate(Plate = 3)
-n4 <- names4 %>%
-  gather("Column", "Name", 2:13, convert = TRUE) %>%
-  rename(Row = `X__1`) %>%
-  mutate(Plate = 4)
+plating <- function(x, plate) {
+  x %>%
+    gather("Column", "Name", 2:13, convert = TRUE) %>%
+    rename(Row = `X__1`) %>%
+    mutate(Plate = !!plate)
+}
+n1 <- plating(names1, "1")
+n2 <- plating(names2, "2")
+n3 <- plating(names3, "3")
+n4 <- plating(names4, "4")
 
 nam <- rbind(n1, n2, n3, n4)
 
@@ -31,58 +25,57 @@ nam <- rbind(n1, n2, n3, n4)
 Concentrations <- "data/dataDelivered/concentr_FinalProject.xlsx"
 plate1 <- read_xlsx(Concentrations, range = anchored("B4", dim = c(9, 13)),
                     skip = 4, n_max = 8)
-p1 <- plate1 %>%
-  gather("Column", "Concentr", 2:13, convert = TRUE) %>%
-  rename(Row = `X__1`) %>%
-  mutate(Plate = 1, Concentr = as.numeric(Concentr))
-
 plate2 <- read_xlsx(Concentrations, range = anchored("B22", dim = c(9, 13)),
                     skip = 4, n_max = 8)
-p2 <- plate2 %>%
-  gather("Column", "Concentr", 2:13, convert = TRUE) %>%
-  rename(Row = `X__1`) %>%
-  mutate(Plate = 2, Concentr = as.numeric(Concentr))
-
 plate3 <- read_xlsx(Concentrations, range = anchored("B40", dim = c(9, 13)),
                     skip = 4, n_max = 8)
-p3 <- plate3 %>%
-  gather("Column", "Concentr", 2:13, convert = TRUE) %>%
-  rename(Row = `X__1`) %>%
-  mutate(Plate = 3, Concentr = as.numeric(Concentr))
-
 plate4 <- read_xlsx(Concentrations, range = anchored("B58", dim = c(9, 13)),
                     skip = 4, n_max = 8)
-p4 <- plate4 %>%
-  gather("Column", "Concentr", 2:13, convert = TRUE) %>%
-  rename(Row = `X__1`) %>%
-  mutate(Plate = as.character(4), Concentr = as.numeric(Concentr))
+
+concentrate <- function(x, plate) {
+  x %>%
+    gather("Column", "Concentr", 2:13, convert = TRUE) %>%
+    rename(Row = `X__1`) %>%
+    mutate(Plate = !!plate, Concentr = as.numeric(Concentr))
+}
+p1 <- concentrate(plate1, "1")
+p2 <- concentrate(plate2, "2")
+p3 <- concentrate(plate3, "3")
+p4 <- concentrate(plate4, "4")
 
 plates <- rbind(p1, p2, p3, p4)
 
-theme_set(theme_bw())
-plates <- plates %>%
+
+# Merging with previously used data ####
+out <- merge(nam, plates) %>%
+  as.tibble() %>%
+  filter(!is.na(Name)) %>%
   mutate(Plate = as.factor(Plate), Row = as.factor(Row),
          Column = as.factor(Column))
+# Because of duplicated names we need to tweak the names
+any(duplicated(out$Name))
+index <- grep("^22-T52-T-DM", out$Name)
+out$Name[index] <- paste0(out$Name[index], "_p", out$Plate[index])
+saveRDS(out, "Samples_concentration_distribution.RDS")
 
-ggplot(plates) +
+theme_set(theme_bw())
+
+ggplot(out) +
   geom_violin(aes(Plate, Concentr))
 
-ggplot(plates) +
+ggplot(out) +
   geom_boxplot(aes(Plate, Concentr)) +
   facet_wrap(~Row)
 
-ggplot(plates) +
+ggplot(out) +
   geom_boxplot(aes(Plate, Concentr)) +
   facet_wrap(~Column)
 
 library("experDesign")
-i <- split(seq_along(plates$Plate), plates$Plate)
-res <- evaluate_index(i, plates[, "Concentr", drop = FALSE])
+i <- split(seq_along(out$Plate), out$Plate)
+res <- evaluate_index(i, out[, "Concentr", drop = FALSE])
 res[, "Concentr", ]
 
-
-# Merging with previously used data ####
-out <- as.tibble(merge(nam, plates))
 spli <- strsplit(out$Name, "_")
 out$root <- sapply(spli, function(x){x[1]})
 out$duplicated <- sapply(spli, function(x){ifelse(length(x) > 1, x[2], NA)})
@@ -95,7 +88,7 @@ namesSamples <- lapply(1:4, function(x) {
   read_xlsx("data/dataDelivered/michigan_samples_modified.xlsx",
             sheet = x)
 })
-
+# Compare with the other variables
 namesSamples <- do.call(rbind, namesSamples)
 # drop columns
 namesSamples <- namesSamples[, -c(9:11, 13:15)]
