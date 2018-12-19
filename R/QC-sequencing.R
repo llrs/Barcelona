@@ -14,7 +14,7 @@ not_empty <- function(x) {
 sp <- apply(counts, 2, not_empty)
 ctrls <- grepl("^500_", colnames(counts))
 
-# For some reason this is failing
+# For some reason (too big?) this is failing
 # library("vegan")
 # S <- specnumber(counts)
 # # min(rowSums(counts))
