@@ -1,4 +1,7 @@
 library("dplyr")
+library("phyloseq")
+library("ggplot2")
+library("decontam")
 
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab))
@@ -84,10 +87,11 @@ all_data %>%
 
 all_data %>% as_tibble() %>%
   filter(Study == "BCN") %>%
-  filter(Genus != "no_match")
+  filter(Microorganism != "no_match")
 
 topMicro <- all_data %>%
   filter(Study == "BCN") %>%
+  filter(Microorganism != "no_match") %>%
   group_by(Microorganism) %>%
   summarise(mA = mean(ratio)) %>%
   arrange(desc(mA)) %>%
@@ -120,12 +124,10 @@ rownames(out) <- paste0("a", as.character(seq_len(nrow(out))))
 rownames(family) <- as.character(seq_len(nrow(family)))
 colnames(family) <- c("Family")
 
-library("phyloseq")
 phyloseq <- phyloseq(otu_table(counts, taxa_are_rows = TRUE),
                      sample_data(out)
                      # tax_table(as.matrix(family))
                      )
-library("ggplot2")
 theme_set(theme_bw())
 beta <- estimate_richness(phyloseq)
 res <- cbind(beta, out)
@@ -153,17 +155,26 @@ ggplot(res) +
 ggplot(res) +
   geom_point(aes(log10(Counts), Shannon, col = Exact_location))
 
-# TODO study as cofacto
-library("decontam")
+# Batch is each plate
+
 count_decontam <- t(as.matrix(counts))
 colnames(count_decontam) <- family$Family
 decontamination <- isContaminant(count_decontam, neg = out$Study %in% "NC",
-                                 method = "auto", conc = out$Concentr,
+                                 method = "either", conc = out$Concentr,
                                  batch = out$Plate)
 
 # I would remove this sequences (also those that are only present in one sample)
 contam <- is.na(decontamination$p.prev) | decontamination$contaminant
 summary(contam)
+
+# Batch is each study
+decontamination2 <- isContaminant(count_decontam, neg = out$Study %in% "NC",
+                                 method = "freq", conc = out$Concentr,
+                                 batch = out$Study)
+
+# I would remove this sequences (also those that are only present in one sample)
+contam2 <- is.na(decontamination2$p.prev) | decontamination2$contaminant
+summary(contam2)
 
 contaminant_families <- as.character(family)[contam]
 metagSeq <- phyloseq_to_metagenomeSeq(phyloseq)

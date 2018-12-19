@@ -3,6 +3,7 @@ library("ggplot2")
 library("dplyr")
 library("tidyr")
 library("scales")
+library("patchwork")
 
 family <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
 
@@ -119,6 +120,6 @@ Controls <- family.tidy %>%
         axis.line.x = element_blank()) +
   labs(title = "Controls", caption = "Michigan")
 
-library("patchwork")
+
 (bcn + nc + trim)/Controls
 (bcn + trim)/(nc + Controls)

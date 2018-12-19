@@ -1,5 +1,6 @@
 library("readxl")
 library("tidyverse")
+library("experDesign")
 
 # Dealing with the names ####
 Names <- "data/dataDelivered/amplicon_names.xlsx"
@@ -38,6 +39,7 @@ concentrate <- function(x, plate) {
     rename(Row = `X__1`) %>%
     mutate(Plate = !!plate, Concentr = as.numeric(Concentr))
 }
+# Warnings expected
 p1 <- concentrate(plate1, "1")
 p2 <- concentrate(plate2, "2")
 p3 <- concentrate(plate3, "3")
@@ -71,8 +73,8 @@ ggplot(out) +
   geom_boxplot(aes(Plate, Concentr)) +
   facet_wrap(~Column)
 
-library("experDesign")
-i <- split(seq_along(out$Plate), out$Plate)
+
+i <- use_index(out$Plate)
 res <- evaluate_index(i, out[, "Concentr", drop = FALSE])
 res[, "Concentr", ]
 

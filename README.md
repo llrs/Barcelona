@@ -1,7 +1,7 @@
-# design_ngs
+# Barcelona
 
 This project is to provide the batch groups for the sequencing at Michigan
-and process it.
+and integrate microbiome and transcriptome
 
 The data is mangled in preprocessing.R, which later was used to design the batch.
 
@@ -25,6 +25,6 @@ TODO: Check the preprocessing (Not so important but would be nice)
 TODO: Check the final batches and effect of the concentrations given
 TODO: Prepare the names and relation with the databases
 The data is in dataDelivered, with the exception of amplicon_names.xlsx which is a copy 
-paste of AmmpliconProject...FinalProject.xlsx. (see [this](https://github.com/tidyverse/readxl/issues/513) bug)
+paste of AmmpliconProject...FinalProject.xlsx. (see [this](https://github.com/tidyverse/readxl/issues/513) problem)
 
 The last two points are in post-sequencing.R
