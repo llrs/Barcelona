@@ -1,3 +1,11 @@
 .Rhistory
 .RData
 .Rproj.user
+data
+^data/P4
+*.RDS
+*.xlsx
+
+data/Raw
+data/fastp
+data/fastQC

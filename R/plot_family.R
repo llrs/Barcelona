@@ -55,7 +55,33 @@ order_names <- c(BCN, NC, TRIM, C)
 
 family.tidy$Sample <-  fct_relevel(family.tidy$Sample, order_names)
 family.tidy$Study <-  fct_relevel(family.tidy$Study, c("BCN", "NC", "TRIM", "Controls"))
-theme_set(theme_bw())
+a <- theme_bw() +
+  theme(axis.text.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.line.x = element_blank(),
+      panel.grid.major.x = element_blank())
+theme_set(a)
+
+family.tidy %>%
+  group_by(Sample) %>%
+  summarise(counts = sum(Count),
+            study = unique(Study)) %>%
+  ungroup() %>%
+  droplevels() %>%
+  ggplot() +
+  geom_col(aes(lvls_reorder(Sample, order(counts)), log10(counts), fill = study)) +
+  labs(title = "BCN", x = "Samples", fill = "Study") +
+  geom_hline(yintercept = c(log10(1000), log10(20000)), col = c("red", "green"))
+
+family.tidy %>%
+  filter(Study == "BCN") %>%
+  ggplot() +
+  geom_col(aes(Sample, log10(Count), fill = Microorganism)) +
+  guides(fill = FALSE) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.line.x = element_blank()) +
+  labs(title = "BCN")
 bcn <- family.tidy %>%
   filter(Study == "BCN") %>%
   ggplot() +
