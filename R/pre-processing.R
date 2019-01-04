@@ -1,3 +1,4 @@
+library("readxl")
 library("dplyr")
 library("metagenomeSeq")
 library("integration")
@@ -65,9 +66,37 @@ colnames(rna) <- colnames2
 
 # Filter them
 rna2 <- rna[, colnames(rna) %in% meta$Original]
-meta2 <- meta[meta$Original %in% colnames(rna2), ]
+meta2 <- droplevels(meta[meta$Original %in% colnames(rna2), ])
 OTUs2 <- OTUs[, colnames(OTUs) %in% meta2$Name]
 
-A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta2)
+
+# Meta ####
+
+db <- data.table::fread(
+  "data/db_biopsies_bcn_seq16S_noTRIM.txt", sep = "\t",
+  stringsAsFactors = FALSE
+)
+
+meta3 <- merge(meta2, db,
+               by.x = "Original", by.y = "Sample_Code",
+               all.x = TRUE, all.y = FALSE)
+meta3 <- droplevels(meta3)
+
+# From the copy of the access database I have 04/01/2019
+dates <- read_xlsx("data/fechas.xlsx",
+                   col_types = c("text", "text", "guess", "guess"), na = "")
+dates$Date <- as.Date(dates$Date)
+dates$`Date of diagnosis` <- as.Date(dates$`Date of diagnosis`)
+colnames(dates) <- c("Visit", "ID", "DATE_SAMPLE", "Date_diagnostic")
+meta4 <- merge(meta3, dates, by.x = "Original", by.y = "Visit", all.x = TRUE, all.y = FALSE)
+
+diagTime <- as.Date(meta4$DATE_SAMPLE, "%Y-%m-%d") - meta4$Date_diagnostic
+diagTime <- as.numeric(diagTime/365.25)
+diagTime[is.na(diagTime)] <- 0 # Replace by date of the sample at least
+AgeDiag <- as.numeric(meta4$Date_diagnostic - as.Date(meta4$Birth_date,
+                                         "%m/%d/%Y"))/365.25
+meta5 <- cbind.data.frame(meta4, diagTime, AgeDiag)
+
+A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta3)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
 saveRDS(A, "data/RGCCA_data.RDS")
