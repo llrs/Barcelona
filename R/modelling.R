@@ -79,7 +79,8 @@ comm +
   geom_text(aes(color = A$Meta$IBD.x, label = A$Meta$Original)) +
   guides(col = guide_legend(title = "Patient"))
 
-# TODO: Merge with the original data.frame with information about the disease.
 models2 <- list(model1, model1i, model2, model2i)
-Ab <- lapply(A, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
+A2 <- A
+A2$meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX"))
+A2b <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 out <- lapply(models2, use, A = Ab2, c1 = shrinkage[1:2])

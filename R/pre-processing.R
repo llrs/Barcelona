@@ -96,6 +96,10 @@ diagTime[is.na(diagTime)] <- 0 # Replace by date of the sample at least
 AgeDiag <- as.numeric(meta4$Date_diagnostic - as.Date(meta4$Birth_date,
                                          "%d/%m/%Y"))/365.25
 meta5 <- cbind.data.frame(meta4, diagTime, AgeDiag)
+meta5$ID[grep("^C", meta5$Original)] <- gsub("^(C[0-9]+)-.+", "\\1", meta5$Original[grep("^C", meta5$Original)])
+meta5$ID[1] <- "001"
+
+# TODO: Clean the Exact location and dates, SEX errors (mainly the controls data)
 
 A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta5)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
