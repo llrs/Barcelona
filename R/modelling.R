@@ -47,8 +47,37 @@ use <- function(...){
 
 
 models0 <- list(model0, model0i)
+names(models0) <- c("model0", "model0i")
 out <- lapply(models0, use, A = Ab2, c1 = shrinkage[1:2])
+saveRDS(out, "models0.RDS")
+samples <- sapply(out[[1]]$Y, function(x) {
+  x[, 1]
+})
+comm <- ggplot(as.data.frame(samples), aes(RNAseq, Micro)) +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
+  ggtitle("All samples at all times ") +
+  xlab("RNAseq (component 1)") +
+  ylab("16S (component 1)") +
+  theme(plot.title = element_text(hjust = 0.5))
+comm +
+  geom_text(aes(color = A$Meta$IBD.x, label = A$Meta$Original)) +
+  guides(col = guide_legend(title = "Patient"))
+# Plot not interesting low AVE and not separating by disease or controls
 
+samples <- sapply(out[[2]]$Y, function(x) {
+  x[, 1]
+})
+comm <- ggplot(as.data.frame(samples), aes(RNAseq, Micro)) +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
+  ggtitle("All samples at all times ") +
+  xlab("RNAseq (component 1)") +
+  ylab("16S (component 1)") +
+  theme(plot.title = element_text(hjust = 0.5))
+comm +
+  geom_text(aes(color = A$Meta$IBD.x, label = A$Meta$Original)) +
+  guides(col = guide_legend(title = "Patient"))
 
 # TODO: Merge with the original data.frame with information about the disease.
 models2 <- list(model1, model1i, model2, model2i)
