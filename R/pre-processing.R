@@ -152,8 +152,10 @@ AgeDiag <- as.numeric(meta4$Date_diagnostic - as.Date(meta4$Birth_date,
 hist(meta4$Age - as.numeric(meta4$DATE_SAMPLE - meta4$Birth_date)/365.25)
 meta4$Age <- as.numeric(meta4$DATE_SAMPLE - meta4$Birth_date)/365.25
 
+AgeDiag[is.na(AgeDiag)] <- 0
 meta4$diagTime <- diagTime
 meta4$AgeDiag <- AgeDiag
+
 
 A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta4)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
