@@ -84,3 +84,15 @@ A2 <- A
 A2$meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX"))
 A2b <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 out <- lapply(models2, use, A = Ab2, c1 = shrinkage[1:2])
+
+
+
+
+Localization <- model_RGCCA(A$Meta, c("Exact_location")) # With SESCD local it increase the AVE_inner
+Time <- model_RGCCA(A$Meta, c("AgeDiag", "Age"))
+Demographics <- model_RGCCA(A$Meta, c("ID","SEX"))
+
+A3 <- A[1:2]
+A3$Demographics <- Demographics
+A3$Localization <- Localization
+A3$Time <- Time
