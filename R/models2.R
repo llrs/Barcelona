@@ -1,7 +1,8 @@
 library("integration")
 library("RGCCA2")
-
+library("dplyr")
 A <- readRDS("data/RGCCA_data.RDS")
+meta <- A$Meta
 
 shrinkage <- sapply(A[1:2], tau.estimate)
 shrinkage[3] <- 1
@@ -30,3 +31,39 @@ Ab <- lapply(A, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 out <- sapply(designs, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
 out2 <- as.data.frame(t(out))
 saveRDS(out2, "model2_optimization.RDS")
+
+out2 %>%
+  top_n(1, AVE_inner) %>%
+  select(AVE_inner, AVE_outer, var12, var13, var23) %>%
+  arrange(desc(AVE_inner))
+model2b <- symm(C, out2[out2$AVE_inner == max(out2$AVE_inner),
+                        grep("^var", colnames(out2))])
+
+model2b_sgcca <- sgcca(A = Ab, c1 = shrinkage, scheme = "centroid", C = model2b,
+                       verbose = FALSE, scale = FALSE, ncomp = rep(2, length(Ab)))
+model2b_sgcca <- improve.sgcca(model2b_sgcca, names(A))
+plot(model2b_sgcca$Y$RNAseq[, 1], model2b_sgcca$Y$Micro[, 1], col = meta$Exact_location)
+
+
+
+
+
+
+
+A$Meta <- model_RGCCA(meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX", "IBD"))
+Ab <- lapply(A, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
+# Estimated time of 1 hours
+out <- sapply(designs, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+out2 <- as.data.frame(t(out))
+saveRDS(out2, "model2_optimization_IBD.RDS")
+
+out2 %>%
+  top_n(1, AVE_inner) %>%
+  select(AVE_inner, AVE_outer, var12, var13, var23) %>%
+  arrange(desc(AVE_inner))
+model2b2 <- symm(C, out2[out2$AVE_inner == max(out2$AVE_inner), grep("^var", colnames(out2))])
+
+model2b2_sgcca <- sgcca(A = Ab, c1 = shrinkage, scheme = "centroid", C = model2b2,
+                       verbose = FALSE, scale = FALSE, ncomp = rep(2, length(Ab)))
+model2b2_sgcca <- improve.sgcca(model2b2_sgcca, names(A))
+plot(model2b2_sgcca$Y$RNAseq[, 1], model2b2_sgcca$Y$Micro[, 1], col = meta$IBD)
