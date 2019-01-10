@@ -103,15 +103,16 @@ meta4$Date_diagnostic[meta4$ID %in% "122"] <- as.Date("28/07/2015", "%d/%m/%Y")
 meta4$Date_diagnostic[meta4$ID %in% "123"] <- as.Date("10/11/2015", "%d/%m/%Y")
 
 # Use the imported metadata from the TRIM project
-# Mainly for the controls that are shared
+# For the controls that are shared
 meta_trim <- readRDS("data/metaTRIM.RDS")
 
 meta_c <- meta_trim[grep("^C", meta_trim$ID), ]
-order_c <- match(meta4$ID[meta4$ID %in% meta_c$ID], meta_c$ID)
+meta_c$Sample_Code_uDNA <- gsub("_", "-", meta_c$Sample_Code_uDNA)
+order_c <- match(meta4$Original[meta4$Original %in% meta_c$Sample_Code_uDNA], meta_c$Sample_Code_uDNA)
 meta_c <- meta_c[order_c, ]
-c_sex <- tolower(meta_c$SEX)
-keep_controls <- meta4$ID %in% meta_c$ID
-meta4$SEX[keep_controls] <- c_sex
+keep_controls <- meta4$Original %in% meta_c$Sample_Code_uDNA
+meta4$SEX[keep_controls] <- tolower(meta_c$SEX)
+
 # Different time formats in Birth date!!
 meta4$Birth_date <- as.Date(meta4$Birth_date, "%d/%m/%Y")
 meta4$Birth_date[keep_controls] <- as.Date(meta_c$Birth_date, "%m/%d/%Y")
@@ -122,7 +123,6 @@ meta4$Exact_location[keep_controls] <- gsub(" colon", "", tolower(meta_c$Exact_l
 p17 <- meta4[meta4$ID == "017", c("Original", "ID", "DATE_SAMPLE", "Birth_date", "Age")]
 meta4$Birth_date[meta4$ID == "017"] <- p17$Birth_date[1]
 
-# check on the master database
 ggplot(meta4[grep("^[0-9]", meta4$ID), ]) +
   geom_point(aes(ID, DATE_SAMPLE, color = factor(substr(Original, 6, 8)),
                  size = Age)) +
@@ -131,7 +131,7 @@ ggplot(meta4[grep("^[0-9]", meta4$ID), ]) +
 # The patient ID 113 has the week 46 before the week 000??
 # Also 2 missing DATE_SAMPLES warning message
 
-# Using the other database we can complete the record
+# Using the other database we can complete and correct the record:
 meta4$DATE_SAMPLE[meta4$Original == "001-w000"] <- as.Date("11/14/2012", "%m/%d/%Y")
 meta4$DATE_SAMPLE[meta4$Original == "111-w038"] <- as.Date("06/07/2016", "%m/%d/%Y")
 meta4$DATE_SAMPLE[meta4$Original == "113-w046"] <- as.Date("08/09/2016", "%m/%d/%Y")
@@ -142,6 +142,7 @@ ggplot(meta4[grep("^[0-9]", meta4$ID), ]) +
   labs(x = "ID", y = "Date sample", color = "Sample id (weeks)",
        title = "After corrections")
 
+# Calculate years since diagnostic and related problems
 diagTime <- as.Date(meta4$DATE_SAMPLE, "%Y-%m-%d") - meta4$Date_diagnostic
 diagTime <- as.numeric(diagTime/365.25)
 diagTime[is.na(diagTime)] <- 0 # Replace by date of the sample at least
