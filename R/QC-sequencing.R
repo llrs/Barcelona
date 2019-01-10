@@ -2,6 +2,8 @@ library("dplyr")
 library("phyloseq")
 library("ggplot2")
 library("decontam")
+library("tidyr")
+library("vegan")
 
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab))
@@ -59,7 +61,7 @@ location <- location %>%
       TRUE ~ "TRIM"
     )
   ) %>%
-  tidyr::separate(Name, c("Original", "Replicate"), sep = "_", remove = FALSE)
+  separate(Name, c("Original", "Replicate"), sep = "_", remove = FALSE)
 
 
 # Merge the different dataset
@@ -175,6 +177,7 @@ decontamination2 <- isContaminant(count_decontam, neg = out$Study %in% "NC",
 # I would remove this sequences (also those that are only present in one sample)
 contam2 <- is.na(decontamination2$p.prev) | decontamination2$contaminant
 summary(contam2)
+# Conclusion, no contaminants if we take into account the different batches
 
 contaminant_families <- as.character(family)[contam]
 metagSeq <- phyloseq_to_metagenomeSeq(phyloseq)
