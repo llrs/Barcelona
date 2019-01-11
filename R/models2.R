@@ -1,6 +1,5 @@
 library("integration")
 library("RGCCA2")
-library("dplyr")
 A <- readRDS("data/RGCCA_data.RDS")
 meta <- A$Meta
 
@@ -31,11 +30,6 @@ Ab <- lapply(A, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 out <- sapply(designs, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
 out2 <- as.data.frame(t(out))
 saveRDS(out2, "model2_optimization.RDS")
-
-out2 %>%
-  top_n(1, AVE_inner) %>%
-  select(AVE_inner, AVE_outer, var12, var13, var23) %>%
-  arrange(desc(AVE_inner))
 model2b <- symm(C, out2[out2$AVE_inner == max(out2$AVE_inner),
                         grep("^var", colnames(out2))])
 
@@ -57,13 +51,10 @@ out <- sapply(designs, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
 out2 <- as.data.frame(t(out))
 saveRDS(out2, "model2_optimization_IBD.RDS")
 
-out2 %>%
-  top_n(1, AVE_inner) %>%
-  select(AVE_inner, AVE_outer, var12, var13, var23) %>%
-  arrange(desc(AVE_inner))
 model2b2 <- symm(C, out2[out2$AVE_inner == max(out2$AVE_inner), grep("^var", colnames(out2))])
 
 model2b2_sgcca <- sgcca(A = Ab, c1 = shrinkage, scheme = "centroid", C = model2b2,
                        verbose = FALSE, scale = FALSE, ncomp = rep(2, length(Ab)))
 model2b2_sgcca <- improve.sgcca(model2b2_sgcca, names(A))
 plot(model2b2_sgcca$Y$RNAseq[, 1], model2b2_sgcca$Y$Micro[, 1], col = meta$IBD)
+plot(model2b2_sgcca$Y$RNAseq[, 1], model2b2_sgcca$Y$Micro[, 1], col = as.factor(ifelse(meta$Exact_location == "ileum", "ileum", "colon")))
