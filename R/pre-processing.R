@@ -44,11 +44,13 @@ OTUs <- norm_otus(otus, genus)
 
 # Working with RNAseq
 conn <- gzfile("data/voom.RNAseq.data.all.cal.noduplications.tsv.gz")
+conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
 rna <- read.table(conn, sep = "\t", check.names = FALSE)
-close(conn)
 
 colnames(rna) <- gsub(" reseq$", "", colnames(rna))
 colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
+
+rna <- norm_RNAseq(rna)
 
 correct_bcn <- function(x) {
   if (length(x) > 1) {
