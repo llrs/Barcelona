@@ -86,3 +86,18 @@ out2 <- out[lengths(out) == 24]
 out2 <- simplify2array(out2)
 out2 <- as.data.frame(t(out2))
 saveRDS(out2, "sample_def_model3_boot.RDS")
+
+out0 <- readRDS("sample_model3_boot.RDS")
+out1 <- readRDS("sample2_model3_boot.RDS")
+out2 <- readRDS("sample_def_model3_boot.RDS")
+out <- rbind(out0, out1, out2)
+out <- out[!duplicated(out), ]
+ggplot(out, aes(AVE_inner, AVE_outer, color = cc1)) +
+  geom_point()
+best3 <- out[out$AVE_inner == max(out$AVE_inner), grep("var", colnames(out))]
+best3 <- symm(designs[[1]], best3)
+colnames(best3) <- names(Ab)
+rownames(best3) <- names(Ab)
+
+model3_best <- sgcca(A = Ab, c1 = shrinkage, C = best3, ncomp = rep(2, 5), scheme = "centroid")
+saveRDS(model3_best, "model3_best.RDS")
