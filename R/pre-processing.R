@@ -51,6 +51,7 @@ colnames(rna) <- gsub(" reseq$", "", colnames(rna))
 colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
 
 rna <- norm_RNAseq(rna)
+rna <- filter_RNAseq(rna)
 
 correct_bcn <- function(x) {
   if (length(x) > 1) {
@@ -159,7 +160,57 @@ AgeDiag[is.na(AgeDiag)] <- 0
 meta4$diagTime <- diagTime
 meta4$AgeDiag <- AgeDiag
 
+db2 <- readxl::read_xls("data/bd_BCN_tnf_biopsies_110119.xls", na = "n.a.")
+db2 <- db2[!is.na(db2$RNA_seq_batch), ]
+db2$NHC <- as.character(db2$NHC)
+db2$Sample_id <- gsub(" reseq", "", db2$Sample_id)
+db2$Sample_id <- gsub("-T-TR-", "-T-DM-", db2$Sample_id)
+db2$Sample_id[grep("-[wW]", db2$Sample_id)] <- tolower(db2$Sample_id)[grep("-[wW]", db2$Sample_id)]
+db2$Sample_id <- str_split(db2$Sample_id, "-w") %>% # Ready for BCN
+  map(correct_bcn) %>%
+  unlist()
+# Based that on the resequenced is after the original
+db3 <- db2[-c(which(duplicated(db2$Sample_id) == TRUE) - 1), ]
+db3 <- db3[db3$Sample_id %in% colnames(rna2), ]
+meta5 <- merge(meta4, db3,
+               by.x = c("Original", "IBD", "SEX"),
+               by.y = c("Sample_id", "IBD", "Gender"),
+               all.x = TRUE)
+meta5$sample_date <- as.Date(meta5$sample_date, "%m/%d/%Y")
 
-A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta4)
+# Different sample date?? The right one is DATE_SAMPLE
+meta5[meta5$sample_date != meta5$DATE_SAMPLE, c("sample_date", "DATE_SAMPLE", "Original")]
+meta5 <- meta5[, -grep("sample_date", colnames(meta5))]
+
+duplicates <- group_by(meta5, NHC) %>%
+  summarise(diff = n_distinct(Patient_ID))
+dupli <- duplicates$NHC[duplicates$diff > 1]
+
+# How do we codify it ?? The one with less  samples loses its Patient_ID
+meta5[meta5$NHC %in% dupli, "Patient_ID"] <- c("17", "17", "17", "86", "92", "86", "86", "86", "92", "92")
+
+# Treatment. check with the database? Better with the database
+meta5 <- meta5[, -grep("Treatment.x", colnames(meta5))] # Only signaling those that are not controls
+treat <- readxl::read_xlsx("data/Treatment.xlsx") # On 17/01/2019 on %D/%M/%Y format
+treat <- treat[, c("Visit", "Drug")]
+treat <- treat[!is.na(treat$Visit), ]
+treat <- treat[treat$Visit %in% meta5$Original, ]
+Drugs <- unique(treat$Drug)
+visits <- unique(treat$Visit)
+incidence <- sapply(visits, function(x){
+  drugs <- treat$Drug[treat$Visit == x]
+  keep <- as.numeric(Drugs %in% drugs)
+  names(keep) <- Drugs
+  keep
+})
+incidence <- t(incidence)
+# We don't know the treatment of many samples
+meta5$Original[grep("-w", meta5$Original)][!(meta5$Original[grep("-w", meta5$Original)] %in% rownames(incidence))]
+
+
+meta6 <- merge(meta5, treat, by.x = "Original", by.y = "Visit",
+               all.x = TRUE, all.y = FALSE)
+
+A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta5)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
 saveRDS(A, "data/RGCCA_data.RDS")
