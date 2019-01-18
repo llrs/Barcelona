@@ -38,10 +38,6 @@ nam <- c(names(replicates[replicates == 1]), keepDup$Name)
 otus <- bcn[, colnames(bcn) %in% nam]
 meta <- meta[meta$Name %in% nam, ]
 
-# normalize 16S
-OTUs <- norm_otus(otus, genus)
-
-
 # Working with RNAseq
 conn <- gzfile("data/voom.RNAseq.data.all.cal.noduplications.tsv.gz")
 conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
@@ -49,9 +45,6 @@ rna <- read.table(conn, sep = "\t", check.names = FALSE)
 
 colnames(rna) <- gsub(" reseq$", "", colnames(rna))
 colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
-
-rna <- norm_RNAseq(rna)
-rna <- filter_RNAseq(rna)
 
 correct_bcn <- function(x) {
   if (length(x) > 1) {
@@ -69,11 +62,16 @@ colnames2 <- colnames(rna) %>%
   gsub("-T-TR-", "-T-DM-", .) # Ready for TRIM
 colnames(rna) <- colnames2
 
-# Filter them
+# Filter the samples
 rna2 <- rna[, colnames(rna) %in% meta$Original]
 meta2 <- droplevels(meta[meta$Original %in% colnames(rna2), ])
-OTUs2 <- OTUs[, colnames(OTUs) %in% meta2$Name]
+OTUs2 <- otus[, colnames(otus) %in% meta2$Name]
 
+# normalize the data
+OTUs2 <- norm_otus(OTUs2, genus)
+
+rna2 <- norm_RNAseq(rna2)
+rna2 <- filter_RNAseq(rna2)
 
 # Meta ####
 
@@ -197,7 +195,7 @@ treat <- treat[!is.na(treat$Visit), ]
 treat <- treat[treat$Visit %in% meta5$Original, ]
 Drugs <- unique(treat$Drug)
 visits <- unique(treat$Visit)
-incidence <- sapply(visits, function(x){
+incidence <- sapply(visits, function(x) {
   drugs <- treat$Drug[treat$Visit == x]
   keep <- as.numeric(Drugs %in% drugs)
   names(keep) <- Drugs
