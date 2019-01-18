@@ -40,7 +40,7 @@ meta <- meta[meta$Name %in% nam, ]
 
 # Working with RNAseq
 conn <- gzfile("data/voom.RNAseq.data.all.cal.noduplications.tsv.gz")
-conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
+# conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
 rna <- read.table(conn, sep = "\t", check.names = FALSE)
 
 colnames(rna) <- gsub(" reseq$", "", colnames(rna))
@@ -62,14 +62,26 @@ colnames2 <- colnames(rna) %>%
   gsub("-T-TR-", "-T-DM-", .) # Ready for TRIM
 colnames(rna) <- colnames2
 
+
 # Filter the samples
 rna2 <- rna[, colnames(rna) %in% meta$Original]
 meta2 <- droplevels(meta[meta$Original %in% colnames(rna2), ])
 OTUs2 <- otus[, colnames(otus) %in% meta2$Name]
 
+colnames(OTUs2) <- meta2$Original[match(colnames(OTUs2), meta2$Name)]
+
+# Reorder samples to match!
+meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
+OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
+
+o <- cbind(meta2$Original, colnames(OTUs2), colnames(rna2))
+k <- apply(o, 1, function(x){length(unique(o[1, ])) == 1})
+if (any(!k)) {
+  stop("Samples not matched")
+}
+
 # normalize the data
 OTUs2 <- norm_otus(OTUs2, genus)
-
 rna2 <- norm_RNAseq(rna2)
 rna2 <- filter_RNAseq(rna2)
 
@@ -202,12 +214,14 @@ incidence <- sapply(visits, function(x) {
   keep
 })
 incidence <- t(incidence)
+
 # We don't know the treatment of many samples
 meta5$Original[grep("-w", meta5$Original)][!(meta5$Original[grep("-w", meta5$Original)] %in% rownames(incidence))]
 
 
 meta6 <- merge(meta5, treat, by.x = "Original", by.y = "Visit",
                all.x = TRUE, all.y = FALSE)
+
 
 A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta5)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
