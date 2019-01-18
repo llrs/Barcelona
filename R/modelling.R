@@ -51,6 +51,9 @@ comm <- ggplot(as.data.frame(samples), aes(RNAseq, Micro)) +
 comm +
   geom_text(aes(color = A$Meta$IBD, label = A$Meta$Original)) +
   guides(col = guide_legend(title = "Patient"))
+comm +
+  geom_text(aes(color = A$Meta$Exact_location, label = A$Meta$Original)) +
+  guides(col = guide_legend(title = "Location"))
 # Plot not interesting low AVE and not separating by disease or controls
 
 samples <- sapply(out[[2]]$Y, function(x) {
@@ -148,7 +151,7 @@ out3$model <- gsub("model", "", out3$model)
 out3$model <- gsub("b$", " best", out3$model)
 theme_update(strip.background = element_blank())
 comm <- ggplot(out3[out3$Interaction != 1, ], aes(RNAseq, Micro)) +
-  facet_wrap(~model)
+  facet_wrap(~model, scale = "free")
 comm +
   geom_point(aes(color = IBD))
 comm +
