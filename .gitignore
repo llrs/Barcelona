@@ -9,3 +9,4 @@ data
 data/Raw
 data/fastp
 data/fastQC
+Figures/*
