@@ -12,9 +12,10 @@ C <- matrix(
 model0 <- subSymm(C, "Micro", "RNAseq", 1)
 model0i <- subSymm(model0, 1, 1, 1)
 
-# We cannnot comput eht tau.estimate for A[[1]]
+# We cannnot comput the tau.estimate for A[[1]]
 # (shrinkage <- sapply(A, tau.estimate))
-shrinkage <- sapply(A2, tau.estimate)
+shrinkage <- 0.285693348851943 #Calculated from the server for the data derived from original data
+shrinkage[2] <- tau.estimate(A2[[2]])
 (min_shrinkage <- sapply(A, function(x) {
   1 / sqrt(ncol(x))
 }))
@@ -130,7 +131,7 @@ out <- lapply(models3, use, A = A3b, c1 = shrinkage3)
 saveRDS(out, "models3.RDS")
 
 
-models <- list.files(pattern = "models.+.RDS")
+models <- list.files(pattern = "models[0-9].RDS")
 models <- lapply(models, readRDS)
 models <- do.call(c, models)
 out <- lapply(names(models), function(x) {
@@ -154,6 +155,8 @@ comm <- ggplot(out3[out3$Interaction != 1, ], aes(RNAseq, Micro)) +
   facet_wrap(~model, scale = "free")
 comm +
   geom_point(aes(color = IBD))
+comm +
+  geom_point(aes(color = RNA_seq_batch))
 comm +
   geom_point(aes(color = Exact_location))
 comm +
