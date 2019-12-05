@@ -77,11 +77,11 @@ OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
 o <- cbind(meta2$Original, colnames(OTUs2), colnames(rna2))
 k <- apply(o, 1, function(x){length(unique(o[1, ])) == 1})
 if (any(!k)) {
-  stop("Samples not matched")
+  stop("Samples do not matched")
 }
 
 # normalize the data
-OTUs2 <- norm_otus(OTUs2, genus)
+OTUs2 <- norm_RNAseq(OTUs2)
 rna2 <- norm_RNAseq(rna2)
 rna2 <- filter_RNAseq(rna2)
 
@@ -179,6 +179,7 @@ db2$Sample_id[grep("-[wW]", db2$Sample_id)] <- tolower(db2$Sample_id)[grep("-[wW
 db2$Sample_id <- str_split(db2$Sample_id, "-w") %>% # Ready for BCN
   map(correct_bcn) %>%
   unlist()
+
 # Based that on the resequenced is after the original
 db3 <- db2[-c(which(duplicated(db2$Sample_id) == TRUE) - 1), ]
 db3 <- db3[db3$Sample_id %in% colnames(rna2), ]
@@ -189,7 +190,8 @@ meta5 <- merge(meta4, db3,
 meta5$sample_date <- as.Date(meta5$sample_date, "%m/%d/%Y")
 
 # Different sample date?? The right one is DATE_SAMPLE
-meta5[meta5$sample_date != meta5$DATE_SAMPLE, c("sample_date", "DATE_SAMPLE", "Original")]
+meta5[meta5$sample_date != meta5$DATE_SAMPLE, c("sample_date", "DATE_SAMPLE",
+                                                "Original")]
 meta5 <- meta5[, -grep("sample_date", colnames(meta5))]
 
 duplicates <- group_by(meta5, NHC) %>%
@@ -197,7 +199,8 @@ duplicates <- group_by(meta5, NHC) %>%
 dupli <- duplicates$NHC[duplicates$diff > 1]
 
 # How do we codify it ?? The one with less  samples loses its Patient_ID
-meta5[meta5$NHC %in% dupli, "Patient_ID"] <- c("17", "17", "17", "86", "92", "86", "86", "86", "92", "92")
+meta5[meta5$NHC %in% dupli, "Patient_ID"] <- c("17", "17", "17", "86", "92",
+                                               "86", "86", "86", "92", "92")
 
 # Treatment. check with the database? Better with the database
 meta5 <- meta5[, -grep("Treatment.x", colnames(meta5))] # Only signaling those that are not controls
@@ -222,7 +225,7 @@ meta5$Original[grep("-w", meta5$Original)][!(meta5$Original[grep("-w", meta5$Ori
 meta6 <- merge(meta5, treat, by.x = "Original", by.y = "Visit",
                all.x = TRUE, all.y = FALSE)
 
-
+stopifnot(sum(is.na(meta5$Patient_ID)) == 0)
 A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta5)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
 saveRDS(A, "data/RGCCA_data.RDS")
