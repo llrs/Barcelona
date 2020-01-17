@@ -32,33 +32,28 @@ model3_best <- readRDS("model3_best.RDS") # Best according to antiTNF
 A <- readRDS("data/RGCCA_data.RDS")
 meta <- A$Meta
 
-merger <- function(data) {
-  cbind.data.frame(data, meta)
-}
-
-
 # Look the samples ####
-a0GE <- merger(tidyer(model0$Y[[1]], "0", "GE"))
-a0M <- merger(tidyer(model0$Y[[2]], "0", "M"))
-a0iGE <- merger(tidyer(model0i$Y[[1]], "0 i", "GE"))
-a0iM <- merger(tidyer(model0i$Y[[2]], "0 i", "M"))
-a1GE <- merger(tidyer(model1$Y[[1]], "1", "GE"))
-a1M <- merger(tidyer(model1$Y[[2]], "1", "M"))
-a1iGE <- merger(tidyer(model1i$Y[[1]], "1 i", "GE"))
-a1iM <- merger(tidyer(model1i$Y[[2]], "1 i", "M"))
-a2GE <- merger(tidyer(model2$Y[[1]], "2", "GE"))
-a2M <- merger(tidyer(model2$Y[[2]], "2", "M"))
-a2bGE <- merger(tidyer(model2_best$Y[[1]], "2 best", "GE"))
-a2bM <- merger(tidyer(model2_best$Y[[2]], "2 best", "M"))
-a3GE <- merger(tidyer(model3$Y[[1]], "3", "GE"))
-a3M <- merger(tidyer(model3$Y[[2]], "3", "M"))
-a3bGE <- merger(tidyer(model3_best$Y[[1]], "3 best", "GE"))
-a3bM <- merger(tidyer(model3_best$Y[[2]], "3 best", "M"))
-
-a1GE <- cbind("Model" = "1", a1GE)
-a1iGE <- cbind("Model" = "1 i", a1iGE)
-a1M <- cbind("Model" = "1", a1M)
-a1iM <- cbind("Model" = "1 i", a1iM)
+a0GE <- cbind.data.frame(tidyer(model0$Y[[1]], "0", "GE"), meta)
+a0M <- cbind.data.frame(tidyer(model0$Y[[2]], "0", "M"), meta)
+a0iGE <- cbind.data.frame(tidyer(model0i$Y[[1]], "0 i", "GE"), meta)
+a0iM <- cbind.data.frame(tidyer(model0i$Y[[2]], "0 i", "M"), meta)
+a1GE <- cbind.data.frame(tidyer(model1$Y[[1]], "1", "GE"), meta)
+a1M <- cbind.data.frame(tidyer(model1$Y[[2]], "1", "M"), meta)
+a1iGE <- cbind.data.frame(tidyer(model1i$Y[[1]], "1 i", "GE"), meta)
+a1iM <- cbind.data.frame(tidyer(model1i$Y[[2]], "1 i", "M"), meta)
+a2GE <- cbind.data.frame(tidyer(model2$Y[[1]], "1.1", "GE"), meta)
+a2M <- cbind.data.frame(tidyer(model2$Y[[2]], "1.1", "M"), meta)
+a2bGE <- cbind.data.frame(tidyer(model2_best$Y[[1]], "1.2", "GE"), meta)
+a2bM <- cbind.data.frame(tidyer(model2_best$Y[[2]], "1.2", "M"), meta)
+a3GE <- cbind.data.frame(tidyer(model3$Y[[1]], "2.1", "GE"), meta)
+a3M <- cbind.data.frame(tidyer(model3$Y[[2]], "2.1", "M"), meta)
+a3bGE <- cbind.data.frame(tidyer(model3_best$Y[[1]], "2.2", "GE"), meta)
+a3bM <- cbind.data.frame(tidyer(model3_best$Y[[2]], "2.2", "M"), meta)
+#
+# a1GE <- cbind("Model" = "1", a1GE)
+# a1iGE <- cbind("Model" = "1 i", a1iGE)
+# a1M <- cbind("Model" = "1", a1M)
+# a1iM <- cbind("Model" = "1 i", a1iM)
 
 inter <- intersect(colnames(a0GE), colnames(a0M))
 inter <- grep("Rownames", inter, invert = TRUE, value = TRUE)
@@ -71,7 +66,7 @@ df <- rbind(
   merge(a1iM, a1iGE, all = TRUE, by = inter),
   merge(a2M, a2GE, all = TRUE, by = inter),
   merge(a2bM, a2bGE, all = TRUE, by = inter),
-  merge(a3M, a3GE, all.x = TRUE, by = inter),
+  merge(a3M, a3GE, all = TRUE, by = inter),
   merge(a3bM, a3bGE, all = TRUE, by = inter)
 )
 
@@ -82,7 +77,8 @@ df %>%
   ggplot() +
   geom_point(aes(GE, M, color = Ileum)) +
   labs(color = "Location") +
-  facet_wrap(~Model)
+  facet_wrap(~Model, scales = "free")
+loc <- last_plot()
 df %>%
   filter(!grepl(" i", Model)) %>%
   mutate(IBD = case_when(is.na(IBD) ~ "CONTROL",
@@ -92,6 +88,7 @@ df %>%
   geom_point(aes(GE, M, color = IBD)) +
   labs(color = "Disease") +
   facet_wrap(~Model, scales = "free")
+dis <- last_plot()
 
 # Look the weights ####
 a0GE <- tidyer(model0$a[[1]], "0", "GE")
