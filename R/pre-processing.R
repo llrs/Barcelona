@@ -82,7 +82,7 @@ if (any(!k)) {
 
 # normalize the data
 OTUs2 <- norm_RNAseq(OTUs2)
-rna2 <- norm_RNAseq(rna2)
+# rna2 <- norm_RNAseq(rna2) # Omit because is already normalized
 rna2 <- filter_RNAseq(rna2)
 
 # Meta ####
@@ -96,6 +96,7 @@ meta3 <- merge(meta2, db,
                by.x = c("Original", "IBD"), by.y = c("Sample_Code", "IBD"),
                all.x = TRUE, all.y = FALSE)
 meta3 <- droplevels(meta3)
+meta3[grepl("^C", meta3$Original), "Patient_ID"] <- gsub("-.*", "", meta3$Original)[grepl("^C", meta3$Original)]
 
 # From the copy of the access database I have 04/01/2019
 dates <- read_xlsx("data/fechas.xlsx",
@@ -133,12 +134,13 @@ meta4$DATE_SAMPLE[keep_controls] <- as.Date(meta_c$DATE_SAMPLE, "%m/%d/%Y")
 meta4$Exact_location[keep_controls] <- gsub(" colon", "", tolower(meta_c$Exact_location))
 
 # Patient 017 has a sample without birth date
-p17 <- meta4[meta4$ID == "017", c("Original", "ID", "DATE_SAMPLE", "Birth_date", "Age")]
+p17 <- meta4[meta4$ID == "017", c("Original", "ID", "DATE_SAMPLE", "Birth_date", "Age", "Patient_ID")]
 meta4$Birth_date[meta4$ID == "017"] <- p17$Birth_date[1]
+meta4$Patient_ID[meta4$ID == "017"] <- p17$Patient_ID[1]
+
 
 ggplot(meta4[grep("^[0-9]", meta4$ID), ]) +
-  geom_point(aes(ID, DATE_SAMPLE, color = factor(substr(Original, 6, 8)),
-                 size = Age)) +
+  geom_point(aes(as.numeric(ID), DATE_SAMPLE, color = factor(substr(Original, 6, 8)))) +
   labs(x = "ID", y = "Date sample", color = "Sample id (weeks)")
 # See the plot!!
 # The patient ID 113 has the week 46 before the week 000??
@@ -150,10 +152,14 @@ meta4$DATE_SAMPLE[meta4$Original == "111-w038"] <- as.Date("06/07/2016", "%m/%d/
 meta4$DATE_SAMPLE[meta4$Original == "113-w046"] <- as.Date("08/09/2016", "%m/%d/%Y")
 
 ggplot(meta4[grep("^[0-9]", meta4$ID), ]) +
-  geom_point(aes(ID, DATE_SAMPLE, color = factor(substr(Original, 6, 8)),
-                 size = Age)) +
+  geom_point(aes(as.numeric(ID), DATE_SAMPLE, color = factor(substr(Original, 6, 8)))) +
   labs(x = "ID", y = "Date sample", color = "Sample id (weeks)",
        title = "After corrections")
+ggplot(meta4[grep("^[0-9]", meta4$ID), ]) +
+  geom_point(aes(as.numeric(ID), DATE_SAMPLE, color = factor(substr(Original, 6, 8)))) +
+  labs(x = "ID", y = "Date sample", color = "Sample id (weeks)",
+       title = "After corrections") +
+  coord_flip()
 
 # Calculate years since diagnostic and related problems
 diagTime <- as.Date(meta4$DATE_SAMPLE, "%Y-%m-%d") - meta4$Date_diagnostic
@@ -163,7 +169,7 @@ AgeDiag <- as.numeric(meta4$Date_diagnostic - as.Date(meta4$Birth_date,
                                          "%d/%m/%Y"))/365.25
 
 # Calculate the age because they are off up to 5 years up
-hist(meta4$Age - as.numeric(meta4$DATE_SAMPLE - meta4$Birth_date)/365.25)
+# hist(meta4$Age - as.numeric(meta4$DATE_SAMPLE - meta4$Birth_date)/365.25)
 meta4$Age <- as.numeric(meta4$DATE_SAMPLE - meta4$Birth_date)/365.25
 
 AgeDiag[is.na(AgeDiag)] <- 0
@@ -190,13 +196,14 @@ meta5 <- merge(meta4, db3,
 meta5$sample_date <- as.Date(meta5$sample_date, "%m/%d/%Y")
 
 # Different sample date?? The right one is DATE_SAMPLE
-meta5[meta5$sample_date != meta5$DATE_SAMPLE, c("sample_date", "DATE_SAMPLE",
-                                                "Original")]
+# meta5[meta5$sample_date != meta5$DATE_SAMPLE & !is.na(meta5$sample_date),
+#       c("sample_date", "DATE_SAMPLE", "Original")]
 meta5 <- meta5[, -grep("sample_date", colnames(meta5))]
 
 duplicates <- group_by(meta5, NHC) %>%
   summarise(diff = n_distinct(Patient_ID))
 dupli <- duplicates$NHC[duplicates$diff > 1]
+dupli <- !is.na(dupli)
 
 # How do we codify it ?? The one with less  samples loses its Patient_ID
 meta5[meta5$NHC %in% dupli, "Patient_ID"] <- c("17", "17", "17", "86", "92",
@@ -205,8 +212,7 @@ meta5[meta5$NHC %in% dupli, "Patient_ID"] <- c("17", "17", "17", "86", "92",
 # Treatment. check with the database? Better with the database
 meta5 <- meta5[, -grep("Treatment.x", colnames(meta5))] # Only signaling those that are not controls
 treat <- readxl::read_xlsx("data/Treatment.xlsx") # On 17/01/2019 on %D/%M/%Y format
-treat <- treat[, c("Visit", "Drug")]
-treat <- treat[!is.na(treat$Visit), ]
+treat <- treat[!is.na(treat$Visit), c("Visit", "Drug")]
 treat <- treat[treat$Visit %in% meta5$Original, ]
 Drugs <- unique(treat$Drug)
 visits <- unique(treat$Visit)
@@ -219,8 +225,12 @@ incidence <- sapply(visits, function(x) {
 incidence <- t(incidence)
 
 # We don't know the treatment of many samples
-meta5$Original[grep("-w", meta5$Original)][!(meta5$Original[grep("-w", meta5$Original)] %in% rownames(incidence))]
+# meta5$Original[grep("-w", meta5$Original)][!(meta5$Original[grep("-w", meta5$Original)] %in% rownames(incidence))]
 
+# Check that the metadata is in the right order
+meta5 <- meta5[match(colnames(OTUs2), meta5$Original), ]
+stopifnot(sum(meta5$Original == colnames(OTUs2)) == 146)
+stopifnot(sum(meta5$Original == colnames(rna2)) == 146)
 
 meta6 <- merge(meta5, treat, by.x = "Original", by.y = "Visit",
                all.x = TRUE, all.y = FALSE)
