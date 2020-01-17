@@ -1,5 +1,6 @@
 library("integration")
-library("RGCCA2")
+library("RGCCA")
+library("ggplot2")
 
 A <- readRDS("data/RGCCA_data.RDS")
 A2 <- A[1:2]
@@ -14,14 +15,14 @@ model0i <- subSymm(model0, 1, 1, 1)
 
 # We cannnot comput the tau.estimate for A[[1]]
 # (shrinkage <- sapply(A, tau.estimate))
-shrinkage <- 0.285693348851943 #Calculated from the server for the data derived from original data
+shrinkage <- c(0.285693348851943, 0, 1) #Calculated from the server for the data derived from original data
 shrinkage[2] <- tau.estimate(A2[[2]])
 (min_shrinkage <- sapply(A, function(x) {
   1 / sqrt(ncol(x))
 }))
 # # Don't let the shrinkage go below the threshold  allowed
-(shrinkage <- ifelse(shrinkage < min_shrinkage, min_shrinkage, shrinkage))
-shrinkage[seq(3, length(shrinkage))] <- 1
+shrinkage[shrinkage < min_shrinkage] <- min_shrinkage[shrinkage < min_shrinkage]
+
 Ab2 <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 use <- function(...){
   sgcca.centroid <- sgcca(
