@@ -1,13 +1,15 @@
 library("integration")
-library("RGCCA2")
+library("RGCCA")
 library("dplyr")
+library("inteRmodel")
+library("ggplot2")
 
 A <- readRDS("data/RGCCA_data.RDS")
 meta <- A$Meta
 
 testing <- function(x, ...) {
   tryCatch({
-  result.sgcca <- RGCCA2::sgcca(C = x,
+  result.sgcca <- RGCCA::sgcca(C = x,
                                 scheme = "centroid",
                                 verbose = FALSE,
                                 scale = FALSE,
@@ -28,7 +30,10 @@ A2$Time <- Time
 A2 <- clean_unvariable(A2)
 saveRDS(A2, "model3_BCN.RDS")
 
-shrinkage <- sapply(A2[1:2], tau.estimate) # 0.11503779803812 0.318145965316924
+# shrinkage <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.318145965316924
+shrinkage <- rep(1, 5)
+names(shrinkage) <- names(A2)
+shrinkage[1:2] <- c(0.11503779803812, 0.318145965316924)
 shrinkage[3:5] <- 1
 names(shrinkage) <- names(A2)
 Ab <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
@@ -46,52 +51,52 @@ keep <- vapply(designs, correct, logical(1L))
 designs <- designs[keep]
 
 # Subset the designs
-set.seed(46726279)
-s <- sample(designs, size = min(length(designs)*.1, 1000))
-
-out <- sapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# set.seed(46726279)
+# s <- sample(designs, size = min(length(designs)*.1, 1000))
+out <- sapply(designs, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
 out2 <- out[lengths(out) == 24]
 out2 <- simplify2array(out2)
 out2 <- as.data.frame(t(out2))
 saveRDS(out2, "sample_model3_boot.RDS")
 
-out %>%
-  top_n(5, AVE_inner) %>%
-  select(AVE_inner, AVE_outer, var12, var13, var23,
-         var14, var24, var34, var15, var25, var35, var45) %>%
-  arrange(desc(AVE_inner))
-stop("Visual inspection of the top 5")
-
-s2 <- sample(designs, size = min(length(designs)*.1, 1000))
-
-out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-out2 <- out[lengths(out) == 24]
-out2 <- simplify2array(out2)
-out2 <- as.data.frame(t(out2))
-saveRDS(out2, "sample2_model3_boot.RDS")
-stop("Visual inspection of the top 5")
+# out %>%
+#   top_n(5, AVE_inner) %>%
+#   select(AVE_inner, AVE_outer, var12, var13, var23,
+#          var14, var24, var34, var15, var25, var35, var45) %>%
+#   arrange(desc(AVE_inner))
+# stop("Visual inspection of the top 5")
+#
+# s2 <- sample(designs, size = min(length(designs)*.1, 1000))
+#
+# out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# out2 <- out[lengths(out) == 24]
+# out2 <- simplify2array(out2)
+# out2 <- as.data.frame(t(out2))
+# saveRDS(out2, "sample2_model3_boot.RDS")
+# stop("Visual inspection of the top 5")
 
 out1 <- readRDS("sample_model3_boot.RDS")
-out0 <- rbind(out1, out2)
-out <- out0[!duplicated(out0), ]
-ggplot(out, aes(AVE_inner, AVE_outer)) +
+# out0 <- rbind(out1, out2)
+# out <- out0[!duplicated(out0), ]
+ggplot(out1, aes(AVE_inner, AVE_outer)) +
   geom_point()
-
-keep_best <- vapply(designs, function(x){
-  x[1, 2] == 0 & x[2, 3] == 0
-}, logical(1L))
-
-out <- sapply(designs[keep_best], testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-out2 <- out[lengths(out) == 24]
-out2 <- simplify2array(out2)
-out2 <- as.data.frame(t(out2))
-saveRDS(out2, "sample_def_model3_boot.RDS")
-
-out0 <- readRDS("sample_model3_boot.RDS")
-out1 <- readRDS("sample2_model3_boot.RDS")
-out2 <- readRDS("sample_def_model3_boot.RDS")
-out <- rbind(out0, out1, out2)
-out <- out[!duplicated(out), ]
+#
+# keep_best <- vapply(designs, function(x){
+#   x[1, 2] == 0 & x[2, 3] == 0
+# }, logical(1L))
+#
+# out <- sapply(designs[keep_best], testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# out2 <- out[lengths(out) == 24]
+# out2 <- simplify2array(out2)
+# out2 <- as.data.frame(t(out2))
+# saveRDS(out2, "sample_def_model3_boot.RDS")
+#
+# out0 <- readRDS("sample_model3_boot.RDS")
+# out1 <- readRDS("sample2_model3_boot.RDS")
+# out2 <- readRDS("sample_def_model3_boot.RDS")
+# out <- rbind(out0, out1, out2)
+# out <- out[!duplicated(out), ]
+out <- out1
 ggplot(out, aes(AVE_inner, AVE_outer, color = cc1)) +
   geom_point()
 best3 <- out[out$AVE_inner == max(out$AVE_inner), grep("var", colnames(out))]
@@ -100,4 +105,5 @@ colnames(best3) <- names(Ab)
 rownames(best3) <- names(Ab)
 
 model3_best <- sgcca(A = Ab, c1 = shrinkage, C = best3, ncomp = rep(2, 5), scheme = "centroid")
+model3_best <- improve.sgcca(model3_best, names(Ab))
 saveRDS(model3_best, "model3_best.RDS")
