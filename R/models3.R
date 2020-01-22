@@ -7,6 +7,7 @@ library("ggplot2")
 A <- readRDS("data/RGCCA_data.RDS")
 meta <- A$Meta
 
+stopifnot(all(A$Meta$Original == rownames(A$RNAseq)))
 testing <- function(x, ...) {
   tryCatch({
   result.sgcca <- RGCCA::sgcca(C = x,
@@ -18,9 +19,12 @@ testing <- function(x, ...) {
   , error = function(x){NA})
 }
 
-Localization <- model_RGCCA(A$Meta, c("Exact_location")) # With SESCD local it increase the AVE_inner
-Time <- model_RGCCA(A$Meta, c("AgeDiag", "Age"))
-Demographics <- model_RGCCA(A$Meta, c("ID","SEX"))
+meta$`Phenotype CD` <- tolower(meta$`Phenotype CD`)
+meta$`Location` <- tolower(meta$`Location`)
+
+Localization <- model_RGCCA(meta, c("Exact_location")) # With SESCD local it increase the AVE_inner
+Time <- model_RGCCA(meta, c("AgeDiag", "Age"))
+Demographics <- model_RGCCA(meta, c("ID","SEX"))
 Time$AgeDiag[is.na(Time$AgeDiag)] <- 0 # Time has NA values
 A2 <- A[1:2]
 A2$Demographics <- Demographics
