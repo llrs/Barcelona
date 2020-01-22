@@ -1,5 +1,5 @@
 library("integration")
-library("RGCCA2")
+library("RGCCA")
 library("dplyr")
 library("ggplot2")
 library("UpSetR")
@@ -30,7 +30,16 @@ model3i <- models3[[2]]
 model3_best <- readRDS("model3_best.RDS") # Best according to antiTNF
 
 A <- readRDS("data/RGCCA_data.RDS")
-meta <- A$Meta
+meta <- A$Meta %>%
+  select(Original:UC_endoscopic_remission) %>% # Remove processing columns
+  mutate(Ileum = case_when(Exact_location == "ileum" ~ "Ileum",
+                           !is.na(Exact_location) ~ "Colon"),
+         IBD = case_when(is.na(IBD) ~ "CONTROL",
+                         IBD == "UC" ~ "UC",
+                         IBD == "CD" ~ "CD"),
+         inv = case_when(Exact_location == tolower(gsub(" COLON$", "", Aftected_area)) ~ "involved",
+                   TRUE ~ "not_involved")) %>%
+  select_if(meta, function(x)any(!is.na(x))) # Select just those with information
 
 # Look the samples ####
 a0GE <- cbind.data.frame(tidyer(model0$Y[[1]], "0", "GE"), meta)
@@ -56,7 +65,7 @@ a3bM <- cbind.data.frame(tidyer(model3_best$Y[[2]], "2.2", "M"), meta)
 # a1iM <- cbind("Model" = "1 i", a1iM)
 
 inter <- intersect(colnames(a0GE), colnames(a0M))
-inter <- grep("Rownames", inter, invert = TRUE, value = TRUE)
+# inter <- grep("Rownames", inter, invert = TRUE, value = TRUE)
 
 
 df <- rbind(
@@ -71,19 +80,16 @@ df <- rbind(
 )
 
 df %>%
-  filter(!grepl(" i", Model)) %>%
-  mutate(Ileum = case_when(Exact_location == "ileum" ~ "Ileum",
-                           !is.na(Exact_location) ~ "Colon")) %>%
+  filter(!grepl(" i", Model),
+         Component == "comp1") %>%
   ggplot() +
   geom_point(aes(GE, M, color = Ileum)) +
   labs(color = "Location") +
   facet_wrap(~Model, scales = "free")
 loc <- last_plot()
 df %>%
-  filter(!grepl(" i", Model)) %>%
-  mutate(IBD = case_when(is.na(IBD) ~ "CONTROL",
-                         IBD == "UC" ~ "UC",
-                         IBD == "CD" ~ "CD")) %>%
+  filter(!grepl(" i", Model),
+         Component == "comp1") %>%
   ggplot() +
   geom_point(aes(GE, M, color = IBD)) +
   labs(color = "Disease") +
