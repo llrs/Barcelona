@@ -79,6 +79,78 @@ df <- rbind(
   merge(a3bM, a3bGE, all = TRUE, by = inter)
 )
 
+# Plots ####
+# * Model 2.2 plots ####
+df3b <- data.frame(R = model3_best$Y[[1]][, 1],
+                         M = model3_best$Y[[2]][, 1],
+                         D = model3_best$Y[[3]][, 1],
+                         L = model3_best$Y[[4]][, 1],
+                         T = model3_best$Y[[5]][, 1],
+                         Rownames = rownames(model3_best$Y[[2]]))
+
+df3b <- cbind(df3b, meta)
+ggplot(df3b) +
+  geom_point(aes(D, M, color = ID)) +
+  scale_color_viridis_d() +
+  labs(x = "Demographics", y = "Microbiome", title = "Model 2.2")
+ggplot(df3b) +
+  geom_point(aes(D, R, color = ID)) +
+  scale_color_viridis_d() +
+  labs(x = "Demographics", y = "Transcriptome", title = "Model 2.2")
+df3b %>%
+  ggplot() +
+  geom_point(aes(D, R, color = Ileum)) +
+  scale_color_viridis_d() +
+  labs(x = "Demographics", y = "Transcriptome", title = "Model 2.2")
+df3b %>%
+  ggplot() +
+  geom_point(aes(T, R, color = Ileum)) +
+  scale_color_viridis_d() +
+  labs(x = "Time", y = "Transcriptome", title = "Model 2.2")
+
+df3b %>%
+  ggplot() +
+  geom_point(aes(T, D, color = ID)) +
+  scale_color_viridis_d() +
+  labs(x = "Time", y = "Demographics", title = "Model 2.2")
+
+df3b %>%
+  ggplot() +
+  geom_point(aes(L, R, color = Ileum)) +
+  scale_color_viridis_d() +
+  labs(x = "Location", y = "Transcriptome", title = "Model 2.2",
+       color = "Location")
+df3b %>%
+  ggplot() +
+  geom_point(aes(L, M, color = Ileum)) +
+  scale_color_viridis_d() +
+  labs(x = "Location", y = "Microbiome", title = "Model 2.2",
+       color = "Location")
+
+df3b %>%
+  ggplot() +
+  geom_point(aes(L, R, color = Exact_location)) +
+  scale_color_viridis_d() +
+  labs(x = "Location", y = "Microbiome", title = "Model 2.2",
+       color = "Location")
+
+ggplot(df3b) +
+  geom_point(aes(D, M, color = IBD)) +
+  labs(x = "Demographics", y = "Microbiome", title = "Model 2.2")
+df3b %>%
+  ggplot() +
+  geom_point(aes(L, R, color = Ileum)) +
+  scale_color_viridis_d() +
+  labs(x = "Location", y = "Transcriptome", title = "Model 2.2",
+       color = "Location")
+ggplot(df3b) +
+  geom_point(aes(L, R, color = IBD))
+ggplot(df3b) +
+  geom_point(aes(T, D, color = AgeDiag))
+ggplot(df3b) +
+  geom_point(aes(M, D, color = AgeDiag))
+
+# * All models plots ####
 df %>%
   filter(!grepl(" i", Model),
          Component == "comp1") %>%
