@@ -5,6 +5,7 @@ data
 ^data/P4
 *.RDS
 *.xlsx
+*.pdf
 
 data/Raw
 data/fastp
