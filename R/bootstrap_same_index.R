@@ -101,6 +101,4 @@ p <- ggplot(b) +
              fill = "red", col = "black", shape = 21) +
   stat_ellipse(aes(inner, outer, col = model)) +
   labs(title = "AVE in bootstraps", x = "Inner AVE", y = "Outer AVE") +
-  theme(legend.position = "bottom") +
-  scale_x_continuous(breaks = seq(0, 0.8, by = 0.1)) +
-  scale_y_continuous(breaks = seq(0, 0.8, by = 0.01))
+  theme(legend.position = "bottom")
