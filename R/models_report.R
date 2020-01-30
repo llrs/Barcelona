@@ -4,6 +4,7 @@ library("dplyr")
 library("ggplot2")
 library("UpSetR")
 library("grid")
+library("pROC")
 
 theme_set(theme_bw())
 theme_update(strip.background = element_blank())
@@ -39,7 +40,7 @@ meta <- A$Meta %>%
                          IBD == "CD" ~ "CD"),
          inv = case_when(Exact_location == tolower(gsub(" COLON$", "", Aftected_area)) ~ "involved",
                    TRUE ~ "not_involved")) %>%
-  select_if(meta, function(x)any(!is.na(x))) # Select just those with information
+  select_if(function(x)any(!is.na(x))) # Select just those with information
 
 # Look the samples ####
 a0GE <- cbind.data.frame(tidyer(model0$Y[[1]], "0", "GE"), meta)
@@ -80,6 +81,21 @@ df <- rbind(
 )
 
 # Plots ####
+
+rock0 <- roc(meta$Ileum, model0$Y$RNAseq[, 1])
+rock1.2 <- roc(meta$Ileum, model2_best$Y$RNAseq[, 1])
+rock2.2 <- roc(meta$Ileum, model3_best$Y$RNAseq[, 1])
+par(pty = "s")
+plot(rocks0, asp = 1, xlim = c(0, 1), ylim = c(0, 1), main = "AUC", col = "red")
+lines(rocks1.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "green")
+lines(rocks2.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "blue")
+text(x = 0.5, y = 0.5, labels = paste("AUC =", round(rock0$auc, 3)), col = "red")
+text(x = 0.5, y = 0.6, labels = paste("AUC =", round(rock1.2$auc, 3)), col = "green")
+text(x = 0.5, y = 0.7, labels = paste("AUC =", round(rock2.2$auc, 3)), col = "blue")
+legend("bottomleft",
+       fill = c("red", "green", "blue"),
+       legend = c("Model 0", "Model 1.2", "Model 2.2"))
+
 # * Model 2.2 plots ####
 df3b <- data.frame(R = model3_best$Y[[1]][, 1],
                          M = model3_best$Y[[2]][, 1],
@@ -155,16 +171,16 @@ df %>%
   filter(!grepl(" i", Model),
          Component == "comp1") %>%
   ggplot() +
-  geom_point(aes(GE, M, color = Ileum)) +
-  labs(color = "Location") +
+  geom_point(aes(GE, M, color = Ileum, shape = Ileum)) +
+  labs(color = "Location", shape = "Location") +
   facet_wrap(~Model, scales = "free")
 loc <- last_plot()
 df %>%
   filter(!grepl(" i", Model),
          Component == "comp1") %>%
   ggplot() +
-  geom_point(aes(GE, M, color = IBD)) +
-  labs(color = "Disease") +
+  geom_point(aes(GE, M, color = IBD, shape = IBD)) +
+  labs(color = "Disease", shape = "Disease") +
   facet_wrap(~Model, scales = "free")
 dis <- last_plot()
 
@@ -244,7 +260,7 @@ dfM %>%
   labs(title = "Distribution of the weights", xlab = "weights",
        subtitle = "Microbiome")
 
-## Upset plots ####
+# * Upset plots ####
 upset(keepGE, order.by = "freq", nsets = 6,
       sets = rev(colnames(keepGE)), keep.order = TRUE,
       line.size = NA, text.scale = text_sizes, scale.sets = "identity")
