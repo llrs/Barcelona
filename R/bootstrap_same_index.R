@@ -57,8 +57,7 @@ b2.2 <- boot_index_sgcca(index, A = ab, C = C2.2, c1 = shrinkage, scheme = "cent
 saveRDS(b2.2, file = "boot_2.2.RDS")
 
 
-
-
+# AVE plot ####
 b0 <- readRDS("boot_0.RDS")
 b1.2 <- readRDS("boot_1.2.RDS")
 b2.2 <- readRDS("boot_2.2.RDS")
@@ -67,7 +66,6 @@ theme_set(theme_bw())
 theme_update(strip.background = element_blank(),
              panel.grid.minor = element_blank())
 
-# AVE ####
 AVE0 <- b0$AVE
 AVE1.2 <- b1.2$AVE
 AVE2.2 <- b2.2$AVE
@@ -88,6 +86,7 @@ ggplot(b) +
 
 AVE_names <- c("AVE_inner", "AVE_outer")
 b$model <- as.character(b$model)
+# * plot ####
 p <- ggplot(b) +
   geom_point(aes(inner, outer, col = model, shape = model), alpha = 0.5) +
   geom_point(aes(AVE_inner, AVE_outer),
