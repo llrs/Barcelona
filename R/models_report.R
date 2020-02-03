@@ -81,7 +81,7 @@ df <- rbind(
 )
 
 # Plots ####
-
+# * AUC: Ileum/Colon ####
 rock0 <- roc(meta$Ileum, model0$Y$RNAseq[, 1])
 rock1.2 <- roc(meta$Ileum, model2_best$Y$RNAseq[, 1])
 rock2.2 <- roc(meta$Ileum, model3_best$Y$RNAseq[, 1])
@@ -95,6 +95,12 @@ text(x = 0.5, y = 0.7, labels = paste("AUC =", round(rock2.2$auc, 3)), col = "bl
 legend("bottomleft",
        fill = c("red", "green", "blue"),
        legend = c("Model 0", "Model 1.2", "Model 2.2"))
+
+# * Aim bullet ####
+
+rownames(model3_best$a$Location) <- paste0("Loc", seq_len(nrow(model3_best$a$Location)))
+v <- variables(model3_best)
+plot_variables(v)
 
 # * Model 2.2 plots ####
 df3b <- data.frame(R = model3_best$Y[[1]][, 1],
