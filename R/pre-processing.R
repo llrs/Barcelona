@@ -11,6 +11,7 @@ tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.nam
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
 genus <- tab[, 1, FALSE]
+write.csv(genus, "data/genus.csv")
 
 # From the QC step
 meta <- readRDS("info_samples.RDS")
