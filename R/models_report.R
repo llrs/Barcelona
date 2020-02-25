@@ -42,6 +42,14 @@ meta <- A$Meta %>%
                    TRUE ~ "not_involved")) %>%
   select_if(function(x)any(!is.na(x))) # Select just those with information
 
+
+# How many samples are
+meta %>%
+  mutate(aTNF = ifelse(as.numeric(Time) == 0 | is.na(Time), "No", "Yes")) %>%
+  group_by(Ileum) %>%
+  count(aTNF) %>%
+  mutate(rel = n/sum(n))
+
 # Look the samples ####
 a0GE <- cbind.data.frame(tidyer(model0$Y[[1]], "0", "GE"), meta)
 a0M <- cbind.data.frame(tidyer(model0$Y[[2]], "0", "M"), meta)
@@ -189,6 +197,16 @@ df %>%
   labs(color = "Disease", shape = "Disease") +
   facet_wrap(~Model, scales = "free")
 dis <- last_plot()
+
+df %>%
+  filter(!grepl(" i", Model),
+         Component == "comp1") %>%
+  mutate(aTNF = ifelse(as.numeric(Time) == 0 | is.na(Time), "No", "Yes")) %>%
+  ggplot() +
+  geom_point(aes(GE, M, color = aTNF, shape = Ileum)) +
+  labs(shape = "Location") +
+  facet_wrap(~Model, scales = "free")
+ggsave("Figures/models_colored_aTNF.png")
 
 # Look the weights ####
 a0GE <- tidyer(model0$a[[1]], "0", "GE")
