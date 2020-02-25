@@ -12,8 +12,8 @@ A <- readRDS("data/RGCCA_data.RDS")
 # for (i in seq_len(boots)) {
 #   index[[i]] <- sample(nrow(A[[1]]), replace = TRUE)
 # }
-# saveRDS(index, file = "index_boot.RDS")
-index <- readRDS("index_boot.RDS")
+# saveRDS(index, file = "data_out/index_boot.RDS")
+index <- readRDS("data_out/index_boot.RDS")
 
 # * Model 0 ####
 shrinkage <- c(0.285693348851943, 0) #Calculated from the server for the data derived from original data
@@ -23,10 +23,10 @@ names(Ab) <- names(A[1:2])
 ab <- clean_unvariable(Ab)
 b0 <- boot_index_sgcca(index, A = ab, c1 = shrinkage, scheme = "centroid",
                          scale = FALSE, verbose = FALSE, bias = TRUE)
-saveRDS(b0, "boot_0.RDS")
+saveRDS(b0, data_out/"boot_0.RDS")
 
 # * Model 1.2 ####
-model2_best <- readRDS("model2b_sgcca.RDS")
+model2_best <- readRDS("data_out/model2b_sgcca.RDS")
 C1.2 <- model2_best$C
 
 A$Meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX"))
@@ -38,11 +38,11 @@ shrinkage[1:2] <- c(0.11503779803812, 0.318145965316924)
 
 b1.2 <- boot_index_sgcca(index, A = Ab, c1 = shrinkage, scheme = "centroid",
                           scale = FALSE, verbose = FALSE, bias = TRUE, C = C1.2)
-saveRDS(b1.2, "boot_1.2.RDS")
+saveRDS(b1.2, "data_out/boot_1.2.RDS")
 
 # * Model 2.2 ####
-model3_best <- readRDS("model3_best.RDS")
-A <- readRDS("model3_BCN.RDS")
+model3_best <- readRDS("data_out/model3_best.RDS")
+A <- readRDS("data_out/model3_BCN.RDS")
 C2.2 <- model3_best$C
 
 shrinkage <- rep(1, 5)
@@ -58,9 +58,9 @@ saveRDS(b2.2, file = "boot_2.2.RDS")
 
 
 # AVE plot ####
-b0 <- readRDS("boot_0.RDS")
-b1.2 <- readRDS("boot_1.2.RDS")
-b2.2 <- readRDS("boot_2.2.RDS")
+b0 <- readRDS("data_out/boot_0.RDS")
+b1.2 <- readRDS("data_out/boot_1.2.RDS")
+b2.2 <- readRDS("data_out/boot_2.2.RDS")
 
 theme_set(theme_bw())
 theme_update(strip.background = element_blank(),
@@ -74,7 +74,7 @@ b <- rbind.data.frame(cbind.data.frame(AVE0, model = "0"),
                       cbind.data.frame(AVE2.2, model = "2.2"))
 b$index <- rep(seq_len(1000), 3)
 
-models0 <- readRDS("models0.RDS")
+models0 <- readRDS("data_out/models0.RDS")
 model0 <- models0[[1]]
 
 # This index doesn't converge

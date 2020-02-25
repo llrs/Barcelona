@@ -39,7 +39,7 @@ use <- function(...){
 models0 <- list(model0, model0i)
 names(models0) <- c("model0", "model0i")
 out <- lapply(models0, use, A = Ab2, c1 = shrinkage[1:2])
-saveRDS(out, "models0_colon.RDS")
+saveRDS(out, "data_out/models0_colon.RDS")
 samples <- sapply(out[[1]]$Y, function(x) {
   x[, 1]
 })
@@ -92,9 +92,10 @@ A2$Meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", 
 A2b <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 shrinkage[seq(3, length(shrinkage))] <- 1
 out <- lapply(models2, use, A = A2b, c1 = shrinkage)
-saveRDS(out, "models2_colon.RDS")
+saveRDS(out, "data_out/models2_colon.RDS")
 
 # Complex models ####
+# This models are the same as on the TRIM/HSCT project
 Localization <- model_RGCCA(A$Meta, c("Exact_location")) # With SESCD local it increase the AVE_inner
 Time <- model_RGCCA(A$Meta, c("AgeDiag", "Age"))
 Demographics <- model_RGCCA(A$Meta, c("ID","SEX"))
@@ -129,10 +130,10 @@ shrinkage3 <- rep(1, length(A3b))
 shrinkage3[1:2] <- shrinkage[1:2]
 names(models3) <- c("model3", "model3i", "model3b", "model3bi")
 out <- lapply(models3, use, A = A3b, c1 = shrinkage3)
-saveRDS(out, "models3_colon.RDS")
+saveRDS(out, "data_out/models3_colon.RDS")
 
 
-models <- list.files(pattern = "models[0-9]_colon.RDS")
+models <- list.files(pattern = "data_out/models[0-9]_colon.RDS")
 models <- lapply(models, readRDS)
 models <- do.call(c, models)
 out <- lapply(names(models), function(x) {

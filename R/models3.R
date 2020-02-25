@@ -26,13 +26,14 @@ Localization <- model_RGCCA(meta, c("Exact_location")) # With SESCD local it inc
 Time <- model_RGCCA(meta, c("AgeDiag", "Age"))
 Demographics <- model_RGCCA(meta, c("ID","SEX"))
 Time$AgeDiag[is.na(Time$AgeDiag)] <- 0 # Time has NA values
+Time$aTNF <- ifelse(meta$Time == "0" | is.na(meta$Time), 0, 1)
 A2 <- A[1:2]
 A2$Demographics <- Demographics
 A2$Location <- Localization
 A2$Time <- Time
 
 A2 <- clean_unvariable(A2)
-saveRDS(A2, "model3_BCN.RDS")
+saveRDS(A2, "data_out/model3_BCN_treatment.RDS")
 
 # shrinkage <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.318145965316924
 shrinkage <- rep(1, 5)
@@ -61,7 +62,7 @@ out <- sapply(designs, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
 out2 <- out[lengths(out) == 24]
 out2 <- simplify2array(out2)
 out2 <- as.data.frame(t(out2))
-saveRDS(out2, "sample_model3_boot.RDS")
+saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
 
 # out %>%
 #   top_n(5, AVE_inner) %>%
@@ -76,10 +77,10 @@ saveRDS(out2, "sample_model3_boot.RDS")
 # out2 <- out[lengths(out) == 24]
 # out2 <- simplify2array(out2)
 # out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "sample2_model3_boot.RDS")
+# saveRDS(out2, "data_out/sample2_model3_boot.RDS")
 # stop("Visual inspection of the top 5")
 
-out1 <- readRDS("sample_model3_boot.RDS")
+out1 <- readRDS("data_out/sample_model3_boot.RDS")
 # out0 <- rbind(out1, out2)
 # out <- out0[!duplicated(out0), ]
 ggplot(out1, aes(AVE_inner, AVE_outer)) +
@@ -110,4 +111,4 @@ rownames(best3) <- names(Ab)
 
 model3_best <- sgcca(A = Ab, c1 = shrinkage, C = best3, ncomp = rep(2, 5), scheme = "centroid")
 model3_best <- improve.sgcca(model3_best, names(Ab))
-saveRDS(model3_best, "model3_best.RDS")
+saveRDS(model3_best, "data_out/model3_best_treatment.RDS")

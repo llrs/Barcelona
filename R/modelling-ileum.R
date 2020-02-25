@@ -40,7 +40,7 @@ use <- function(...){
 models0 <- list(model0, model0i)
 names(models0) <- c("model0", "model0i")
 out <- lapply(models0, use, A = Ab2, c1 = shrinkage[1:2])
-saveRDS(out, "models0_ileum.RDS")
+saveRDS(out, "data_out/models0_ileum.RDS")
 samples <- sapply(out[[1]]$Y, function(x) {
   x[, 1]
 })
@@ -93,7 +93,7 @@ A2$Meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", 
 A2b <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 shrinkage[seq(3, length(shrinkage))] <- 1
 out <- lapply(models2, use, A = A2b, c1 = shrinkage)
-saveRDS(out, "models2_ileum.RDS")
+saveRDS(out, "data_out/models2_ileum.RDS")
 
 # Complex models ####
 Localization <- model_RGCCA(A$Meta, c("Exact_location")) # With SESCD local it increase the AVE_inner
@@ -102,7 +102,6 @@ Demographics <- model_RGCCA(A$Meta, c("ID","SEX"))
 
 A3 <- A[1:2]
 A3$Demographics <- Demographics
-A3$Localization <- Localization
 A3$Time <- Time
 A3b <- lapply(A3, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 
@@ -112,16 +111,16 @@ C <- matrix(
 )
 model3 <- subSymm(C, "Micro", "RNAseq", 1)
 model3 <- subSymm(model3, "RNAseq", "Demographics", 1)
-model3 <- subSymm(model3, "RNAseq", "Localization", 1)
+# model3 <- subSymm(model3, "RNAseq", "Localization", 1)
 model3 <- subSymm(model3, "RNAseq", "Time", 1)
 model3 <- subSymm(model3, "Micro", "Demographics", 1)
-model3 <- subSymm(model3, "Micro", "Localization", 1)
+# model3 <- subSymm(model3, "Micro", "Localization", 1)
 model3 <- subSymm(model3, "Micro", "Time", 1)
 model3i <- subSymm(model3, 1, 1, 1)
 
-model3b <- subSymm(C, "RNAseq", "Localization", 1)
-model3b <- subSymm(model3b, "Demographics", "Micro", 1)
-model3b <- subSymm(model3b, "Localization", "Micro", 0.5)
+# model3b <- subSymm(C, "RNAseq", "Localization", 1)
+model3b <- subSymm(C, "Demographics", "Micro", 1)
+# model3b <- subSymm(model3b, "Localization", "Micro", 0.5)
 model3b <- subSymm(model3b, "Demographics", "Time", 1)
 model3bi <- subSymm(model3b, 1, 1, 1)
 
@@ -129,8 +128,8 @@ models3 <- list(model3, model3i, model3b, model3bi)
 shrinkage3 <- rep(1, length(A3b))
 shrinkage3[1:2] <- shrinkage[1:2]
 names(models3) <- c("model3", "model3i", "model3b", "model3bi")
-out <- lapply(models3, use, A = A3b, c1 = shrinkage3)
-saveRDS(out, "models3_ileum.RDS")
+out <- lapply(models3[1:2], use, A = A3b, c1 = shrinkage3)
+saveRDS(out, "data_out/models3_ileum.RDS")
 
 
 models <- list.files(pattern = "models[0-9]_ileum.RDS")
