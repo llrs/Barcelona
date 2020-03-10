@@ -5,11 +5,12 @@ library("vegan")
 
 A <- readRDS("data/RGCCA_data.RDS")
 otus <- t(A$Micro)
+genus <- read.csv("data/genus.csv", row.names = 1)
 
 # Alpha diversity ####
 alpha <- prop.table(otus, 2)*100
 a <- as.data.frame(alpha)
-a$otus <- rownames(a)
+a$otus <- genus[, 1]
 a <- pivot_longer(a, colnames(alpha))
 
 ggplot(a) +
