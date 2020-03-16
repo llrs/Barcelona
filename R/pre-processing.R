@@ -14,7 +14,7 @@ genus <- tab[, 1, FALSE]
 write.csv(genus, "data/genus.csv")
 
 # From the QC step
-meta <- readRDS("info_samples.RDS")
+meta <- readRDS("data_out/info_samples.RDS")
 meta$Counts <- colSums(counts)
 
 # filter (keep in mind that it should be on the same order)
@@ -97,7 +97,8 @@ meta3 <- merge(meta2, db,
                by.x = c("Original", "IBD"), by.y = c("Sample_Code", "IBD"),
                all.x = TRUE, all.y = FALSE)
 meta3 <- droplevels(meta3)
-meta3[grepl("^C", meta3$Original), "Patient_ID"] <- gsub("-.*", "", meta3$Original)[grepl("^C", meta3$Original)]
+contr_original <- grepl("^C", meta3$Original)
+meta3[contr_original, "Patient_ID"] <- gsub("-.*", "", meta3$Original)[contr_original]
 
 # From the copy of the access database I have 04/01/2019
 dates <- read_xlsx("data/fechas.xlsx",
@@ -108,7 +109,8 @@ colnames(dates) <- c("Visit", "ID", "DATE_SAMPLE", "Date_diagnostic")
 meta4 <- merge(meta3, dates, by.x = "Original", by.y = "Visit", all.x = TRUE, all.y = FALSE)
 
 # Arrange the IDs
-meta4$ID[grep("^C", meta4$Original)] <- gsub("^(C[0-9]+)-.+", "\\1", meta4$Original[grep("^C", meta4$Original)])
+contr4_original <- grepl("^C", meta4$Original)
+meta4$ID[contr4_original] <- gsub("^(C[0-9]+)-.+", "\\1", meta4$Original[contr4_original])
 meta4$ID[grep("^001", meta4$Original)] <- "001"
 
 # Date diagnostic related
@@ -195,6 +197,7 @@ meta5 <- merge(meta4, db3,
                by.y = c("Sample_id", "IBD", "Gender"),
                all.x = TRUE)
 meta5$sample_date <- as.Date(meta5$sample_date, "%m/%d/%Y")
+meta5$Time[meta5$Name == "017-w014"] <- "14"
 
 # Different sample date?? The right one is DATE_SAMPLE
 # meta5[meta5$sample_date != meta5$DATE_SAMPLE & !is.na(meta5$sample_date),
@@ -206,13 +209,13 @@ duplicates <- group_by(meta5, NHC) %>%
 dupli <- duplicates$NHC[duplicates$diff > 1]
 dupli <- !is.na(dupli)
 
-# How do we codify it ?? The one with less  samples loses its Patient_ID
+# How do we codify it ?? The one with less samples loses its Patient_ID
 meta5[meta5$NHC %in% dupli, "Patient_ID"] <- c("17", "17", "17", "86", "92",
                                                "86", "86", "86", "92", "92")
 
 # Treatment. check with the database? Better with the database
 meta5 <- meta5[, -grep("Treatment.x", colnames(meta5))] # Only signaling those that are not controls
-treat <- readxl::read_xlsx("data/Treatment.xlsx") # On 17/01/2019 on %D/%M/%Y format
+treat <- readxl::read_xlsx("data/Treatment.xlsx") # On 17/01/2019 on %D/%M/%Y format, some warnings
 treat <- treat[!is.na(treat$Visit), c("Visit", "Drug")]
 treat <- treat[treat$Visit %in% meta5$Original, ]
 Drugs <- unique(treat$Drug)
@@ -228,6 +231,11 @@ incidence <- t(incidence)
 # We don't know the treatment of many samples
 # meta5$Original[grep("-w", meta5$Original)][!(meta5$Original[grep("-w", meta5$Original)] %in% rownames(incidence))]
 
+# Treatment added as with aTNF-alpha
+meta5 <- mutate(meta5,
+                treatment = case_when(Time != "0" & !is.na(Time) ~ "Yes",
+                                      TRUE ~ "No"))
+
 # Check that the metadata is in the right order
 meta5 <- meta5[match(colnames(OTUs2), meta5$Original), ]
 stopifnot(sum(meta5$Original == colnames(OTUs2)) == 146)
@@ -235,8 +243,8 @@ stopifnot(sum(meta5$Original == colnames(rna2)) == 146)
 
 meta6 <- merge(meta5, treat, by.x = "Original", by.y = "Visit",
                all.x = TRUE, all.y = FALSE)
-
 stopifnot(sum(is.na(meta5$Patient_ID)) == 0)
+
 A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta5)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
 saveRDS(A, "data/RGCCA_data.RDS")

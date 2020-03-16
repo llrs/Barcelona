@@ -9,10 +9,10 @@ library("pROC")
 theme_set(theme_bw())
 theme_update(strip.background = element_blank())
 
-models0 <- readRDS("models0_colon.RDS")
+models0 <- readRDS("data_out/models0_colon.RDS")
 model0 <- models0[[1]]
 model0i <- models0[[2]]
-models2 <- readRDS("models2_colon.RDS")
+models2 <- readRDS("data_out/models2_colon.RDS")
 model1 <- models2[[1]]
 model1i <- models2[[2]]
 model2 <- models2[[3]]
@@ -20,15 +20,15 @@ model2i <- models2[[4]]
 # bests according to TRIM
 # model2_best <- models2[[5]]
 # model2_besti <- models2[[6]]
-model2_best <- readRDS("model2b_colon_sgcca.RDS") # Best according to antiTNF
-models3 <- readRDS("models3_colon.RDS")
+model2_best <- readRDS("data_out/model2b_colon_sgcca.RDS") # Best according to antiTNF
+models3 <- readRDS("data_out/models3_colon.RDS")
 model3 <- models3[[1]]
 model3i <- models3[[2]]
 # bests according to TRIM
 # model3_best <- models3[[3]]
 # model3_besti <- models3[[4]]
 
-model3_best <- readRDS("model3_colon_best.RDS") # Best according to antiTNF
+model3_best <- readRDS("data_out/model3_colon_best.RDS") # Best according to antiTNF
 
 A <- readRDS("data/RGCCA_data.RDS")
 meta <- A$Meta %>%
@@ -39,7 +39,10 @@ meta <- A$Meta %>%
                          IBD == "UC" ~ "UC",
                          IBD == "CD" ~ "CD"),
          inv = case_when(Exact_location == tolower(gsub(" COLON$", "", Aftected_area)) ~ "involved",
-                         TRUE ~ "not_involved")) %>%
+                         TRUE ~ "not_involved"),
+         treatment = case_when(Time == "0" ~ "No",
+                               !is.na(Time) ~ "Yes",
+                               is.na(Time) ~ "No")) %>%
   select_if(function(x)any(!is.na(x))) %>% # Select just those with information
   filter(Ileum == "Colon")
 
@@ -81,25 +84,10 @@ df <- rbind(
   merge(a3bM, a3bGE, all = TRUE, by = inter)
 )
 
-# Plots ####
-# * AUC: Ileum/Colon ####
-rock0 <- roc(meta$Ileum, model0$Y$RNAseq[, 1])
-rock1.2 <- roc(meta$Ileum, model2_best$Y$RNAseq[, 1])
-rock2.2 <- roc(meta$Ileum, model3_best$Y$RNAseq[, 1])
-par(pty = "s")
-plot(rocks0, asp = 1, xlim = c(0, 1), ylim = c(0, 1), main = "AUC", col = "red")
-lines(rocks1.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "green")
-lines(rocks2.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "blue")
-text(x = 0.5, y = 0.5, labels = paste("AUC =", round(rock0$auc, 3)), col = "red")
-text(x = 0.5, y = 0.6, labels = paste("AUC =", round(rock1.2$auc, 3)), col = "green")
-text(x = 0.5, y = 0.7, labels = paste("AUC =", round(rock2.2$auc, 3)), col = "blue")
-legend("bottomleft",
-       fill = c("red", "green", "blue"),
-       legend = c("Model 0", "Model 1.2", "Model 2.2"))
-
 # * Aim bullet ####
 
-rownames(model3_best$a$Location) <- paste0("Loc", seq_len(nrow(model3_best$a$Location)))
+rownames(model3_best$a$Location) <- paste0("Loc",
+                                           seq_len(nrow(model3_best$a$Location)))
 v <- variables(model3_best)
 plot_variables(v)
 
@@ -187,9 +175,18 @@ df %>%
          Component == "comp1") %>%
   ggplot() +
   geom_point(aes(GE, M, color = IBD, shape = IBD)) +
-  labs(color = "Disease", shape = "Disease") +
+  labs(color = "Disease", shape = "Disease", title = "Colon") +
   facet_wrap(~Model, scales = "free")
 dis <- last_plot()
+df %>%
+  filter(!grepl(" i", Model),
+         Component == "comp1") %>%
+  ggplot() +
+  geom_point(aes(GE, M, color = treatment, shape = treatment)) +
+
+  labs(color = "Treatment", shape = "Treatment", title = "Colon") +
+  facet_wrap(~Model, scales = "free")
+ggsave("Figures/colon_models_treatment.png")
 
 # Look the weights ####
 a0GE <- tidyer(model0$a[[1]], "0", "GE")

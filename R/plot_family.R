@@ -43,7 +43,8 @@ family.tidy %>%
 family.tidy %>%
   filter(!is.na(Rep)) %>%
   ggplot(aes(group = Sample, Count, fill = Microorganism)) +
-  geom_bar()
+  geom_bar() +
+  theme_minimal()
 
 
 BCN <- grep("-w0", colnames(family), value = TRUE)
