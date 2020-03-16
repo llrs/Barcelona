@@ -6,6 +6,8 @@ library("purrr")
 library("vegan")
 library("stringr")
 library("phyloseq")
+library("metagenomeSeq")
+library("limma")
 library("ggedit")
 
 
@@ -45,7 +47,7 @@ meta <- meta[meta$Name %in% nam, ]
 # Working with RNAseq
 conn <- gzfile("data/voom.RNAseq.data.all.cal.noduplications.tsv.gz")
 # conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
-rna <- read.table(conn, sep = "\t", check.names = FALSE)
+rna <- read.table(conn, sep = "\t", check.names = FALSE, nrows = 3)
 
 colnames(rna) <- gsub(" reseq$", "", colnames(rna))
 colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
@@ -91,23 +93,7 @@ phyloseq <- phyloseq(otu_table(otus, taxa_are_rows = TRUE),
               tax_table(genus))
 
 
-alpha_meas <- c("Simpson")
-theme_set(theme_minimal())
-p <- plot_richness(o, "SEX", "IBD", measures = alpha_meas)
-remove_geom(p, 'point', 1) + geom_jitter()
-q <- plot_richness(o, "Time", "IBD", measures = alpha_meas)
-remove_geom(q, 'point', 1) + geom_jitter()
-r <- plot_richness(o, "IBD", measures = alpha_meas)
-remove_geom(r, 'point', 1) + geom_jitter()
-s <- plot_richness(o, "Exact_location", "IBD", measures = alpha_meas)
-remove_geom(s, 'point', 1) + geom_jitter()
-u <- plot_richness(o, "ANTITNF_responder", "IBD", measures = alpha_meas)
-remove_geom(u, 'point', 1) + geom_jitter()
 
-
-d <- distance(o, "jaccard")
-
->>>>>>> a2242f412da2a52f4549b18194a588580f7dcf7b
 
 # Alpha diversity ####
 alpha <- prop.table(otus, 2)*100
@@ -124,10 +110,24 @@ b <- a %>%
   arrange(name)
 
 
-  ggplot(b) +
-  geom_col(aes(name, value, fill = otus), col = "transparent") +
-  guides(fill = FALSE) +
-  theme_minimal()
+ggplot(b) +
+geom_col(aes(name, value, fill = otus), col = "transparent") +
+guides(fill = FALSE) +
+theme_minimal()
+
+
+alpha_meas <- c("Simpson")
+theme_set(theme_minimal())
+p <- plot_richness(phyloseq, "SEX", "IBD", measures = alpha_meas)
+remove_geom(p, 'point', 1) + geom_jitter()
+q <- plot_richness(phyloseq, "Time", "IBD", measures = alpha_meas)
+remove_geom(q, 'point', 1) + geom_jitter()
+r <- plot_richness(phyloseq, "IBD", measures = alpha_meas)
+remove_geom(r, 'point', 1) + geom_jitter()
+s <- plot_richness(phyloseq, "Exact_location", "IBD", measures = alpha_meas)
+remove_geom(s, 'point', 1) + geom_jitter()
+u <- plot_richness(phyloseq, "ANTITNF_responder", "IBD", measures = alpha_meas)
+remove_geom(u, 'point', 1) + geom_jitter()
 
 # Beta diversity ####
 beta <- vegdist(otus, method = "jaccard")
@@ -135,7 +135,7 @@ cmd <- cmdscale(d = beta)
 plot(cmd, col = as.factor(A$Meta$SEX))
 
 # metagenomeSeq ####
-MR <- phyloseq_to_metagenomeSeq(o) # For testing and comparing data
+MR <- phyloseq_to_metagenomeSeq(phyloseq) # For testing and comparing data
 filterData(MR, present = 10, depth = 1000)
 p <- cumNormStatFast(MR)
 MR <- cumNorm(MR, p = p)
@@ -152,12 +152,30 @@ assayData(MRtrim)$relative <- assayData(MRtrim)$counts / rowSums(assayData(MRtri
 assayData(MRtrim)$prevalence <- as.matrix(assayData(MRtrim)$counts != 0)
 
 normFactor <- log2(normFactor / median(normFactor) + 1)
-settings <- zigControl(maxit = 10, verbose = TRUE)
-mod <- model.matrix(~ 0 + IBD, data = pData(MRtrim))
-mod <- cbind(mod, ID = pData(MRtrim)$ID, Time = as.numeric(pData(MRtrim)$Time))
+settings <- zigControl(maxit = 10, verbose = FALSE)
+mod <- model.matrix(~ 0 + IBD + SEX, data = pData(MRtrim))
+Time <- as.numeric(pData(MRtrim)$Time)
+Time[is.na(Time)] <- 0
+Ileum <- ifelse(pData(MRtrim)$Exact_location == "ileum", 1, 0)
+mod <- cbind(mod, Time = Time, Ileum = Ileum)
 fit <- fitZig(
   obj = MRtrim, mod = mod, useCSSoffset = FALSE,
-  control = settings
+  control = settings,
+  block =  pData(MRtrim)$ID
 )
+zigFit <- slot(fit, "fit")
+finalMod <- slot(fit, "fit")$design
+contrast.matrix <- makeContrasts(CD = IBDCD - IBDC,
+                                 UC = IBDUC - IBDC,
+                                 Ileum_vs_Colon = Ileum,
+                                 Male_vs_femal = SEXmale,
+                                 levels = finalMod)
+fit2 <- contrasts.fit(zigFit, contrast.matrix)
+fit2 <- eBayes(fit2)
+dt <- decideTests(fit2)
+summary(dt)
+dt <- as.matrix(dt)
+dt[dt < 0 ] <- 1
+library("UpSetR")
+upset(as.data.frame(dt), keep.order = FALSE, order.by = "freq", nsets = 50)
 
-eb <- fit$eb
