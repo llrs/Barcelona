@@ -40,11 +40,12 @@ otus <- bcn[, colnames(bcn) %in% nam]
 meta <- meta[meta$Name %in% nam, ]
 
 # Working with RNAseq
-conn <- gzfile("data/voom.RNAseq.data.all.cal.noduplications.tsv.gz")
-# conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
+# From Juanjo: The original counts are ok, but I need to remove the reseq samples as they
+# have different length and bias the PCA
+conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz")
 rna <- read.table(conn, sep = "\t", check.names = FALSE)
 
-colnames(rna) <- gsub(" reseq$", "", colnames(rna))
+rna <- rna[ , !grepl(" reseq$", colnames(rna))] # Remove as said
 colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
 
 correct_bcn <- function(x) {
@@ -143,8 +144,9 @@ meta4$Patient_ID[meta4$ID == "017"] <- p17$Patient_ID[1]
 
 
 ggplot(meta4[grep("^[0-9]", meta4$ID), ]) +
-  geom_point(aes(as.numeric(ID), DATE_SAMPLE, color = factor(substr(Original, 6, 8)))) +
-  labs(x = "ID", y = "Date sample", color = "Sample id (weeks)")
+  geom_point(aes(DATE_SAMPLE, as.numeric(ID), color = factor(substr(Original, 6, 8)))) +
+  labs(y = "ID", x = "Date sample", color = "Sample id (weeks)") +
+  theme_minimal()
 # See the plot!!
 # The patient ID 113 has the week 46 before the week 000??
 # Also 2 missing DATE_SAMPLES warning message
@@ -155,14 +157,9 @@ meta4$DATE_SAMPLE[meta4$Original == "111-w038"] <- as.Date("06/07/2016", "%m/%d/
 meta4$DATE_SAMPLE[meta4$Original == "113-w046"] <- as.Date("08/09/2016", "%m/%d/%Y")
 
 ggplot(meta4[grep("^[0-9]", meta4$ID), ]) +
-  geom_point(aes(as.numeric(ID), DATE_SAMPLE, color = factor(substr(Original, 6, 8)))) +
-  labs(x = "ID", y = "Date sample", color = "Sample id (weeks)",
-       title = "After corrections")
-ggplot(meta4[grep("^[0-9]", meta4$ID), ]) +
-  geom_point(aes(as.numeric(ID), DATE_SAMPLE, color = factor(substr(Original, 6, 8)))) +
-  labs(x = "ID", y = "Date sample", color = "Sample id (weeks)",
-       title = "After corrections") +
-  coord_flip()
+  geom_point(aes(DATE_SAMPLE, as.numeric(ID), color = factor(substr(Original, 6, 8)))) +
+  labs(y = "ID", x = "Date sample", color = "Sample id (weeks)") +
+  theme_minimal()
 
 # Calculate years since diagnostic and related problems
 diagTime <- as.Date(meta4$DATE_SAMPLE, "%Y-%m-%d") - meta4$Date_diagnostic
@@ -238,8 +235,8 @@ meta5 <- mutate(meta5,
 
 # Check that the metadata is in the right order
 meta5 <- meta5[match(colnames(OTUs2), meta5$Original), ]
-stopifnot(sum(meta5$Original == colnames(OTUs2)) == 146)
-stopifnot(sum(meta5$Original == colnames(rna2)) == 146)
+stopifnot(sum(meta5$Original == colnames(OTUs2)) == 128) # Removing reseq reduces by 18 samples
+stopifnot(sum(meta5$Original == colnames(rna2)) == 128)
 
 meta6 <- merge(meta5, treat, by.x = "Original", by.y = "Visit",
                all.x = TRUE, all.y = FALSE)
