@@ -9,10 +9,10 @@ library("pROC")
 theme_set(theme_bw())
 theme_update(strip.background = element_blank())
 
-models0 <- readRDS("models0.RDS")
+models0 <- readRDS("data_out/models0.RDS")
 model0 <- models0[[1]]
 model0i <- models0[[2]]
-models2 <- readRDS("models2.RDS")
+models2 <- readRDS("data_out/models2.RDS")
 model1 <- models2[[1]]
 model1i <- models2[[2]]
 model2 <- models2[[3]]
@@ -20,15 +20,15 @@ model2i <- models2[[4]]
 # bests according to TRIM
 # model2_best <- models2[[5]]
 # model2_besti <- models2[[6]]
-model2_best <- readRDS("model2b_sgcca.RDS") # Best according to antiTNF
-models3 <- readRDS("models3.RDS")
+model2_best <- readRDS("data_out/model2b_sgcca.RDS") # Best according to antiTNF
+models3 <- readRDS("data_out/models3.RDS")
 model3 <- models3[[1]]
 model3i <- models3[[2]]
 # bests according to TRIM
 # model3_best <- models3[[3]]
 # model3_besti <- models3[[4]]
 
-model3_best <- readRDS("model3_best.RDS") # Best according to antiTNF
+model3_best <- readRDS("data_out/model3_best.RDS") # Best according to antiTNF
 
 A <- readRDS("data/RGCCA_data.RDS")
 meta <- A$Meta %>%
