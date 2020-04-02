@@ -39,8 +39,8 @@ otus <- bcn[, colnames(bcn) %in% nam]
 meta <- meta[meta$Name %in% nam, ]
 
 # Working with RNAseq
-conn <- gzfile("data/voom.RNAseq.data.all.cal.noduplications.tsv.gz")
-# conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
+# conn <- gzfile("data/voom.RNAseq.data.all.cal.noduplications.tsv.gz")
+conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
 rna <- read.table(conn, sep = "\t", check.names = FALSE)
 
 rna <- rna[ , !grepl(" reseq$", colnames(rna))] # Remove as said
