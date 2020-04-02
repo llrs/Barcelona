@@ -43,7 +43,7 @@ conn <- gzfile("data/voom.RNAseq.data.all.cal.noduplications.tsv.gz")
 # conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
 rna <- read.table(conn, sep = "\t", check.names = FALSE)
 
-colnames(rna) <- gsub(" reseq$", "", colnames(rna))
+rna <- rna[ , !grepl(" reseq$", colnames(rna))] # Remove as said
 colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
 
 correct_bcn <- function(x) {
@@ -176,6 +176,7 @@ db2 <- db2[!is.na(db2$RNA_seq_batch), ]
 db2$NHC <- as.character(db2$NHC)
 db2$Sample_id <- gsub(" reseq", "", db2$Sample_id)
 db2$Sample_id <- gsub("-T-TR-", "-T-DM-", db2$Sample_id)
+
 db2$Sample_id[grep("-[wW]", db2$Sample_id)] <- tolower(db2$Sample_id)[grep("-[wW]", db2$Sample_id)]
 db2$Sample_id <- str_split(db2$Sample_id, "-w") %>% # Ready for BCN
   map(correct_bcn) %>%

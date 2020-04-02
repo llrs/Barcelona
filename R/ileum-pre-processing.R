@@ -43,7 +43,7 @@ conn <- gzfile("data/voom.RNAseq.data.all.cal.noduplications.tsv.gz")
 # conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
 rna <- read.table(conn, sep = "\t", check.names = FALSE)
 
-colnames(rna) <- gsub(" reseq$", "", colnames(rna))
+rna <- rna[ , !grepl(" reseq$", colnames(rna))] # Remove as said
 colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
 
 correct_bcn <- function(x) {
