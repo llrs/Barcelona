@@ -4,7 +4,7 @@ library("ggplot2")
 library("decontam")
 library("tidyr")
 library("vegan")
-library("forecats")
+library("forcats")
 
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab))
