@@ -230,9 +230,9 @@ OTUs2 <- norm_RNAseq(OTUs2[, meta5$Exact_location != "ileum"])
 rna2 <- filter_RNAseq(rna2[, meta5$Exact_location != "ileum"])
 meta5 <- meta5[meta5$Exact_location != "ileum", ]
 
-# Check that the metadata is in the right order
-stopifnot(sum(meta5$Original == colnames(OTUs2)) == 103)
-stopifnot(sum(meta5$Original == colnames(rna2)) == 103)
+# Check that the metadata is in the right order and the right amount of samples
+stopifnot(sum(meta5$Original == colnames(OTUs2)) == 89)
+stopifnot(sum(meta5$Original == colnames(rna2)) == 89)
 
 meta6 <- merge(meta5, treat, by.x = "Original", by.y = "Visit",
                all.x = TRUE, all.y = FALSE)
