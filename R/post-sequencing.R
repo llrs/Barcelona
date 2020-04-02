@@ -12,7 +12,7 @@ names4 <- read_xlsx(Names, range = anchored("A55", dim = c(9, 13)))
 plating <- function(x, plate) {
   x %>%
     gather("Column", "Name", 2:13, convert = TRUE) %>%
-    rename(Row = `X__1`) %>%
+    rename(Row = `...1`) %>%
     mutate(Plate = !!plate)
 }
 n1 <- plating(names1, "1")
@@ -36,7 +36,7 @@ plate4 <- read_xlsx(Concentrations, range = anchored("B58", dim = c(9, 13)),
 concentrate <- function(x, plate) {
   x %>%
     gather("Column", "Concentr", 2:13, convert = TRUE) %>%
-    rename(Row = `X__1`) %>%
+    rename(Row = `...1`) %>%
     mutate(Plate = !!plate, Concentr = as.numeric(Concentr))
 }
 # Warnings expected
