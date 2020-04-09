@@ -84,7 +84,7 @@ if (any(!k)) {
 
 # normalize the data
 OTUs2 <- norm_RNAseq(OTUs2)
-# rna2 <- norm_RNAseq(rna2) # Omit because is already normalized
+rna2 <- norm_RNAseq(rna2) # Omit because is already normalized
 rna2 <- filter_RNAseq(rna2)
 
 # Meta ####
