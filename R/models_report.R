@@ -20,7 +20,7 @@ model2i <- models2[[4]]
 # bests according to TRIM
 # model2_best <- models2[[5]]
 # model2_besti <- models2[[6]]
-model2_best <- readRDS("data_out/model2b_sgcca.RDS") # Best according to antiTNF
+model2_best <- readRDS("model2b_sgcca.RDS") # Best according to antiTNF
 models3 <- readRDS("data_out/models3.RDS")
 model3 <- models3[[1]]
 model3i <- models3[[2]]
@@ -28,7 +28,7 @@ model3i <- models3[[2]]
 # model3_best <- models3[[3]]
 # model3_besti <- models3[[4]]
 
-model3_best <- readRDS("data_out/model3_best.RDS") # Best according to antiTNF
+model3_best <- readRDS("data_out/model3_best_treatment.RDS") # Best according to antiTNF
 
 A <- readRDS("data/RGCCA_data.RDS")
 meta <- A$Meta %>%
@@ -94,9 +94,9 @@ rock0 <- roc(meta$Ileum, model0$Y$RNAseq[, 1])
 rock1.2 <- roc(meta$Ileum, model2_best$Y$RNAseq[, 1])
 rock2.2 <- roc(meta$Ileum, model3_best$Y$RNAseq[, 1])
 par(pty = "s")
-plot(rocks0, asp = 1, xlim = c(0, 1), ylim = c(0, 1), main = "AUC", col = "red")
-lines(rocks1.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "green")
-lines(rocks2.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "blue")
+plot(rock0, asp = 1, xlim = c(0, 1), ylim = c(0, 1), main = "AUC", col = "red")
+lines(rock1.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "green")
+lines(rock2.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "blue")
 text(x = 0.5, y = 0.5, labels = paste("AUC =", round(rock0$auc, 3)), col = "red")
 text(x = 0.5, y = 0.6, labels = paste("AUC =", round(rock1.2$auc, 3)), col = "green")
 text(x = 0.5, y = 0.7, labels = paste("AUC =", round(rock2.2$auc, 3)), col = "blue")
