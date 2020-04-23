@@ -79,6 +79,10 @@ colnames(OTUs2) <- meta2$Original[match(colnames(OTUs2), meta2$Name)]
 meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
 OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
 
+abundance <- 0.005 # 0.5%
+a <- prop.table(OTUs2, 2)
+b <- rowSums(a > abundance)
+OTUs2 <- OTUs2[b != 0, ]
 
 OTUs2 <- norm_RNAseq(OTUs2)
 rna2 <- norm_RNAseq(rna2)
@@ -145,18 +149,16 @@ for (i in seq_len(nrow(df))) {
 dev.off()
 saveRDS(df, "data_out/correlations.RDS")
 
-# Filter significative ####
-# Plot correlations ####
-# Filter outliers ####
-
-
+# Plot distributions ####
 df %>%
   group_by(genus) %>%
   summarise(n = sum(p.value < 0.05)) %>%
   filter(n != 0) %>%
   arrange(desc(n)) %>%
   ggplot() +
-  geom_histogram(aes(n))
+  geom_histogram(aes(n)) +
+  theme_minimal() +
+  labs(x = element_blank(), title = "Significant correlations by microorganism", y = "n")
 
 df %>%
   group_by(genes) %>%
@@ -164,4 +166,49 @@ df %>%
   filter(n != 0) %>%
   arrange(desc(n)) %>%
   ggplot() +
-  geom_histogram(aes(n))
+  geom_histogram(aes(n)) +
+  theme_minimal() +
+  labs(x = element_blank(), title = "Significant correlations by gene", y = "n")
+df %>%
+  filter(p.value < 0.05) %>%
+  ggplot() +
+  geom_histogram(aes(abs(r)), binwidth = 0.005) +
+  scale_y_log10() +
+  theme_minimal() +
+  labs(title = "Distribution of significant correlations",
+       x = "Correlation (absolute value)", y = "n")
+
+# Select a threshold ####
+q <- quantile(abs(df$r[df$p.value < 0.05]), 0.99)
+sum(abs(df$r) > q)
+
+# Redo just those correlations above the threshold to be able to check that they are fit
+subDF <- df[abs(df$r) > q, c("genus", "genes")]
+
+
+
+pdf("Figures/high_correlations_genus.pdf")
+for (i in seq_len(nrow(subDF))) {
+  genus <- subDF$genus[i]
+  gene <- subDF$genes[i]
+
+
+  x <- frna2[gene, ]
+  x[x == 0] <- NA
+  y <- fOTUS2[genus, ]
+  y[y == 0] <- NA
+  names(x) <- NULL
+  names(y) <- NULL
+
+  try({
+    co <- cor.test(x, y, use = "spearman",
+                   use = "pairwise.complete.obs")
+    plot(x, y, xlab = gene, ylab = genus,
+         main = paste0("Correlation: ",
+                       round(co$estimate, 4), "\n",
+                       "p-value: ", round(co$p.value, 4)))
+  },
+  silent = TRUE
+  )
+}
+dev.off()
