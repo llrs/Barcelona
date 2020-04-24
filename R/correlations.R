@@ -79,6 +79,9 @@ colnames(OTUs2) <- meta2$Original[match(colnames(OTUs2), meta2$Name)]
 meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
 OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
 
+OTUs2 <- as.matrix(OTUs2)
+rna2 <- as.matrix(rna2)
+
 abundance <- 0.005 # 0.5%
 a <- prop.table(OTUs2, 2)
 b <- rowSums(a > abundance)
@@ -96,8 +99,6 @@ names_rna <- names(w_rna)[w_rna != 0]
 w_dna <- model$a[[2]][, 1]
 
 
-OTUs2 <- as.matrix(OTUs2)
-rna2 <- as.matrix(rna2)
 fOTUS2 <- OTUs2[which(w_dna != 0), ]
 frna2 <- rna2[rownames(rna2) %in% names_rna, ]
 
