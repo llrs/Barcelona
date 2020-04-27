@@ -132,7 +132,7 @@ out <- lapply(models3, use, A = A3b, c1 = shrinkage3)
 saveRDS(out, "data_out/models3.RDS")
 
 
-models <- list.files(pattern = "models[0-9].RDS")
+models <- list.files(path = "data_out", pattern = "models[0-9].RDS", full.names = TRUE)
 models <- lapply(models, readRDS)
 models <- do.call(c, models)
 out <- lapply(names(models), function(x) {
