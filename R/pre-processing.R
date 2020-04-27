@@ -12,6 +12,7 @@ colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
 genus <- tab[, 1, FALSE]
 write.csv(genus, "data/genus.csv")
+rownames(counts) <- as.character(genus[, 1])
 
 # From the QC step
 meta <- readRDS("data_out/info_samples.RDS")
