@@ -85,7 +85,6 @@ rna2 <- as.matrix(rna2)
 abundance <- 0.005 # 0.5%
 a <- prop.table(OTUs2, 2)
 b <- rowSums(a > abundance)
-OTUs2 <- OTUs2[b != 0, ]
 
 OTUs2 <- norm_RNAseq(OTUs2)
 rna2 <- norm_RNAseq(rna2)
@@ -99,7 +98,7 @@ names_rna <- names(w_rna)[w_rna != 0]
 w_dna <- model$a[[2]][, 1]
 
 
-fOTUS2 <- OTUs2[which(w_dna != 0), ]
+fOTUS2 <- OTUs2[w_dna != 0 & b != 0, ]
 frna2 <- rna2[rownames(rna2) %in% names_rna, ]
 
 
@@ -109,7 +108,7 @@ s <- mapIds(org.Hs.eg.db, keys = trimVer(rownames(frna2)), keytype = "ENSEMBL", 
 frna2 <- frna2[!is.na(s), ]
 rownames(frna2) <- s[!is.na(s)]
 # Tax genus instead of numbers
-rownames(fOTUS2) <- as.character(genus[which(w_dna != 0), 1])
+rownames(fOTUS2) <- as.character(genus[w_dna != 0  & b != 0, 1])
 
 
 # Correlations ####
@@ -117,6 +116,26 @@ df <- expand.grid(genus = rownames(fOTUS2), genes = rownames(frna2),
                   stringsAsFactors = FALSE)
 df$r <- 0
 df$p.value <- 1
+# Remove big outliers
+qrna <- quantile(frna2, c(0.05, 0.95))
+qdna <- quantile(fOTUS2, c(0.05, 0.95))
+
+rm_outliers <- function(x, quantiles) {
+  x[x < quantiles[1]] <- NA
+  x[x > quantiles[2]] <- NA
+  x[x == 0] <- NA
+  x
+}
+
+outliers <- function(x, quantiles) {
+  x <- rm_outliers(x, quantiles)
+  # Filter based on NA values on gene expression
+  if (sum(!is.na(x)) < 3 | sum(!is.na(x))/length(x) < 0.15) {
+    TRUE
+  } else {
+    FALSE
+  }
+}
 
 pdf("Figures/correlations_genus.pdf")
 for (i in seq_len(nrow(df))) {
@@ -125,11 +144,24 @@ for (i in seq_len(nrow(df))) {
 
 
   x <- frna2[gene, ]
-  x[x == 0] <- NA
+  if (outliers(x, qrna)) {
+    next
+  }
+
   y <- fOTUS2[genus, ]
-  y[y == 0] <- NA
+  if (outliers(y, qdna)) {
+    next
+  }
   names(x) <- NULL
   names(y) <- NULL
+
+  # Filter based on the number of pairwise values existing
+  d <- rbind(x, y)
+  pairwise <- apply(d, 2, function(z){all(!is.na(z))})
+  k <- sum(pairwise, na.rm = TRUE)
+  if (k/length(pairwise) < 0.15 & k < 4) {
+    next
+  }
 
   try({
     co <- cor.test(x, y, use = "spearman",
@@ -149,6 +181,10 @@ for (i in seq_len(nrow(df))) {
 }
 dev.off()
 saveRDS(df, "data_out/correlations.RDS")
+
+#  Not workking because n < length p.values
+# df$fdr <- p.adjust(df$p.value, method = "fdr",
+                   # n = max(c(nrow(frna2), nrow(fOTUS2))))
 
 # Plot distributions ####
 df %>%
@@ -180,13 +216,11 @@ df %>%
        x = "Correlation (absolute value)", y = "n")
 
 # Select a threshold ####
-q <- quantile(abs(df$r[df$p.value < 0.05]), 0.99)
-sum(abs(df$r) > q)
+q <- quantile(abs(df$r[df$p.value < 0.05 & !is.na(df$p.value)]), 0.99)
+sum(abs(df$r) > q & !is.na(df$p.value))
 
 # Redo just those correlations above the threshold to be able to check that they are fit
-subDF <- df[abs(df$r) > q, c("genus", "genes")]
-
-
+subDF <- df[abs(df$r) > q & !is.na(df$p.value), c("genus", "genes")]
 
 pdf("Figures/high_correlations_genus.pdf")
 for (i in seq_len(nrow(subDF))) {
@@ -195,21 +229,31 @@ for (i in seq_len(nrow(subDF))) {
 
 
   x <- frna2[gene, ]
-  x[x == 0] <- NA
+  x <- rm_outliers(x, qrna)
   y <- fOTUS2[genus, ]
-  y[y == 0] <- NA
+  y <- rm_outliers(y, qdna)
   names(x) <- NULL
   names(y) <- NULL
 
+  g <- x[!is.na(x) & !is.na(y)]
+  o <- y[!is.na(x) & !is.na(y)]
+
+  if (var(g, use = "everything") < .Machine$double.eps) {
+    next
+  }
+  if (var(o, use = "everything") < .Machine$double.eps) {
+    next
+  }
+
   try({
-    co <- cor.test(x, y, use = "spearman",
+    co <- cor.test(g, o, use = "spearman",
                    use = "pairwise.complete.obs")
-    plot(x, y, xlab = gene, ylab = genus,
+    plot(g, o, xlab = gene, ylab = genus,
          main = paste0("Correlation: ",
                        round(co$estimate, 4), "\n",
                        "p-value: ", round(co$p.value, 4)))
   },
-  silent = TRUE
+  silent = FALSE
   )
 }
 dev.off()
