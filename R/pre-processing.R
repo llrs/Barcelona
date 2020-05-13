@@ -245,4 +245,5 @@ stopifnot(sum(is.na(meta5$Patient_ID)) == 0)
 
 A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta5)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
+saveRDS(meta5, "data_out/refined_meta.RDS")
 saveRDS(A, "data/RGCCA_data.RDS")
