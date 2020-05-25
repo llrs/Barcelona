@@ -179,3 +179,7 @@ dt[dt < 0 ] <- 1
 library("UpSetR")
 upset(as.data.frame(dt), keep.order = FALSE, order.by = "freq", nsets = 50)
 
+CD <- topTreat(fit2, coef = "CD", number = Inf)
+UC <- topTreat(fit2, coef = "UC", number = Inf)
+Loc <- topTreat(fit2, coef = "Ileum_vs_Colon", number = Inf)
+sex <- topTreat(fit2, coef = "Male_vs_femal", number = Inf)
