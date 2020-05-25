@@ -127,10 +127,13 @@ rm_outliers <- function(x, quantiles) {
   x
 }
 
-outliers <- function(x, quantiles) {
-  x <- rm_outliers(x, quantiles)
-  # Filter based on NA values on gene expression
-  if (sum(!is.na(x)) < 3 | sum(!is.na(x))/length(x) < 0.15) {
+less_precision <- function(x) {
+  var(x, na.rm = TRUE) < .Machine$double.eps
+}
+
+outliers <- function(x) {
+  # Filter based on NA values on NAs present and amount of values
+  if (sum(!is.na(x)) < 3 | sum(!is.na(x))/length(x) < 0.15 | less_precision(x)) {
     TRUE
   } else {
     FALSE
@@ -144,12 +147,14 @@ for (i in seq_len(nrow(df))) {
 
 
   x <- frna2[gene, ]
-  if (outliers(x, qrna)) {
+  x <- rm_outliers(x, qrna)
+  if (outliers(x)) {
     next
   }
 
   y <- fOTUS2[genus, ]
-  if (outliers(y, qdna)) {
+  y <- rm_outliers(y, qdna)
+  if (outliers(y)) {
     next
   }
   names(x) <- NULL
@@ -180,6 +185,7 @@ for (i in seq_len(nrow(df))) {
   )
 }
 dev.off()
+df <- df[!is.na(df$r), ]
 saveRDS(df, "data_out/correlations.RDS")
 
 #  Not workking because n < length p.values
@@ -220,7 +226,17 @@ q <- quantile(abs(df$r[df$p.value < 0.05 & !is.na(df$p.value)]), 0.99)
 sum(abs(df$r) > q & !is.na(df$p.value))
 
 # Redo just those correlations above the threshold to be able to check that they are fit
-subDF <- df[abs(df$r) > q & !is.na(df$p.value), c("genus", "genes")]
+subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
+subDF <- subDF[order(subDF$p.value, decreasing = FALSE), c("genes", "genus")]
+meta <- readRDS("data_out/refined_meta.RDS")
+write.csv(meta, "data_out/refined_meta.csv", na = "", row.names = FALSE)
+
+subMeta <- meta[match(colnames(frna2), meta$Original), ]
+loc <- ifelse(meta$Exact_location == "ileum", "ileum", "colon")
+loc <- factor(loc, levels = c("colon", "ileum"))
+ibd <- as.character(subMeta$IBD)
+ibd[is.na(ibd)] <- "C"
+ibd <- factor(ibd, levels = c("C", "CD", "UC"))
 
 pdf("Figures/high_correlations_genus.pdf")
 for (i in seq_len(nrow(subDF))) {
@@ -234,9 +250,11 @@ for (i in seq_len(nrow(subDF))) {
   y <- rm_outliers(y, qdna)
   names(x) <- NULL
   names(y) <- NULL
-
-  g <- x[!is.na(x) & !is.na(y)]
-  o <- y[!is.na(x) & !is.na(y)]
+  rm_samples <- !is.na(x) & !is.na(y)
+  loc2 <- loc[rm_samples]
+  ibd2 <- ibd[rm_samples]
+  g <- x[rm_samples]
+  o <- y[rm_samples]
 
   if (var(g, use = "everything") < .Machine$double.eps) {
     next
@@ -248,12 +266,30 @@ for (i in seq_len(nrow(subDF))) {
   try({
     co <- cor.test(g, o, use = "spearman",
                    use = "pairwise.complete.obs")
-    plot(g, o, xlab = gene, ylab = genus,
+    if (co$p.value >= 0.05) {
+      next
+    }
+    plot(g, o, xlab = gene, ylab = genus, pch = 14+as.numeric(loc2),
+         col = ibd2,
          main = paste0("Correlation: ",
                        round(co$estimate, 4), "\n",
                        "p-value: ", round(co$p.value, 4)))
+    legend("top",
+           legend = levels(ibd),
+           fill = as.factor(levels(ibd)))
+    legend("right",
+           legend = levels(loc),
+           pch = 14 + as.numeric(as.factor(levels(loc))))
   },
   silent = FALSE
   )
 }
 dev.off()
+subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
+write.csv(subDF, "data_out/high_correlations_genus.csv",
+          na = "", row.names = FALSE)
+
+subDF %>%
+  count(genus, sort = TRUE)
+subDF %>%
+  count(genes, sort = TRUE)
