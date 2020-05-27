@@ -14,7 +14,7 @@ genus <- tab[, 1, FALSE]
 write.csv(genus, "data/genus.csv")
 rownames(counts) <- as.character(genus[, 1])
 
-# From the QC step
+# From the QC step (QC-sequencing.R)
 meta <- readRDS("data_out/info_samples.RDS")
 meta$Counts <- colSums(counts)
 
@@ -23,7 +23,7 @@ if (!all(colnames(counts) == meta$Name)) {
   stop("Reorder the samples to match the condition!!")
 }
 bcn <- counts[, meta$Study %in% c("BCN", "Controls")]
-meta <- meta[meta$Study %in% c("BCN", "Controls"), ]
+# meta <- meta[meta$Study %in% c("BCN", "Controls"), ]
 
 # Remove duplicate samples
 replicates <- table(meta$Original)
@@ -38,7 +38,7 @@ keepDup <- replicate_samples %>%
 
 nam <- c(names(replicates[replicates == 1]), keepDup$Name)
 otus <- bcn[, colnames(bcn) %in% nam]
-meta <- meta[meta$Name %in% nam, ]
+# meta <- meta[meta$Name %in% nam, ]
 
 # Working with RNAseq
 # From Juanjo: The original counts are ok, but I need to remove the reseq samples as they
@@ -67,14 +67,14 @@ colnames(rna) <- colnames2
 
 
 # Filter the samples
+
+colnames(otus) <- meta$Original[match(colnames(otus), meta$Name)]
+OTUs2 <- otus[, colnames(otus) %in% colnames(rna)]
 rna2 <- rna[, colnames(rna) %in% meta$Original]
-meta2 <- droplevels(meta[meta$Original %in% colnames(rna2), ])
-OTUs2 <- otus[, colnames(otus) %in% meta2$Name]
+stopifnot(length(intersect(colnames(rna2), colnames(OTUs2))) == 128)
 
-colnames(OTUs2) <- meta2$Original[match(colnames(OTUs2), meta2$Name)]
-
+meta0 <- meta[meta$Original %in% unique(c(colnames(rna), colnames(otus))), ]
 # Reorder samples to match!
-meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
 OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
 
 o <- cbind(meta2$Original, colnames(OTUs2), colnames(rna2))
@@ -89,13 +89,12 @@ rna2 <- norm_RNAseq(rna2) # Omit because is already normalized
 rna2 <- filter_RNAseq(rna2)
 
 # Meta ####
-
 db <- data.table::fread(
   "data/db_biopsies_bcn_seq16S_noTRIM.txt", sep = "\t",
   stringsAsFactors = FALSE
 )
 
-meta3 <- merge(meta2, db,
+meta3 <- merge(meta0, db,
                by.x = c("Original", "IBD"), by.y = c("Sample_Code", "IBD"),
                all.x = TRUE, all.y = FALSE)
 meta3 <- droplevels(meta3)
@@ -235,15 +234,13 @@ meta5 <- mutate(meta5,
                                       TRUE ~ "No"))
 
 # Check that the metadata is in the right order
-meta5 <- meta5[match(colnames(OTUs2), meta5$Original), ]
-stopifnot(sum(meta5$Original == colnames(OTUs2)) == 128) # Removing reseq reduces by 18 samples
-stopifnot(sum(meta5$Original == colnames(rna2)) == 128)
+meta6 <- droplevels(meta5[match(colnames(OTUs2), meta5$Original), ])
+stopifnot(sum(meta6$Original == colnames(OTUs2)) == 128) # Removing reseq reduces by 18 samples
+stopifnot(sum(meta6$Original == colnames(rna2)) == 128)
+stopifnot(sum(colnames(OTUs2) == colnames(rna2)) == 128)
 
-meta6 <- merge(meta5, treat, by.x = "Original", by.y = "Visit",
-               all.x = TRUE, all.y = FALSE)
-stopifnot(sum(is.na(meta5$Patient_ID)) == 0)
-
-A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta5)
+A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta6)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
-saveRDS(meta5, "data_out/refined_meta.RDS")
+saveRDS(meta6, "data_out/refined_meta.RDS")
+saveRDS(meta5, "data_out/refined_meta_all.RDS")
 saveRDS(A, "data/RGCCA_data.RDS")
