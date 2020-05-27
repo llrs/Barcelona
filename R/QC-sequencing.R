@@ -51,6 +51,7 @@ meta <- meta %>%
   select(-Study, -ID, -batch)
 
 # Input about the concentration used and location on the plates
+# From the post-sequencing.R files
 location <- readRDS("Samples_concentration_distribution.RDS")
 # Add th study and separate name
 location <- location %>%
