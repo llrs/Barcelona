@@ -15,13 +15,10 @@ counts <- tab[, -1]
 genus <- tab[, 1, FALSE]
 
 # From the QC step
-meta <- readRDS("data_out/info_samples.RDS")
-meta$Counts <- colSums(counts)
+meta <- readRDS("data_out/refined_meta_all.RDS")
+ccounts <- colSums(counts)
+meta <- meta[meta$Name %in% colnames(counts), ]
 
-# filter (keep in mind that it should be on the same order)
-if (!all(colnames(counts) == meta$Name)) {
-  stop("Reorder the samples to match the condition!!")
-}
 bcn <- counts[, meta$Study %in% c("BCN", "Controls")]
 meta <- meta[meta$Study %in% c("BCN", "Controls"), ]
 
@@ -81,8 +78,10 @@ ts <- pData(MRtrim)$Time
 ts[is.na(ts)] <- "0"
 mod <- data.frame(Time = paste0("t", ts))
 pData(MRtrim)$ileum <- ifelse(meta$Exact_location == "ileum", "Ileum", "colon")
+pData(MRtrim)$ileum[is.na(pData(MRtrim)$ileum )] <- "colon" # Checked manually on the database
 ibd <- as.character(pData(MRtrim)$IBD)
 ibd[is.na(ibd)] <- "C"
+ibd[ibd == "CONTROL"] <- "C"
 ibd <- factor(ibd, levels = c("C", "CD", "UC"))
 mod <- model.matrix(~ts+pData(MRtrim)$ileum+ibd)
 colnames(mod) <- c("(Intercept)", "ts14", "ts46", "Ileum", "CD","UC")
@@ -112,8 +111,10 @@ dt <- decideTests(fit2)
 summary(dt)
 microb <- dt[, 4, drop = TRUE] != 0
 
-topTable(fit2, coef = "ileum_vs_colon", number = 3)
+topTable(fit2, coef = "ileum_vs_colon", number = 43)
+
 # Prevalence ####
+
 rownames(OTUs2) <- genus[, 1]
 meta$ileum <- ifelse(meta$Exact_location == "ileum", "Ileum", "colon")
 meta$Time[is.na(meta$Time)] <- "C"
