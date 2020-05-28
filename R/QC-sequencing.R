@@ -41,14 +41,14 @@ info_seq <- cbind(sp, seqs, sp_b, seqs_b)
 
 family.tidy <- gather(tab, Sample, Count, -'Sample name') %>%
   filter(Count != 0) %>%
-  rename(Microorganism = 'Sample name') %>%
+  dplyr::rename(Microorganism = "Sample name") %>%
   group_by(Sample) %>%
   mutate(ratio = Count/sum(Count))
 
 # Input the disease, state and so on
 meta <- read.csv("data/batches.csv")
 meta <- meta %>%
-  select(-Study, -ID, -batch)
+  dplyr::select(-Study, -ID, -batch)
 
 # Input about the concentration used and location on the plates
 # From the post-sequencing.R files
@@ -64,7 +64,7 @@ location <- location %>%
     )
   ) %>%
   separate(Name, c("Original", "Replicate"), sep = "_", remove = FALSE)
-
+# Expected a warning of filling pieces
 
 # Merge the different dataset
 colnames(info_seq) <- c("Families", "Counts", "Families_wo_ctrls", "Counts_wo_ctrls")
@@ -74,6 +74,7 @@ out <- out[match(colnames(counts), out$Name), ] # Reorder
 
 
 all_data <- merge(family.tidy, out, by.x = "Sample", by.y = "Name")
+# Plot about the number of counts per sample and the column of origin
 all_data %>%
   group_by(Sample) %>%
   summarise(counts = sum(Count),
@@ -87,11 +88,14 @@ all_data %>%
   ggplot() +
   geom_col(aes(lvls_reorder(Sample, order(counts)), log10(counts), fill = Col)) +
   labs(x = "Samples") +
-  geom_hline(yintercept = c(log10(1000), log10(20000)), col = c("red", "green"))
+  geom_hline(yintercept = c(log10(1000), log10(20000)), col = c("red", "green")) +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.major.x = element_blank())
 
 all_data %>% as_tibble() %>%
-  filter(Study == "BCN") %>%
-  filter(Microorganism != "no_match")
+  filter(Study == "BCN" & Microorganism != "no_match")
 
 topMicro <- all_data %>%
   filter(Study == "BCN") %>%
@@ -101,6 +105,7 @@ topMicro <- all_data %>%
   arrange(desc(mA)) %>%
   top_n(10, mA)
 theme_update(strip.background = element_blank())
+# Abundance plot about the top microorganisms on the three time
 all_data %>%
   filter(Study == "BCN",
          Microorganism %in% topMicro$Microorganism) %>%
@@ -115,7 +120,9 @@ all_data %>%
   scale_fill_viridis_c() +
   facet_wrap(~week) +
   labs(fill = "Abundance (%)") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1),
+        axis.ticks.x = element_blank())
 
 out$Concentr[is.na(out$Concentr)] <- 0.0005
 out$Exact_location[out$Exact_location == ""] <- NA
@@ -136,6 +143,8 @@ theme_set(theme_bw())
 beta <- estimate_richness(phyloseq)
 res <- cbind(beta, out)
 (p <- plot_richness(phyloseq, "Original", "Plate", measures = "Shannon"))
+p + theme(panel.grid.major.x = element_blank()) + labs(x = element_blank())
+ggsave("Figures/alpha_diversity_plates.png")
 (p <- plot_richness(phyloseq, "Name", "Row", measures = "Shannon"))
 (p <- plot_richness(phyloseq, "Name", "Column", measures = "Shannon"))
 (p <- plot_richness(phyloseq, "Name", "Concentr", measures = "Shannon"))
