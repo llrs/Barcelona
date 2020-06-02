@@ -9,23 +9,22 @@ library("phyloseq")
 library("metagenomeSeq")
 library("limma")
 library("ggedit")
+library("readxl")
+library("integration")
+library("lubridate")
+library("org.Hs.eg.db")
+library("forcats")
 
-
-tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv",
-                  check.names = FALSE)
+tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
 genus <- tab[, 1, FALSE]
-write.csv(genus, "data/genus.csv")
 
 # From the QC step
-meta <- readRDS("data_out/info_samples.RDS")
-meta$Counts <- colSums(counts)
+meta <- readRDS("data_out/refined_meta_all.RDS")
+ccounts <- colSums(counts)
+meta <- meta[meta$Name %in% colnames(counts), ]
 
-# filter (keep in mind that it should be on the same order)
-if (!all(colnames(counts) == meta$Name)) {
-  stop("Reorder the samples to match the condition!!")
-}
 bcn <- counts[, meta$Study %in% c("BCN", "Controls")]
 meta <- meta[meta$Study %in% c("BCN", "Controls"), ]
 
@@ -44,55 +43,26 @@ nam <- c(names(replicates[replicates == 1]), keepDup$Name)
 otus <- bcn[, colnames(bcn) %in% nam]
 meta <- meta[meta$Name %in% nam, ]
 
-# Working with RNAseq
-conn <- gzfile("data/voom.RNAseq.data.all.cal.noduplications.tsv.gz")
-# conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz") # TODO See if this is a good choice
-rna <- read.table(conn, sep = "\t", check.names = FALSE, nrows = 3)
-
-colnames(rna) <- gsub(" reseq$", "", colnames(rna))
-colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
-
-correct_bcn <- function(x) {
-  if (length(x) > 1) {
-    a <- str_pad(x[1], width = 3, pad = "0")
-    b <- str_pad(x[2], width = 3, pad = "0")
-    x <- paste(a, b, sep = "-w")
-  }
-  x
-}
-
-colnames2 <- colnames(rna) %>%
-  str_split("-w") %>% # Ready for BCN
-  map(correct_bcn) %>%
-  unlist() %>%
-  gsub("-T-TR-", "-T-DM-", .) # Ready for TRIM
-colnames(rna) <- colnames2
-
-
 # Filter the samples
-rna2 <- rna[, colnames(rna) %in% meta$Original]
-meta2 <- droplevels(meta[meta$Original %in% colnames(rna2), ])
-OTUs2 <- otus[, colnames(otus) %in% meta2$Name]
+OTUs2 <- otus[, colnames(otus) %in% meta$Name]
 
-colnames(OTUs2) <- meta2$Original[match(colnames(OTUs2), meta2$Name)]
+colnames(OTUs2) <- meta$Original[match(colnames(OTUs2), meta$Name)]
 
 # Reorder samples to match!
-meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
-OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
-
-A <- readRDS("data/RGCCA_data.RDS")
-otus <- OTUs2
+OTUs2 <- OTUs2[, match(meta$Original, colnames(OTUs2))]
+stopifnot(all(colnames(OTUs2) == meta$Original))
 genus <- read.csv("data/genus.csv", row.names = 1)
 
-meta <- A$Meta
-levels(meta$IBD) <- c(levels(meta$IBD), "C")
-meta$IBD[is.na(meta$IBD)] <- "C"
-rownames(meta) <- colnames(otus)
-phyloseq <- phyloseq(otu_table(otus, taxa_are_rows = TRUE),
+meta$ileum <- ifelse(meta$Exact_location == "ileum", "Ileum", "colon")
+meta$ileum[is.na(meta$ileum )] <- "colon"
+meta$SEX[is.na(meta$SEX) | meta$SEX == ""] <- "female"
+meta$Time[is.na(meta$Time)] <- "C"
+
+rownames(meta) <- colnames(OTUs2)
+otus <- as.matrix(OTUs2)
+phyloseq <- phyloseq(otu_table(OTUs2, taxa_are_rows = TRUE),
               sample_data(meta),
               tax_table(genus))
-
-
 
 
 # Alpha diversity ####
@@ -111,28 +81,66 @@ b <- a %>%
 
 
 ggplot(b) +
-geom_col(aes(name, value, fill = otus), col = "transparent") +
-guides(fill = FALSE) +
-theme_minimal()
+  geom_col(aes(name, value, fill = otus), col = "transparent") +
+  guides(fill = FALSE) +
+  theme_minimal() +
+  labs(x = element_blank(), y = "%") +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.major.x = element_blank())
 
 
-alpha_meas <- c("Simpson")
+alpha_meas <- c("Simpson", "Shannon")
 theme_set(theme_minimal())
+richness <- estimate_richness(phyloseq)
+richness$Sample <- meta$Original
+richness <- merge(richness, meta, by.x = "Sample", by.y = "Original")
+ggplot(richness) +
+  geom_col(aes(Shannon, fct_reorder(Sample, IBD), fill = IBD, col = IBD)) +
+  labs(y = "Sample") +
+  theme(panel.grid.major.y = element_blank())
+ggplot(richness) +
+  geom_jitter(aes(x = SEX,  y = Shannon, col = IBD, shape = IBD))
+
 p <- plot_richness(phyloseq, "SEX", "IBD", measures = alpha_meas)
 remove_geom(p, 'point', 1) + geom_jitter()
+ggsave("Figures/alpha_simpson_sex_ibd.png")
 q <- plot_richness(phyloseq, "Time", "IBD", measures = alpha_meas)
 remove_geom(q, 'point', 1) + geom_jitter()
+ggsave("Figures/alpha_simpson_time_ibd.png")
 r <- plot_richness(phyloseq, "IBD", measures = alpha_meas)
 remove_geom(r, 'point', 1) + geom_jitter()
 s <- plot_richness(phyloseq, "Exact_location", "IBD", measures = alpha_meas)
 remove_geom(s, 'point', 1) + geom_jitter()
+ggsave("Figures/alpha_simpson_location_ibd.png")
+s <- plot_richness(phyloseq, "ileum", "IBD", measures = alpha_meas)
+remove_geom(s, 'point', 1) + geom_jitter()
+ggsave("Figures/alpha_simpson_location_ibd.png")
 u <- plot_richness(phyloseq, "ANTITNF_responder", "IBD", measures = alpha_meas)
 remove_geom(u, 'point', 1) + geom_jitter()
+ggsave("Figures/alpha_simpson_responders_ibd.png")
 
 # Beta diversity ####
-beta <- vegdist(otus, method = "jaccard")
+# Remove empty lines
+e <- apply(otus, 1, function(x){sum(x == 0)})
+beta <- vegdist(t(otus[e != 194, ]), method = "jaccard")
 cmd <- cmdscale(d = beta)
-plot(cmd, col = as.factor(A$Meta$SEX))
+png("Figures/beta_jaccard_sex.png")
+plot(cmd, col = as.factor(meta$SEX), main = "Beta diversity",
+     xlab = "Dimension 1", ylab = "Dimension 2")
+legend("topleft", legend = c("male", "female"), fill = c("red", "black"))
+dev.off()
+png("Figures/beta_jaccard_location.png")
+plot(cmd, col = as.factor(meta$ileum), main = "Beta diversity",
+     xlab = "Dimension 1", ylab = "Dimension 2")
+legend("topleft", legend = c("ileum", "colon"), fill = c("red", "black"))
+dev.off()
+png("Figures/beta_jaccard_location.png")
+plot(cmd, col = as.factor(meta$IBD), main = "Beta diversity",
+     xlab = "Dimension 1", ylab = "Dimension 2")
+legend("topleft", legend = c("CD", "C", "UC"),
+       fill = c("red", "black", "green"))
+dev.off()
 
 # metagenomeSeq ####
 MR <- phyloseq_to_metagenomeSeq(phyloseq) # For testing and comparing data
