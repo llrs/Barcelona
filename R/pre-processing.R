@@ -22,23 +22,19 @@ meta$Counts <- colSums(counts)
 if (!all(colnames(counts) == meta$Name)) {
   stop("Reorder the samples to match the condition!!")
 }
-bcn <- counts[, meta$Study %in% c("BCN", "Controls")]
-# meta <- meta[meta$Study %in% c("BCN", "Controls"), ]
 
 # Remove duplicate samples
-replicates <- table(meta$Original)
-replicate_samples <- meta[meta$Original %in% names(replicates[replicates > 1]), ]
-
-## By keeping those more sequenced
-keepDup <- replicate_samples %>%
+# By keeping those more sequenced
+bcn_samples <- meta %>%
   group_by(Original) %>%
   filter(Counts == max(Counts)) %>%
-  arrange(desc(abs(Counts))) %>%
-  ungroup()
+  ungroup() %>%
+  filter(Study %in% c("BCN", "Controls")) %>%
+  pull(Name)
 
-nam <- c(names(replicates[replicates == 1]), keepDup$Name)
-otus <- bcn[, colnames(bcn) %in% nam]
-# meta <- meta[meta$Name %in% nam, ]
+# Subset and change the names
+otus <- counts[, bcn_samples]
+colnames(otus) <- meta$Original[match(colnames(otus), meta$Name)]
 
 # Working with RNAseq
 # From Juanjo: The original counts are ok, but I need to remove the reseq samples as they
@@ -67,21 +63,15 @@ colnames(rna) <- colnames2
 
 
 # Filter the samples
-
-colnames(otus) <- meta$Original[match(colnames(otus), meta$Name)]
 OTUs2 <- otus[, colnames(otus) %in% colnames(rna)]
 rna2 <- rna[, colnames(rna) %in% meta$Original]
 stopifnot(length(intersect(colnames(rna2), colnames(OTUs2))) == 128)
 
+# Subset meta to all the samples that belong to the study and were sequenced
 meta0 <- meta[meta$Original %in% unique(c(colnames(rna), colnames(otus))), ]
+
 # Reorder samples to match!
 OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
-
-o <- cbind(meta2$Original, colnames(OTUs2), colnames(rna2))
-k <- apply(o, 1, function(x){length(unique(o[1, ])) == 1})
-if (any(!k)) {
-  stop("Samples do not matched")
-}
 
 # normalize the data
 OTUs2 <- norm_RNAseq(OTUs2)
@@ -230,17 +220,20 @@ incidence <- t(incidence)
 
 # Treatment added as with aTNF-alpha
 meta5 <- mutate(meta5,
-                treatment = case_when(Time != "0" & !is.na(Time) ~ "Yes",
-                                      TRUE ~ "No"))
+                treatment = if_else(Time != "0" & !is.na(Time), "Yes", "No"),
+                IBD = if_else(is.na(IBD), "CONTROL", as.character(IBD)),
+                SEX = if_else(is.na(SEX) | SEX == "", "female", as.character(SEX))
+                )
 
 # Check that the metadata is in the right order
 meta6 <- droplevels(meta5[match(colnames(OTUs2), meta5$Original), ])
-stopifnot(sum(meta6$Original == colnames(OTUs2)) == 128) # Removing reseq reduces by 18 samples
+# Removing reseq reduces by 18 samples
+stopifnot(sum(meta6$Original == colnames(OTUs2)) == 128)
 stopifnot(sum(meta6$Original == colnames(rna2)) == 128)
 stopifnot(sum(colnames(OTUs2) == colnames(rna2)) == 128)
 
 A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta6)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
 saveRDS(meta6, "data_out/refined_meta.RDS")
-saveRDS(meta5, "data_out/refined_meta_all.RDS")
+saveRDS(meta5, "data_out/refined_meta_all.RDS") # It doesn't have info about trim samples
 saveRDS(A, "data/RGCCA_data.RDS")
