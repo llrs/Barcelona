@@ -11,3 +11,5 @@ data/Raw
 data/fastp
 data/fastQC
 Figures/*
+GSM*
+GSE*
