@@ -53,7 +53,7 @@ meta <- meta %>%
 # Input about the concentration used and location on the plates
 # From the post-sequencing.R files
 location <- readRDS("Samples_concentration_distribution.RDS")
-# Add th study and separate name
+# Add the study and separate name
 location <- location %>%
   mutate(
     Study = case_when(
@@ -66,7 +66,7 @@ location <- location %>%
   separate(Name, c("Original", "Replicate"), sep = "_", remove = FALSE)
 # Expected a warning of filling pieces
 
-# Merge the different dataset
+# Merge the different data set
 colnames(info_seq) <- c("Families", "Counts", "Families_wo_ctrls", "Counts_wo_ctrls")
 out <- merge(location, info_seq, by.x = "Name", by.y = "row.names", all = TRUE)
 out <- merge(out, meta, by.x = "Original", by.y = "Sample.Name_RNA", all.x = TRUE)
@@ -105,7 +105,8 @@ topMicro <- all_data %>%
   arrange(desc(mA)) %>%
   top_n(10, mA)
 theme_update(strip.background = element_blank())
-# Abundance plot about the top microorganisms on the three time
+
+# Abundance plot about the top microorganisms on the three times
 all_data %>%
   filter(Study == "BCN",
          Microorganism %in% topMicro$Microorganism) %>%
@@ -123,6 +124,11 @@ all_data %>%
   theme_bw() +
   theme(axis.text.x = element_text(angle = 60, hjust = 1),
         axis.ticks.x = element_blank())
+
+
+ggplot(all_data) +
+  geom_point(aes(Sample, Microorganism, size = ratio, col = IBD)) +
+  theme(panel.grid = element_blank())
 
 out$Concentr[is.na(out$Concentr)] <- 0.0005
 out$Exact_location[out$Exact_location == ""] <- NA
