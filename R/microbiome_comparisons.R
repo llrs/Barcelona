@@ -1,6 +1,7 @@
 # load data ####
 library("readxl")
 library("dplyr")
+library("tidyr")
 library("metagenomeSeq")
 library("integration")
 library("stringr")
@@ -8,6 +9,7 @@ library("purrr")
 library("ggplot2")
 library("lubridate")
 library("org.Hs.eg.db")
+library("forcats")
 
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
@@ -19,35 +21,103 @@ meta <- readRDS("data_out/refined_meta_all.RDS")
 ccounts <- colSums(counts)
 meta <- meta[meta$Name %in% colnames(counts), ]
 
-bcn <- counts[, meta$Study %in% c("BCN", "Controls")]
-meta <- meta[meta$Study %in% c("BCN", "Controls"), ]
-
-# Remove duplicate samples
-replicates <- table(meta$Original)
-replicate_samples <- meta[meta$Original %in% names(replicates[replicates > 1]), ]
-
-## By keeping those more sequenced
-keepDup <- replicate_samples %>%
-  group_by(Original) %>%
-  filter(Counts == max(Counts)) %>%
-  arrange(desc(abs(Counts))) %>%
-  ungroup()
-
-nam <- c(names(replicates[replicates == 1]), keepDup$Name)
-otus <- bcn[, colnames(bcn) %in% nam]
-meta <- meta[meta$Name %in% nam, ]
-
-# Filter the samples
-OTUs2 <- otus[, colnames(otus) %in% meta$Name]
-
-colnames(OTUs2) <- meta$Original[match(colnames(OTUs2), meta$Name)]
+# Subset and change the names
+otus <- counts[, colnames(counts) %in% meta$Name]
+colnames(otus) <- meta$Original[match(colnames(otus), meta$Name)]
 
 # Reorder samples to match!
-OTUs2 <- OTUs2[, match(meta$Original, colnames(OTUs2))]
+OTUs2 <- otus[, match(meta$Original, colnames(otus))]
 stopifnot(all(colnames(OTUs2) == meta$Original))
 OTUs2 <- as.matrix(OTUs2)
 
 rownames(meta) <- colnames(OTUs2)
+
+meta$ileum <- ifelse(meta$Exact_location == "ileum", "Ileum", "colon")
+# The missing values of Exact location
+meta$ileum[is.na(meta$ileum )] <- "colon"
+meta$SEX[is.na(meta$SEX) | meta$SEX == ""] <- "female"
+meta$Time[is.na(meta$Time)] <- "C"
+
+
+# Abundance ####
+# * Phylum level ####
+family <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv",
+                     check.names = FALSE)
+
+tidy_family <- family %>%
+  gather(Sample, Count, -'Sample name') %>%
+  mutate(Sample = str_remove(string = Sample, pattern = "_S.*"),
+         # Sample = str_replace_all(Sample, "-T-DM-", "-T-TTR-"),
+         ) %>%
+  filter(Sample %in% meta$Name) %>%
+  dplyr::rename(Family = "Sample name") %>%
+  filter(!str_detect(Sample, "^500") &
+           str_detect(Sample, "^C|^([0-9]+-w)")) %>%
+  group_by(Sample) %>%
+  mutate(ratio = Count/sum(Count)) %>%
+  ungroup() %>%
+  group_by(Family) %>%
+  ungroup() %>%
+  left_join(meta, by = c("Sample" = "Name")) %>%
+  mutate_if(is.factor, as.character) %>%
+  # mutate(IBD = case_when(grepl(x = Name, pattern = "^C") & is.na(IBD) ~ "CONTROL",
+  #                        TRUE ~ IBD)) %>%
+  arrange(IBD, Time, SEX) %>%
+  mutate(Sample = Original)
+
+
+
+
+tidy_family %>%
+  ggplot() +
+  geom_point(aes(Sample, Family, size = ratio, col = IBD)) +
+  theme(axis.text.x = element_blank())
+tidy_family %>%
+  arrange(IBD) %>%
+  ggplot() +
+  geom_col(aes(Sample, ratio, col = IBD, fill = Family)) +
+  theme(axis.text.x = element_blank()) +
+  labs(fill = element_blank()) +
+  guides(fill = FALSE) +
+  scale_y_continuous(labels = scales::percent, expand = expansion())
+tidy_family %>%
+  arrange(IBD) %>%
+  mutate(f2 = fct_lump_prop(as.factor(Family), prop = 0.01, w = ratio),
+         # Reorder such that the levels are according to the ratio on the plot
+         f2 = fct_reorder2(f2, Sample, ratio)) %>%
+  ggplot() +
+  geom_col(aes(Sample, ratio, fill = f2), col = NA) +
+  theme(axis.text.x = element_blank()) +
+  labs(fill = "Family", title = "Family abundance of the samples",
+       y = "Abundance") +
+  scale_fill_viridis_d() +
+  # guides(fill = FALSE) +
+  scale_y_continuous(labels = scales::percent, expand = expansion())
+
+# * Comparisons of genus ####
+
+tidy_genus <- tab %>%
+  gather(Sample, Count, -"Sample name") %>%
+  mutate(Sample = str_remove(string = Sample, pattern = "_S.*"),
+         # Sample = str_replace_all(Sample, "-T-DM-", "-T-TTR-"),
+  ) %>%
+  filter(Sample %in% meta$Name) %>%
+  dplyr::rename(Genus = "Sample name") %>%
+  filter(!str_detect(Sample, "^500") &
+           str_detect(Sample, "^C|^([0-9]+-w)")) %>%
+  group_by(Sample) %>%
+  mutate(ratio = Count/sum(Count)) %>%
+  ungroup() %>%
+  group_by(Genus) %>%
+  ungroup() %>%
+  left_join(meta, by = c("Sample" = "Name")) %>%
+  mutate_if(is.factor, as.character) %>%
+  # mutate(IBD = case_when(grepl(x = Name, pattern = "^C") & is.na(IBD) ~ "CONTROL",
+  #                        TRUE ~ IBD)) %>%
+  arrange(IBD, Time, SEX) %>%
+  mutate(Sample = Original)
+
+
 fd <- AnnotatedDataFrame(genus)
 # Create the object
 MR <- newMRexperiment(
@@ -56,7 +126,6 @@ MR <- newMRexperiment(
   featureData = fd
 )
 
-filterData(MR, present = 10, depth = 1000)
 p <- cumNormStatFast(MR)
 MR <- cumNorm(MR, p = p)
 assayData(MR)$relative <- assayData(MR)$counts / rowSums(assayData(MR)$counts)
@@ -78,7 +147,11 @@ ts <- pData(MRtrim)$Time
 ts[is.na(ts)] <- "0"
 mod <- data.frame(Time = paste0("t", ts))
 pData(MRtrim)$ileum <- ifelse(meta$Exact_location == "ileum", "Ileum", "colon")
-pData(MRtrim)$ileum[is.na(pData(MRtrim)$ileum )] <- "colon" # Checked manually on the database
+# Fill some gaps
+# Checked manually on the database
+pData(MRtrim)$ileum[is.na(pData(MRtrim)$ileum )] <- "colon"
+pData(MRtrim)$SEX[is.na(pData(MRtrim)$SEX) | pData(MRtrim)$SEX == ""] <- "female"
+
 ibd <- as.character(pData(MRtrim)$IBD)
 ibd[is.na(ibd)] <- "C"
 ibd[ibd == "CONTROL"] <- "C"
@@ -86,7 +159,7 @@ ibd <- factor(ibd, levels = c("C", "CD", "UC"))
 mod <- model.matrix(~ts+pData(MRtrim)$ileum+ibd)
 colnames(mod) <- c("(Intercept)", "ts14", "ts46", "Ileum", "CD","UC")
 
-# Comparisions ####
+
 fit <- fitZig(
   obj = MRtrim, mod = mod, useCSSoffset = FALSE,
   block = pData(MRtrim)$ID,
@@ -109,21 +182,92 @@ fit2 <- eBayes(fit2)
 
 dt <- decideTests(fit2)
 summary(dt)
-microb <- dt[, 4, drop = TRUE] != 0
 
-topTable(fit2, coef = "ileum_vs_colon", number = 43)
+tt <- topTable(fit2, coef = "ileum_vs_colon", number = Inf)
+rownames(tt) <- genus[rownames(tt), 1]
+write.csv(tt, "data_out/colon_vs_ileum.csv", row.names = TRUE)
 
 # Prevalence ####
 
 rownames(OTUs2) <- genus[, 1]
-meta$ileum <- ifelse(meta$Exact_location == "ileum", "Ileum", "colon")
-meta$Time[is.na(meta$Time)] <- "C"
 
-gen <- comb_prevalence(OTUs2, meta, c("Time"))
-gen_se <- comb_prevalence(OTUs2, meta, c("Time", "SEX"))
-tre <- comb_prevalence(OTUs2, meta, c("treatment"))
-se <- comb_prevalence(OTUs2, meta, c("SEX"))
-std <- comb_prevalence(OTUs2, meta, c("Study"))
-ibdm <- comb_prevalence(OTUs2, meta, c("IBD", "Time", "ileum"))
-ibd <- comb_prevalence(OTUs2, meta, c("IBD", "ileum"))
-loc <- comb_prevalence(OTUs2, meta, c("ileum"))
+filter_prev <- function(x) {
+  x <- x[apply(x, 1, function(y){any(y != 1)}), , drop = FALSE]
+  x[, apply(x, 2, function(y){any(y != 1)}), drop = FALSE]
+}
+gen <- filter_prev(comb_prevalence(OTUs2, meta, c("Time")))
+gen_se <- comb_prevalence(OTUs2, meta, c("Time", "SEX")) %>% filter_prev()
+tre <- comb_prevalence(OTUs2, meta, c("treatment")) %>% filter_prev()
+se <- comb_prevalence(OTUs2, meta, c("SEX")) %>% filter_prev()
+std <- comb_prevalence(OTUs2, meta, c("Study")) %>% filter_prev()
+ibdm <- comb_prevalence(OTUs2, meta, c("IBD", "Time", "ileum")) %>% filter_prev()
+ibd <- comb_prevalence(OTUs2, meta, c("IBD", "ileum")) %>% filter_prev()
+loc <- comb_prevalence(OTUs2, meta, c("ileum")) %>% filter_prev()
+write.csv(ibd, "data_out/prevalence_disease_location.csv", row.names = TRUE)
+
+extract_genus <- function(x) {
+  rownames(which(x < 0.05, arr.ind = TRUE))
+}
+(time_genus <- extract_genus(gen))
+(time_sex_genus <- extract_genus(gen_se))
+(tre_genus <- extract_genus(tre))
+(se_genus <- extract_genus(se))
+(std_genus <- extract_genus(std))
+(ibdm_genus <- extract_genus(ibdm))
+(ibd_genus <- extract_genus(ibd))
+(loc_genus <- extract_genus(loc))
+
+# So basically I need to plot for ibdm and ibd_genus
+
+tidy_genus %>%
+  mutate(presence = Count != 0) %>%
+  group_by(Genus, Time, ileum, presence) %>%
+  count() %>%
+  ungroup() %>%
+  group_by(Genus, ileum, Time) %>%
+  mutate(pos = sum(n), label = paste(n, collapse = "/")) %>%
+  ungroup() %>%
+  mutate(Time = if_else(is.na(Time), "C", Time)) %>%
+  filter(Genus %in% ibdm_genus) %>%
+  ggplot() +
+  geom_col(aes(fct_relevel(Time, c("C", "0", "14", "46")), n, fill = presence)) +
+  geom_text(aes(y = pos * 1.05, x = Time, label = label)) +
+  facet_grid(ileum~Genus, scales = "free") +
+  theme_minimal() +
+  labs(x = "Time", y = "Samples") +
+  theme(strip.background = element_rect(fill = "transparent", linetype = 0))
+
+
+tidy_genus %>%
+  mutate(presence = Count != 0) %>%
+  group_by(Genus, IBD, ileum, presence) %>%
+  count() %>%
+  ungroup() %>%
+  group_by(Genus, ileum, IBD) %>%
+  mutate(pos = sum(n), label = paste(n, collapse = "/")) %>%
+  ungroup() %>%
+  filter(Genus %in% ibd_genus) %>%
+  ggplot() +
+  geom_col(aes(IBD, n, fill = presence)) +
+  geom_text(aes(y = pos + 3, x = IBD, label = label)) +
+  facet_grid(ileum~Genus) +
+  theme_minimal() +
+  labs(x = "Disease", y = "Samples") +
+  theme(strip.background = element_rect(fill = "transparent", linetype = 0))
+
+tidy_genus %>%
+  mutate(presence = Count != 0) %>%
+  group_by(Genus, Study, presence) %>%
+  count() %>%
+  ungroup() %>%
+  group_by(Genus, Study) %>%
+  mutate(pos = sum(n), label = paste(n, collapse = "/")) %>%
+  ungroup() %>%
+  filter(Genus %in% std_genus) %>%
+  ggplot() +
+  geom_col(aes(Study, n, fill = presence)) +
+  geom_text(aes(y = pos + 3, x = Study, label = label)) +
+  theme_minimal() +
+  labs(x = "Disease", y = "Samples", title = std_genus) +
+  theme(strip.background = element_rect(fill = "transparent", linetype = 0))
+
