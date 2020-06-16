@@ -17,7 +17,7 @@ counts <- tab[, -1]
 genus <- tab[, 1, FALSE]
 
 # From the QC step
-meta <- readRDS("data_out/refined_meta_all.RDS")
+meta <- readRDS("data_out/refined_meta.RDS")
 ccounts <- colSums(counts)
 meta <- meta[meta$Name %in% colnames(counts), ]
 
@@ -80,13 +80,14 @@ tidy_family %>%
   labs(fill = element_blank()) +
   guides(fill = FALSE) +
   scale_y_continuous(labels = scales::percent, expand = expansion())
+
 tidy_family %>%
   arrange(IBD) %>%
   mutate(f2 = fct_lump_prop(as.factor(Family), prop = 0.01, w = ratio),
          # Reorder such that the levels are according to the ratio on the plot
          f2 = fct_reorder2(f2, Sample, ratio)) %>%
   ggplot() +
-  geom_col(aes(Sample, ratio, fill = f2), col = NA) +
+  geom_col(aes(Sample, ratio, fill = f2)) +
   theme(axis.text.x = element_blank()) +
   labs(fill = "Family", title = "Family abundance of the samples",
        y = "Abundance") +
@@ -205,8 +206,29 @@ ibd <- comb_prevalence(OTUs2, meta, c("IBD", "ileum")) %>% filter_prev()
 loc <- comb_prevalence(OTUs2, meta, c("ileum")) %>% filter_prev()
 write.csv(ibd, "data_out/prevalence_disease_location.csv", row.names = TRUE)
 
+
+p <- full_prevalence(OTUs2, meta, "Time")
+p <- full_prevalence(OTUs2, meta, "ileum")
+genus_ibd <- extract_genus(full_prevalence(OTUs2, meta, "IBD"))
+genus_study <- extract_genus(full_prevalence(OTUs2, meta, "Study"))
+
+meta2 <- meta
+meta2$ti <- paste(meta$Time, meta$ileum, sep = " & ")
+meta2$tI <- paste(meta$Time, meta$IBD, sep = " & ")
+meta2$t3 <- paste(meta$Time, meta$Study, sep = " & ")
+meta2$t4 <- paste(meta$Study, meta$IBD, sep = " & ")
+meta2$t5 <- paste(meta$ileum, meta$IBD, sep = " & ")
+meta2$t6 <- paste(meta$ileum, meta$Study, sep = " & ")
+genus_time_ileum <- extract_genus(full_prevalence(OTUs2, meta2, "ti"))
+genus_time_ibd <- extract_genus(full_prevalence(OTUs2, meta2, "tI"))
+genus_time_t3 <- extract_genus(full_prevalence(OTUs2, meta2, "t3"))
+genus_time_t4 <- extract_genus(full_prevalence(OTUs2, meta2, "t4"))
+genus_time_t5 <- extract_genus(full_prevalence(OTUs2, meta2, "t5"))
+genus_time_t6 <- extract_genus(full_prevalence(OTUs2, meta2, "t6"))
+
+
 extract_genus <- function(x) {
-  rownames(which(x < 0.05, arr.ind = TRUE))
+  unique(rownames(which(x < 0.05, arr.ind = TRUE)))
 }
 (time_genus <- extract_genus(gen))
 (time_sex_genus <- extract_genus(gen_se))
@@ -219,55 +241,55 @@ extract_genus <- function(x) {
 
 # So basically I need to plot for ibdm and ibd_genus
 
-tidy_genus %>%
-  mutate(presence = Count != 0) %>%
-  group_by(Genus, Time, ileum, presence) %>%
-  count() %>%
-  ungroup() %>%
-  group_by(Genus, ileum, Time) %>%
-  mutate(pos = sum(n), label = paste(n, collapse = "/")) %>%
-  ungroup() %>%
-  mutate(Time = if_else(is.na(Time), "C", Time)) %>%
-  filter(Genus %in% ibdm_genus) %>%
+
+count_prevalence <- function(tidy_data, selected_genus, ...) {
+  tidy_data %>%
+    mutate(presence = Count != 0,
+           Time = if_else(is.na(Time), "C", Time)) %>%
+    group_by(Genus, presence, ...) %>%
+    count() %>%
+    ungroup() %>%
+    group_by(Genus, ...) %>%
+    mutate(pos = sum(n), label = paste(n, collapse = "/")) %>%
+    ungroup() %>%
+    filter(Genus %in% selected_genus)
+}
+theme_set(theme_minimal())
+
+count_prevalence(tidy_genus, ibdm_genus, ileum, Time) %>%
   ggplot() +
   geom_col(aes(fct_relevel(Time, c("C", "0", "14", "46")), n, fill = presence)) +
   geom_text(aes(y = pos * 1.05, x = Time, label = label)) +
   facet_grid(ileum~Genus, scales = "free") +
-  theme_minimal() +
-  labs(x = "Time", y = "Samples") +
-  theme(strip.background = element_rect(fill = "transparent", linetype = 0))
+  labs(x = element_blank(), y = "Samples")
+ggsave("Figures/time_location_genus.png")
 
-
-tidy_genus %>%
-  mutate(presence = Count != 0) %>%
-  group_by(Genus, IBD, ileum, presence) %>%
-  count() %>%
-  ungroup() %>%
-  group_by(Genus, ileum, IBD) %>%
-  mutate(pos = sum(n), label = paste(n, collapse = "/")) %>%
-  ungroup() %>%
-  filter(Genus %in% ibd_genus) %>%
+count_prevalence(tidy_genus, ibd_genus, IBD, ileum) %>%
   ggplot() +
   geom_col(aes(IBD, n, fill = presence)) +
   geom_text(aes(y = pos + 3, x = IBD, label = label)) +
   facet_grid(ileum~Genus) +
-  theme_minimal() +
-  labs(x = "Disease", y = "Samples") +
-  theme(strip.background = element_rect(fill = "transparent", linetype = 0))
+  labs(x = element_blank(), y = "Samples")
+ggsave("Figures/coprothermobacter_prevotella_disease_location.png")
 
-tidy_genus %>%
-  mutate(presence = Count != 0) %>%
-  group_by(Genus, Study, presence) %>%
-  count() %>%
-  ungroup() %>%
-  group_by(Genus, Study) %>%
-  mutate(pos = sum(n), label = paste(n, collapse = "/")) %>%
-  ungroup() %>%
-  filter(Genus %in% std_genus) %>%
+count_prevalence(tidy_genus, std_genus, Study) %>%
   ggplot() +
   geom_col(aes(Study, n, fill = presence)) +
   geom_text(aes(y = pos + 3, x = Study, label = label)) +
-  theme_minimal() +
-  labs(x = "Disease", y = "Samples", title = std_genus) +
-  theme(strip.background = element_rect(fill = "transparent", linetype = 0))
+  labs(x = "Disease", y = "Samples", title = std_genus)
+ggsave("Figures/ralstonia_study.png")
+
+count_prevalence(tidy_genus, genus_ibd, IBD) %>%
+  ggplot() +
+  geom_col(aes(fct_relevel(IBD, c("CONTROL", "UC", "CD")), n, fill = presence)) +
+  geom_text(aes(y = pos + 3, x = IBD, label = label)) +
+  facet_grid(~Genus) +
+  labs(x = element_blank(), y = "Samples")
+ggsave("Figures/Prevotella_Ralstonia_disease.png")
+count_prevalence(tidy_genus, genus_study, Study) %>%
+  ggplot() +
+  geom_col(aes(Study, n, fill = presence)) +
+  geom_text(aes(y = pos + 3, x = Study, label = label)) +
+  labs(x = element_blank(), y = "Samples", title = genus_study)
+ggsave("Figures/Ralstonia_study.png")
 
