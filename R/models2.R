@@ -10,9 +10,9 @@ shrinkage[3] <- 1
 
 A$Meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX"))
 Ab <- lapply(A, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
-shrinkage[1:2] <- vapply(Ab[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.318145965316924
-dput(shrinkage)
-# shrinkage[1:2] <- c(0.11503779803812, 0.318145965316924)
+# shrinkage[1:2] <- vapply(Ab[1:2], tau.estimate, numeric(1L)) # c(0.322297910454825, 0.578751235707392)
+
+shrinkage[1:2] <- c(0.322297910454825, 0.578751235707392)
 
 
 out_model <- search_model(A = Ab, c1 = shrinkage, scheme = "centroid",
@@ -29,7 +29,7 @@ model2b_sgcca <- sgcca(A = Ab, c1 = shrinkage, scheme = "centroid", C = model2b,
                        verbose = FALSE, scale = FALSE, ncomp = rep(2, length(Ab)))
 
 model2b_sgcca <- improve.sgcca(model2b_sgcca, names(A))
-saveRDS(model2b_sgcca, "model2b_sgcca.RDS")
+saveRDS(model2b_sgcca, "data_out/model2b_sgcca.RDS")
 plot(model2b_sgcca$Y$RNAseq[, 1], model2b_sgcca$Y$Micro[, 1], col = meta$Exact_location)
 
 A3 <- model_RGCCA(meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX", "IBD"))

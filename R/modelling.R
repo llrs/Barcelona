@@ -14,9 +14,8 @@ model0 <- subSymm(C, "Micro", "RNAseq", 1)
 model0i <- subSymm(model0, 1, 1, 1)
 
 # We cannnot comput the tau.estimate for A[[1]]
-# (shrinkage <- sapply(A, tau.estimate))
-shrinkage <- c(0.285693348851943, 0, 1) #Calculated from the server for the data derived from original data
-shrinkage[2] <- tau.estimate(A2[[2]])
+shrinkage <- rep(1, 3) #Calculated from the server for the data derived from original data
+(shrinkage[1:2] <- sapply(A[1:2], tau.estimate))
 (min_shrinkage <- sapply(A, function(x) {
   1 / sqrt(ncol(x))
 }))
