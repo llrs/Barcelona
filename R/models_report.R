@@ -46,6 +46,11 @@ if (any(!ncol(A$RNAseq) == s[1, ])) {
   stop("Different size of data used for the models!")
 }
 
+s <- sapply(l, function(x){x$c1[1:2]})
+if (any(!apply(s, 1, function(x){length(unique(x)) == 1}))) {
+  stop("Different shrinkage used")
+}
+
 meta <- A$Meta %>%
   select(Original:UC_endoscopic_remission) %>% # Remove processing columns
   mutate(Ileum = case_when(Exact_location == "ileum" ~ "Ileum",
