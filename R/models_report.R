@@ -20,7 +20,7 @@ model2i <- models2[[4]]
 # bests according to TRIM
 # model2_best <- models2[[5]]
 # model2_besti <- models2[[6]]
-model2_best <- readRDS("model2b_sgcca.RDS") # Best according to antiTNF
+model2_best <- readRDS("data_out/model2b_sgcca.RDS") # Best according to antiTNF
 models3 <- readRDS("data_out/models3.RDS")
 model3 <- models3[[1]]
 model3i <- models3[[2]]
@@ -30,7 +30,22 @@ model3i <- models3[[2]]
 
 model3_best <- readRDS("data_out/model3_best_treatment.RDS") # Best according to antiTNF
 
+
+l <- list(model0, model0i, model1, model1i, model2, model2i, model2_best,
+          model3, model3i, model3_best)
+names(l) <- c("0", "0 i", "1", "1 i", "1.1", "1.1 i", "1.2", "2.1", "2.1 i", "2.2")
+s <- sapply(l, function(x){
+  c(nrow(x$a[[1]]), nrow(x$a[[2]]))
+})
+if (any(!apply(s, 1, function(x){length(unique(x)) == 1}))) {
+  stop("Different size of data => different data used for the models!")
+}
+
 A <- readRDS("data/RGCCA_data.RDS")
+if (any(!ncol(A$RNAseq) == s[1, ])) {
+  stop("Different size of data used for the models!")
+}
+
 meta <- A$Meta %>%
   select(Original:UC_endoscopic_remission) %>% # Remove processing columns
   mutate(Ileum = case_when(Exact_location == "ileum" ~ "Ileum",
@@ -186,17 +201,21 @@ df %>%
          Component == "comp1") %>%
   ggplot() +
   geom_point(aes(GE, M, color = Ileum, shape = Ileum)) +
-  labs(color = "Location", shape = "Location") +
+  labs(color = "Location", shape = "Location",
+       x = "Transcriptome", y = "Microrbiome") +
   facet_wrap(~Model, scales = "free")
 loc <- last_plot()
+ggsave("Figures/models_location.png", plot = loc)
 df %>%
   filter(!grepl(" i", Model),
          Component == "comp1") %>%
   ggplot() +
   geom_point(aes(GE, M, color = IBD, shape = IBD)) +
-  labs(color = "Disease", shape = "Disease") +
+  labs(color = "Disease", shape = "Disease",
+       x = "Transcriptome", y = "Microrbiome") +
   facet_wrap(~Model, scales = "free")
 dis <- last_plot()
+ggsave("Figures/models_disease.png", plot = dis)
 
 df %>%
   filter(!grepl(" i", Model),
@@ -217,14 +236,14 @@ a1GE <- tidyer(model1$a[[1]], "1", "GE")
 a1M <- tidyer(model1$a[[2]], "1", "M")
 a1iGE <- tidyer(model1i$a[[1]], "1 i", "GE")
 a1iM <- tidyer(model1i$a[[2]], "1 i", "M")
-a2GE <- tidyer(model2$a[[1]], "2", "GE")
-a2M <- tidyer(model2$a[[2]], "2", "M")
-a2bGE <- tidyer(model2_best$a[[1]], "2 best", "GE")
-a2bM <- tidyer(model2_best$a[[2]], "2 best", "M")
-a3GE <- tidyer(model3$a[[1]], "3", "GE")
-a3M <- tidyer(model3$a[[2]], "3", "M")
-a3bGE <- tidyer(model3_best$a[[1]], "3 best", "GE")
-a3bM <- tidyer(model3_best$a[[2]], "3 best", "M")
+a2GE <- tidyer(model2$a[[1]], "1.1", "GE")
+a2M <- tidyer(model2$a[[2]], "1.1", "M")
+a2bGE <- tidyer(model2_best$a[[1]], "1.2", "GE")
+a2bM <- tidyer(model2_best$a[[2]], "1.2", "M")
+a3GE <- tidyer(model3$a[[1]], "2.1", "GE")
+a3M <- tidyer(model3$a[[2]], "2.1", "M")
+a3bGE <- tidyer(model3_best$a[[1]], "2.2", "GE")
+a3bM <- tidyer(model3_best$a[[2]], "2.2", "M")
 
 a0GE <- cbind("Model" = "0", a0GE)
 a0M <- cbind("Model" = "0", a0M)

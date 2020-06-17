@@ -1,68 +1,66 @@
-library("integration")
-library("RGCCA")
-library("dplyr")
-library("inteRmodel")
-library("ggplot2")
+  library("integration")
+  library("RGCCA")
+  library("dplyr")
+  library("inteRmodel")
+  library("ggplot2")
 
-A <- readRDS("data/RGCCA_data.RDS")
-meta <- A$Meta
+  A <- readRDS("data/RGCCA_data.RDS")
+  meta <- A$Meta
 
-stopifnot(all(A$Meta$Original == rownames(A$RNAseq)))
-testing <- function(x, ...) {
-  tryCatch({
-  result.sgcca <- RGCCA::sgcca(C = x,
-                                scheme = "centroid",
-                                verbose = FALSE,
-                                scale = FALSE,
-                                ...)
-  analyze(result.sgcca)}
-  , error = function(x){NA})
-}
+  stopifnot(all(A$Meta$Original == rownames(A$RNAseq)))
+  testing <- function(x, ...) {
+    tryCatch({
+    result.sgcca <- RGCCA::sgcca(C = x,
+                                  scheme = "centroid",
+                                  verbose = FALSE,
+                                  scale = FALSE,
+                                  ...)
+    analyze(result.sgcca)}
+    , error = function(x){NA})
+  }
 
-meta$`Phenotype CD` <- tolower(meta$`Phenotype CD`)
-meta$`Location` <- tolower(meta$`Location`)
+  meta$`Phenotype CD` <- tolower(meta$`Phenotype CD`)
+  meta$`Location` <- tolower(meta$`Location`)
 
-Localization <- model_RGCCA(meta, c("Exact_location")) # With SESCD local it increase the AVE_inner
-Time <- model_RGCCA(meta, c("AgeDiag", "Age"))
-Demographics <- model_RGCCA(meta, c("ID","SEX"))
-Time$AgeDiag[is.na(Time$AgeDiag)] <- 0 # Time has NA values
-Time$aTNF <- ifelse(meta$Time == "0" | is.na(meta$Time), 0, 1)
-A2 <- A[1:2]
-A2$Demographics <- Demographics
-A2$Location <- Localization
-A2$Time <- Time
+  Localization <- model_RGCCA(meta, c("Exact_location")) # With SESCD local it increase the AVE_inner
+  Time <- model_RGCCA(meta, c("AgeDiag", "Age"))
+  Demographics <- model_RGCCA(meta, c("ID","SEX"))
+  Time$AgeDiag[is.na(Time$AgeDiag)] <- 0 # Time has NA values
+  Time$aTNF <- ifelse(meta$Time == "0" | is.na(meta$Time), 0, 1)
+  A2 <- A[1:2]
+  A2$Demographics <- Demographics
+  A2$Location <- Localization
+  A2$Time <- Time
 
-A2 <- clean_unvariable(A2)
-saveRDS(A2, "data_out/model3_BCN_treatment.RDS")
+  A2 <- clean_unvariable(A2)
+  saveRDS(A2, "data_out/model3_BCN_treatment.RDS")
 
-# shrinkage <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.318145965316924
-shrinkage <- rep(1, 5)
-names(shrinkage) <- names(A2)
-shrinkage[1:2] <- c(0.11503779803812, 0.318145965316924)
-shrinkage[3:5] <- 1
-names(shrinkage) <- names(A2)
-Ab <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
+  # shrinkage <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.318145965316924
+  shrinkage <- rep(1, 5)
+  names(shrinkage) <- names(A2)
+  shrinkage[1:2] <- c(0.11503779803812, 0.318145965316924)
+  shrinkage[3:5] <- 1
+  names(shrinkage) <- names(A2)
+  Ab <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 
+  # The design of model 3
+  C <- matrix(
+    0, ncol = length(Ab), nrow = length(Ab),
+    dimnames = list(names(Ab), names(Ab))
+  )
 
+  designs <- weight_design(weights = 3, size = length(Ab))
+  keep <- vapply(designs, correct, logical(1L))
+  designs <- designs[keep]
 
-# The design of model 3
-C <- matrix(
-  0, ncol = length(Ab), nrow = length(Ab),
-  dimnames = list(names(Ab), names(Ab))
-)
-
-designs <- weight_design(weights = 3, size = length(Ab))
-keep <- vapply(designs, correct, logical(1L))
-designs <- designs[keep]
-
-# Subset the designs
-# set.seed(46726279)
-# s <- sample(designs, size = min(length(designs)*.1, 1000))
-out <- sapply(designs, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-out2 <- out[lengths(out) == 24]
-out2 <- simplify2array(out2)
-out2 <- as.data.frame(t(out2))
-saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
+  # Subset the designs
+  # set.seed(46726279)
+  # s <- sample(designs, size = min(length(designs)*.1, 1000))
+  out <- sapply(designs, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+  out2 <- out[lengths(out) == 24]
+  out2 <- simplify2array(out2)
+  out2 <- as.data.frame(t(out2))
+  saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
 
 # out %>%
 #   top_n(5, AVE_inner) %>%
