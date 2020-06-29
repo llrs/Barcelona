@@ -31,9 +31,9 @@ model3i <- models3[[2]]
 model3_best <- readRDS("data_out/model3_best_treatment.RDS") # Best according to antiTNF
 
 
-l <- list(model0, model0i, model1, model1i, model2, model2i, model2_best,
-          model3, model3i, model3_best)
-names(l) <- c("0", "0 i", "1", "1 i", "1.1", "1.1 i", "1.2", "2.1", "2.1 i", "2.2")
+l <- list("0" = model0, "0 i" = model0i, "1" = model1, "1 i" = model1i,
+          "1.1" = model2, "1.1 i" = model2i,  "1.2" = model2_best,
+          "2" = model3, "2 i" = model3i, "2.2" = model3_best)
 s <- sapply(l, function(x){
   c(nrow(x$a[[1]]), nrow(x$a[[2]]))
 })
@@ -48,8 +48,13 @@ if (any(!ncol(A$RNAseq) == s[1, ])) {
 
 s <- sapply(l, function(x){x$c1[1:2]})
 if (any(!apply(s, 1, function(x){length(unique(x)) == 1}))) {
-  stop("Different shrinkage used")
+  # It might incorrectly report that there are different shrinkage used
+  print(apply(s, 1, function(x){unique(x)}))
+  warning("Different shrinkage used")
 }
+
+inner_ave <- sapply(sapply(l, getElement, name = "AVE")[3, ],
+                         function(x){x[1]})
 
 meta <- A$Meta %>%
   select(Original:UC_endoscopic_remission) %>% # Remove processing columns
@@ -208,17 +213,27 @@ df %>%
   geom_point(aes(GE, M, color = Ileum, shape = Ileum)) +
   labs(color = "Location", shape = "Location",
        x = "Transcriptome", y = "Microrbiome") +
-  facet_wrap(~Model, scales = "free")
+  facet_wrap(~Model, scales = "free") +
+  scale_x_continuous(breaks = seq(-0.75, 0.75, by = 0.25)) +
+  scale_y_continuous(breaks = seq(-0.75, 0.75, by = 0.25)) +
+  theme(panel.grid.minor = element_blank(), axis.ticks = element_blank(),
+        axis.text = element_blank())
 loc <- last_plot()
 ggsave("Figures/models_location.png", plot = loc)
 df %>%
   filter(!grepl(" i", Model),
          Component == "comp1") %>%
+  mutate(IBD = ifelse(is.na(IBD), "C", IBD),
+         IBD = forcats::fct_relevel(IBD, c("UC", "C", "CD"))) %>%
   ggplot() +
   geom_point(aes(GE, M, color = IBD, shape = IBD)) +
   labs(color = "Disease", shape = "Disease",
        x = "Transcriptome", y = "Microrbiome") +
-  facet_wrap(~Model, scales = "free")
+  facet_wrap(~Model, scales = "free") +
+  scale_x_continuous(breaks = seq(-0.75, 0.75, by = 0.25)) +
+  scale_y_continuous(breaks = seq(-0.75, 0.75, by = 0.25)) +
+  theme(panel.grid.minor = element_blank(), axis.ticks = element_blank(),
+        axis.text = element_blank())
 dis <- last_plot()
 ggsave("Figures/models_disease.png", plot = dis)
 
@@ -229,7 +244,12 @@ df %>%
   ggplot() +
   geom_point(aes(GE, M, color = aTNF, shape = Ileum)) +
   labs(shape = "Location") +
-  facet_wrap(~Model, scales = "free")
+  facet_wrap(~Model, scales = "free") +
+  labs(x = "Transcriptome", y = "Microrbiome") +
+  scale_x_continuous(breaks = seq(-0.75, 0.75, by = 0.25)) +
+  scale_y_continuous(breaks = seq(-0.75, 0.75, by = 0.25)) +
+  theme(panel.grid.minor = element_blank(), axis.ticks = element_blank(),
+        axis.text = element_blank())
 ggsave("Figures/models_colored_aTNF.png")
 
 # Look the weights ####
