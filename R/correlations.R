@@ -13,8 +13,8 @@ library("org.Hs.eg.db")
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
-genus <- tab[, 1, FALSE]
-write.csv(genus, "data/genus.csv")
+genus_all <- tab[, 1, FALSE]
+write.csv(genus_all, "data/genus.csv")
 
 # From the QC step
 meta <- readRDS("data_out/info_samples.RDS")
@@ -26,6 +26,7 @@ if (!all(colnames(counts) == meta$Name)) {
 }
 bcn <- counts[, meta$Study %in% c("BCN", "Controls")]
 meta <- meta[meta$Study %in% c("BCN", "Controls"), ]
+m <- readRDS("data_out/refined_meta_all.RDS")
 
 # Remove duplicate samples
 replicates <- table(meta$Original)
@@ -40,7 +41,6 @@ keepDup <- replicate_samples %>%
 
 nam <- c(names(replicates[replicates == 1]), keepDup$Name)
 otus <- bcn[, colnames(bcn) %in% nam]
-meta <- meta[meta$Name %in% nam, ]
 
 # Working with RNAseq
 # From Juanjo: The original counts are ok, but I need to remove the reseq samples as they
@@ -77,30 +77,93 @@ colnames(OTUs2) <- meta2$Original[match(colnames(OTUs2), meta2$Name)]
 
 # Reorder samples to match!
 meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
+meta3 <- readRDS("data_out/refined_meta.RDS")
+meta3$IBD <- as.character(meta3$IBD)
+meta3$IBD[is.na(meta3$IBD)] <- "C"
+stopifnot(all(meta3$Original == meta2$Original))
+meta2 <- meta3
 OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
+rownames(meta2) <- 1:nrow(meta2)
 
 OTUs2 <- as.matrix(OTUs2)
 rna2 <- as.matrix(rna2)
 
+# * ileum ####
+keep_ileum <- meta2$Exact_location %in% "ileum"
+rna_ileum <- rna2[, keep_ileum]
+otus_ileum <- OTUs2[, keep_ileum]
+
+abundance <- 0.005 # 0.5%
+ab <- prop.table(otus_ileum, 2)
+b_ileum <- rowSums(ab > abundance)
+
+otus_ileum <- norm_RNAseq(otus_ileum)
+rna_ileum <- norm_RNAseq(rna_ileum)
+rna_ileum <- filter_RNAseq(rna_ileum)
+
+# * colon ####
+keep_colon <- !keep_ileum
+keep_uc <- meta2$IBD %in% "UC"
+rna_colon <- rna2[, keep_colon]
+otus_colon <- OTUs2[, keep_colon]
+
+abundance <- 0.005 # 0.5%
+ab <- prop.table(otus_colon, 2)
+b_colon <- rowSums(ab > abundance)
+
+otus_colon <- norm_RNAseq(otus_colon)
+rna_colon <- norm_RNAseq(rna_colon)
+rna_colon <- filter_RNAseq(rna_colon)
+
+# ** Colon CD C ####
+
+rna_colon_CD <- rna2[, keep_colon | !keep_uc]
+otus_colon_CD <- OTUs2[, keep_colon | !keep_uc]
+
+abundance <- 0.005 # 0.5%
+ab <- prop.table(otus_colon_CD, 2)
+b_colon_CD <- rowSums(ab > abundance)
+
+otus_colon_CD <- norm_RNAseq(otus_colon_CD)
+rna_colon_CD <- norm_RNAseq(rna_colon_CD)
+rna_colon_CD <- filter_RNAseq(rna_colon_CD)
+
+# ** Colon UC C ####
+rna_colon_UC <- rna2[, keep_colon | keep_uc]
+otus_colon_UC <- OTUs2[, keep_colon | keep_uc]
+
+abundance <- 0.005 # 0.5%
+ab <- prop.table(otus_colon_UC, 2)
+b_colon_UC <- rowSums(ab > abundance)
+
+otus_colon_UC <- norm_RNAseq(otus_colon_UC)
+rna_colon_UC <- norm_RNAseq(rna_colon_UC)
+rna_colon_UC <- filter_RNAseq(rna_colon_UC)
+
+# * All ####
 abundance <- 0.005 # 0.5%
 a <- prop.table(OTUs2, 2)
-b <- rowSums(a > abundance)
+b_all <- rowSums(a > abundance)
 
-OTUs2 <- norm_RNAseq(OTUs2)
-rna2 <- norm_RNAseq(rna2)
-rna2 <- filter_RNAseq(rna2)
+OTUs_all <- norm_RNAseq(OTUs2)
+rna_all <- norm_RNAseq(rna2)
+rna_all <- filter_RNAseq(rna_all)
 
 # Filter by model ####
-model <- models2 <- readRDS("data_out/models2.RDS")
-model <- model[[3]]
+model <- readRDS("data_out/model2b_sgcca.RDS")
 w_rna <- model$a[[1]][, 1]
 names_rna <- names(w_rna)[w_rna != 0]
 w_dna <- model$a[[2]][, 1]
 
 
+# Select options ####
+OTUs2 <- otus_colon_UC
+rna2 <- rna_colon_UC
+b <- b_colon_UC
+header <- "20200703_colon_UC_"
+
 fOTUS2 <- OTUs2[w_dna != 0 & b != 0, ]
 frna2 <- rna2[rownames(rna2) %in% names_rna, ]
-
 
 # Fix names ####
 # Gene names instead of ENSEMBL
@@ -108,27 +171,25 @@ s <- mapIds(org.Hs.eg.db, keys = trimVer(rownames(frna2)), keytype = "ENSEMBL", 
 frna2 <- frna2[!is.na(s), ]
 rownames(frna2) <- s[!is.na(s)]
 # Tax genus instead of numbers
-rownames(fOTUS2) <- as.character(genus[w_dna != 0  & b != 0, 1])
-
+rownames(fOTUS2) <- as.character(genus_all[w_dna != 0  & b != 0, 1])
 
 # Correlations ####
 df <- expand.grid(genus = rownames(fOTUS2), genes = rownames(frna2),
                   stringsAsFactors = FALSE)
 df$r <- 0
 df$p.value <- 1
+
 # Remove big outliers
 qrna <- quantile(frna2, c(0.05, 0.95))
 qdna <- quantile(fOTUS2, c(0.05, 0.95))
+
+# Select a threshold ####
 
 rm_outliers <- function(x, quantiles) {
   x[x < quantiles[1]] <- NA
   x[x > quantiles[2]] <- NA
   x[x == 0] <- NA
   x
-}
-
-less_precision <- function(x) {
-  var(x, na.rm = TRUE) < .Machine$double.eps
 }
 
 outliers <- function(x) {
@@ -140,11 +201,14 @@ outliers <- function(x) {
   }
 }
 
-pdf("Figures/correlations_genus.pdf")
+less_precision <- function(x) {
+  var(x, na.rm = TRUE) < .Machine$double.eps
+}
+
+pdf(paste0("Figures/", header, "correlations_genus.pdf"))
 for (i in seq_len(nrow(df))) {
   genus <- df$genus[i]
   gene <- df$genes[i]
-
 
   x <- frna2[gene, ]
   x <- rm_outliers(x, qrna)
@@ -174,7 +238,6 @@ for (i in seq_len(nrow(df))) {
     df$p.value[i] <- co$p.value
     df$r[i] <- co$estimate
     if (co$p.value < 0.05) {
-
       plot(x, y, xlab = gene, ylab = genus,
            main = paste0("Correlation: ",
                          round(co$estimate, 4), "\n",
@@ -184,15 +247,12 @@ for (i in seq_len(nrow(df))) {
   silent = TRUE
   )
 }
+
 dev.off()
 df <- df[!is.na(df$r), ]
-saveRDS(df, "data_out/correlations.RDS")
+saveRDS(df, paste0("data_out/", header, "correlations.RDS"))
 
-#  Not workking because n < length p.values
-# df$fdr <- p.adjust(df$p.value, method = "fdr",
-                   # n = max(c(nrow(frna2), nrow(fOTUS2))))
-
-# Plot distributions ####
+# * Plot distributions ####
 df %>%
   group_by(genus) %>%
   summarise(n = sum(p.value < 0.05)) %>%
@@ -221,24 +281,23 @@ df %>%
   labs(title = "Distribution of significant correlations",
        x = "Correlation (absolute value)", y = "n")
 
-# Select a threshold ####
+# ** Higher correlations ####
 q <- quantile(abs(df$r[df$p.value < 0.05 & !is.na(df$p.value)]), 0.99)
 sum(abs(df$r) > q & !is.na(df$p.value))
 
 # Redo just those correlations above the threshold to be able to check that they are fit
 subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
 subDF <- subDF[order(subDF$p.value, decreasing = FALSE), c("genes", "genus")]
-meta <- readRDS("data_out/refined_meta.RDS")
-write.csv(meta, "data_out/refined_meta.csv", na = "", row.names = FALSE)
+# write.csv(meta, "data_out/20200629_refined_meta.csv", na = "", row.names = FALSE)
 
-subMeta <- meta[match(colnames(frna2), meta$Original), ]
-loc <- ifelse(meta$Exact_location == "ileum", "ileum", "colon")
+subMeta <- meta3[match(colnames(frna2), meta3$Original), ]
+loc <- ifelse(subMeta$Exact_location == "ileum", "ileum", "colon")
 loc <- factor(loc, levels = c("colon", "ileum"))
 ibd <- as.character(subMeta$IBD)
 ibd[is.na(ibd)] <- "C"
 ibd <- factor(ibd, levels = c("C", "CD", "UC"))
 
-pdf("Figures/high_correlations_genus.pdf")
+pdf(paste0("Figures/", header, "high_correlations_genus.pdf"))
 for (i in seq_len(nrow(subDF))) {
   genus <- subDF$genus[i]
   gene <- subDF$genes[i]
@@ -286,10 +345,12 @@ for (i in seq_len(nrow(subDF))) {
 }
 dev.off()
 subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
-write.csv(subDF, "data_out/high_correlations_genus.csv",
+write.csv(subDF, paste0("data_out/", header, "high_correlations_genus.csv"),
           na = "", row.names = FALSE)
 
 subDF %>%
-  count(genus, sort = TRUE)
+  count(genus, sort = TRUE) %>%
+  head()
 subDF %>%
-  count(genes, sort = TRUE)
+  count(genes, sort = TRUE) %>%
+  head()
