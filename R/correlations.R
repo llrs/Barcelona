@@ -1,4 +1,4 @@
-library("ggplot2")
+`library("ggplot2")
 # load data ####
 library("readxl")
 library("dplyr")
@@ -104,6 +104,7 @@ rna_ileum <- filter_RNAseq(rna_ileum)
 # * colon ####
 keep_colon <- !keep_ileum
 keep_uc <- meta2$IBD %in% "UC"
+keep_c <- meta2$IBD %in% "C"
 rna_colon <- rna2[, keep_colon]
 otus_colon <- OTUs2[, keep_colon]
 
@@ -117,8 +118,8 @@ rna_colon <- filter_RNAseq(rna_colon)
 
 # ** Colon CD C ####
 
-rna_colon_CD <- rna2[, keep_colon | !keep_uc]
-otus_colon_CD <- OTUs2[, keep_colon | !keep_uc]
+rna_colon_CD <- rna2[, keep_colon  & !keep_uc]
+otus_colon_CD <- OTUs2[, keep_colon  & !keep_uc]
 
 abundance <- 0.005 # 0.5%
 ab <- prop.table(otus_colon_CD, 2)
@@ -129,8 +130,8 @@ rna_colon_CD <- norm_RNAseq(rna_colon_CD)
 rna_colon_CD <- filter_RNAseq(rna_colon_CD)
 
 # ** Colon UC C ####
-rna_colon_UC <- rna2[, keep_colon | keep_uc]
-otus_colon_UC <- OTUs2[, keep_colon | keep_uc]
+rna_colon_UC <- rna2[, keep_colon & (keep_uc | keep_c)]
+otus_colon_UC <- OTUs2[, keep_colon & (keep_uc | keep_c)]
 
 abundance <- 0.005 # 0.5%
 ab <- prop.table(otus_colon_UC, 2)
@@ -157,17 +158,18 @@ w_dna <- model$a[[2]][, 1]
 
 
 # Select options ####
-OTUs2 <- otus_colon_UC
-rna2 <- rna_colon_UC
+sOTUs2 <- otus_colon_UC
+srna2 <- rna_colon_UC
 b <- b_colon_UC
 header <- "20200703_colon_UC_"
 
-fOTUS2 <- OTUs2[w_dna != 0 & b != 0, ]
-frna2 <- rna2[rownames(rna2) %in% names_rna, ]
+fOTUS2 <- sOTUs2[w_dna != 0 & b != 0, ]
+frna2 <- srna2[rownames(srna2) %in% names_rna, ]
 
 # Fix names ####
 # Gene names instead of ENSEMBL
-s <- mapIds(org.Hs.eg.db, keys = trimVer(rownames(frna2)), keytype = "ENSEMBL", column = "SYMBOL")
+s <- mapIds(org.Hs.eg.db, keys = trimVer(rownames(frna2)),
+            keytype = "ENSEMBL", column = "SYMBOL")
 frna2 <- frna2[!is.na(s), ]
 rownames(frna2) <- s[!is.na(s)]
 # Tax genus instead of numbers
