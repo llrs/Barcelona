@@ -1,4 +1,3 @@
-`library("ggplot2")
 # load data ####
 library("readxl")
 library("dplyr")
