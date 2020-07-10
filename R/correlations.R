@@ -160,7 +160,7 @@ w_dna <- model$a[[2]][, 1]
 sOTUs2 <- otus_colon_UC
 srna2 <- rna_colon_UC
 b <- b_colon_UC
-header <- "20200703_colon_UC_"
+header <- "20200710_colon_UC_"
 
 fOTUS2 <- sOTUs2[w_dna != 0 & b != 0, ]
 frna2 <- srna2[rownames(srna2) %in% names_rna, ]
@@ -179,32 +179,7 @@ df <- expand.grid(genus = rownames(fOTUS2), genes = rownames(frna2),
                   stringsAsFactors = FALSE)
 df$r <- 0
 df$p.value <- 1
-
-# Remove big outliers
-qrna <- quantile(frna2, c(0.05, 0.95))
-qdna <- quantile(fOTUS2, c(0.05, 0.95))
-
-# Select a threshold ####
-
-rm_outliers <- function(x, quantiles) {
-  x[x < quantiles[1]] <- NA
-  x[x > quantiles[2]] <- NA
-  x[x == 0] <- NA
-  x
-}
-
-outliers <- function(x) {
-  # Filter based on NA values on NAs present and amount of values
-  if (sum(!is.na(x)) < 3 | sum(!is.na(x))/length(x) < 0.15 | less_precision(x)) {
-    TRUE
-  } else {
-    FALSE
-  }
-}
-
-less_precision <- function(x) {
-  var(x, na.rm = TRUE) < .Machine$double.eps
-}
+df <- arrange(df, genus)
 
 pdf(paste0("Figures/", header, "correlations_genus.pdf"))
 for (i in seq_len(nrow(df))) {
@@ -212,16 +187,8 @@ for (i in seq_len(nrow(df))) {
   gene <- df$genes[i]
 
   x <- frna2[gene, ]
-  x <- rm_outliers(x, qrna)
-  if (outliers(x)) {
-    next
-  }
-
   y <- fOTUS2[genus, ]
-  y <- rm_outliers(y, qdna)
-  if (outliers(y)) {
-    next
-  }
+
   names(x) <- NULL
   names(y) <- NULL
 
@@ -288,7 +255,7 @@ sum(abs(df$r) > q & !is.na(df$p.value))
 
 # Redo just those correlations above the threshold to be able to check that they are fit
 subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
-subDF <- subDF[order(subDF$p.value, decreasing = FALSE), c("genes", "genus")]
+subDF <- subDF[order(subDF$genus, subDF$p.value, decreasing = FALSE), c("genes", "genus")]
 # write.csv(meta, "data_out/20200629_refined_meta.csv", na = "", row.names = FALSE)
 
 subMeta <- meta3[match(colnames(frna2), meta3$Original), ]
