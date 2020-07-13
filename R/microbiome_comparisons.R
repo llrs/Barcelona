@@ -43,6 +43,11 @@ meta$Time[is.na(meta$Time)] <- "C"
 # * Family level ####
 family <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv",
                      check.names = FALSE)
+family_tax <- family[, 1]
+fam <- family[ , -1]
+colnames(fam) <- gsub("_S.*", "", colnames(fam)) # Remove trailing numbers
+fam2 <- fam[, match(meta$Original, colnames(fam))]
+fam2 <- as.matrix(fam2)
 
 tidy_family <- family %>%
   gather(Sample, Count, -'Sample name') %>%
@@ -190,12 +195,31 @@ write.csv(tt, "data_out/colon_vs_ileum.csv", row.names = TRUE)
 
 # Prevalence ####
 
-rownames(OTUs2) <- genus[, 1]
-
 filter_prev <- function(x) {
   x <- x[apply(x, 1, function(y){any(y != 1)}), , drop = FALSE]
   x[, apply(x, 2, function(y){any(y != 1)}), drop = FALSE]
 }
+
+extract_genus <- function(x) {
+  unique(rownames(which(x < 0.05, arr.ind = TRUE)))
+}
+
+count_prevalence <- function(tidy_data, selected_genus, ...) {
+  tidy_data %>%
+    mutate(presence = Count != 0,
+           Time = if_else(is.na(Time), "C", Time)) %>%
+    group_by(Genus, presence, ...) %>%
+    count() %>%
+    ungroup() %>%
+    group_by(Genus, ...) %>%
+    mutate(pos = sum(n), label = paste(n, collapse = "/")) %>%
+    ungroup() %>%
+    filter(Genus %in% selected_genus)
+}
+
+# * genus level ####
+rownames(OTUs2) <- genus[, 1]
+
 gen <- filter_prev(comb_prevalence(OTUs2, meta, c("Time")))
 gen_se <- comb_prevalence(OTUs2, meta, c("Time", "SEX")) %>% filter_prev()
 tre <- comb_prevalence(OTUs2, meta, c("treatment")) %>% filter_prev()
@@ -205,7 +229,6 @@ ibdm <- comb_prevalence(OTUs2, meta, c("IBD", "Time", "ileum")) %>% filter_prev(
 ibd <- comb_prevalence(OTUs2, meta, c("IBD", "ileum")) %>% filter_prev()
 loc <- comb_prevalence(OTUs2, meta, c("ileum")) %>% filter_prev()
 write.csv(ibd, "data_out/prevalence_disease_location.csv", row.names = TRUE)
-
 
 p <- full_prevalence(OTUs2, meta, "Time")
 p <- full_prevalence(OTUs2, meta, "ileum")
@@ -227,9 +250,7 @@ genus_time_t5 <- extract_genus(full_prevalence(OTUs2, meta2, "t5"))
 genus_time_t6 <- extract_genus(full_prevalence(OTUs2, meta2, "t6"))
 
 
-extract_genus <- function(x) {
-  unique(rownames(which(x < 0.05, arr.ind = TRUE)))
-}
+
 (time_genus <- extract_genus(gen))
 (time_sex_genus <- extract_genus(gen_se))
 (tre_genus <- extract_genus(tre))
@@ -242,18 +263,7 @@ extract_genus <- function(x) {
 # So basically I need to plot for ibdm and ibd_genus
 
 
-count_prevalence <- function(tidy_data, selected_genus, ...) {
-  tidy_data %>%
-    mutate(presence = Count != 0,
-           Time = if_else(is.na(Time), "C", Time)) %>%
-    group_by(Genus, presence, ...) %>%
-    count() %>%
-    ungroup() %>%
-    group_by(Genus, ...) %>%
-    mutate(pos = sum(n), label = paste(n, collapse = "/")) %>%
-    ungroup() %>%
-    filter(Genus %in% selected_genus)
-}
+
 theme_set(theme_minimal())
 
 count_prevalence(tidy_genus, ibdm_genus, ileum, Time) %>%
@@ -293,3 +303,47 @@ count_prevalence(tidy_genus, genus_study, Study) %>%
   labs(x = element_blank(), y = "Samples", title = genus_study)
 ggsave("Figures/Ralstonia_study.png")
 
+
+
+# * family level ####
+rownames(fam2) <- family_tax
+
+gen <- filter_prev(comb_prevalence(fam2, meta, c("Time")))
+gen_se <- comb_prevalence(fam2, meta, c("Time", "SEX")) %>% filter_prev()
+tre <- comb_prevalence(fam2, meta, c("treatment")) %>% filter_prev()
+se <- comb_prevalence(fam2, meta, c("SEX")) %>% filter_prev()
+std <- comb_prevalence(fam2, meta, c("Study")) %>% filter_prev()
+ibdm <- comb_prevalence(fam2, meta, c("IBD", "Time", "ileum")) %>% filter_prev()
+ibd <- comb_prevalence(fam2, meta, c("IBD", "ileum")) %>% filter_prev()
+loc <- comb_prevalence(fam2, meta, c("ileum")) %>% filter_prev()
+write.csv(ibd, "data_out/prevalence_disease_family_location.csv", row.names = TRUE)
+
+
+(p <- extract_genus(full_prevalence(fam2, meta, "Time")))
+(p <- extract_genus(full_prevalence(fam2, meta, "ileum")))
+(genus_ibd <- extract_genus(full_prevalence(fam2, meta, "IBD")))
+(genus_study <- extract_genus(full_prevalence(fam2, meta, "Study")))
+
+meta2 <- meta
+meta2$ti <- paste(meta$Time, meta$ileum, sep = " & ")
+meta2$tI <- paste(meta$Time, meta$IBD, sep = " & ")
+meta2$t3 <- paste(meta$Time, meta$Study, sep = " & ")
+meta2$t4 <- paste(meta$Study, meta$IBD, sep = " & ")
+meta2$t5 <- paste(meta$ileum, meta$IBD, sep = " & ")
+meta2$t6 <- paste(meta$ileum, meta$Study, sep = " & ")
+(family_time_ileum <- extract_genus(full_prevalence(fam2, meta2, "ti")))
+(family_time_ibd <- extract_genus(full_prevalence(fam2, meta2, "tI")))
+(family_time_t3 <- extract_genus(full_prevalence(fam2, meta2, "t3")))
+(family_time_t4 <- extract_genus(full_prevalence(fam2, meta2, "t4")))
+(family_time_t5 <- extract_genus(full_prevalence(fam2, meta2, "t5")))
+(family_time_t6 <- extract_genus(full_prevalence(fam2, meta2, "t6")))
+
+
+(time_fam <- extract_genus(gen))
+(time_sex_fam <- extract_genus(gen_se))
+(tre_fam <- extract_genus(tre))
+(se_fam <- extract_genus(se))
+(std_fam <- extract_genus(std))
+(ibdm_fam <- extract_genus(ibdm))
+(ibd_fam <- extract_genus(ibd))
+(loc_fam <- extract_genus(loc))
