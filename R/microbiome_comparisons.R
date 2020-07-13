@@ -40,7 +40,7 @@ meta$Time[is.na(meta$Time)] <- "C"
 
 
 # Abundance ####
-# * Phylum level ####
+# * Family level ####
 family <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv",
                      check.names = FALSE)
 
@@ -95,7 +95,7 @@ tidy_family %>%
   # guides(fill = FALSE) +
   scale_y_continuous(labels = scales::percent, expand = expansion())
 
-# * Comparisons of genus ####
+# * genus level ####
 
 tidy_genus <- tab %>%
   gather(Sample, Count, -"Sample name") %>%
