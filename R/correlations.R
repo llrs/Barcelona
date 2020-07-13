@@ -9,11 +9,12 @@ library("ggplot2")
 library("lubridate")
 library("org.Hs.eg.db")
 
-tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
+tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
-genus_all <- tab[, 1, FALSE]
-write.csv(genus_all, "data/genus.csv")
+family_all <- tab[, 1, FALSE]
+rownames(counts) <- family_all[, 1]
+write.csv(family_all, "data/family.csv")
 
 # From the QC step
 meta <- readRDS("data_out/info_samples.RDS")
@@ -157,12 +158,12 @@ w_dna <- model$a[[2]][, 1]
 
 
 # Select options ####
-sOTUs2 <- otus_colon_UC
-srna2 <- rna_colon_UC
-b <- b_colon_UC
-header <- "20200710_colon_UC_"
+sOTUs2 <- otus_ileum
+srna2 <- rna_ileum
+b <- b_ileum
+header <- "20200713_ileum_family_"
 
-fOTUS2 <- sOTUs2[w_dna != 0 & b != 0, ]
+fOTUS2 <- sOTUs2[b != 0, ]
 frna2 <- srna2[rownames(srna2) %in% names_rna, ]
 
 # Fix names ####
@@ -171,23 +172,29 @@ s <- mapIds(org.Hs.eg.db, keys = trimVer(rownames(frna2)),
             keytype = "ENSEMBL", column = "SYMBOL")
 frna2 <- frna2[!is.na(s), ]
 rownames(frna2) <- s[!is.na(s)]
-# Tax genus instead of numbers
-rownames(fOTUS2) <- as.character(genus_all[w_dna != 0  & b != 0, 1])
+# Tax family instead of numbers
+rownames(fOTUS2) <- as.character(family_all[b != 0, 1])
 
 # Correlations ####
-df <- expand.grid(genus = rownames(fOTUS2), genes = rownames(frna2),
+df <- expand.grid(family = rownames(fOTUS2), genes = rownames(frna2),
                   stringsAsFactors = FALSE)
 df$r <- 0
 df$p.value <- 1
-df <- arrange(df, genus)
+df <- arrange(df, family)
 
-pdf(paste0("Figures/", header, "correlations_genus.pdf"))
+skip_micro <- c("Tsukamurellaceae", "Cyclobacteriaceae", "Beutenbergiaceae",
+                "Conexibacteriaceae", "Dermacoccaceae", "Nocardiaceae",
+                "Thermaceae", "Thermomicrobiaceae", "Beijerinckiaceae",
+                "Campylobacteraceae", "Halanaerobiaceae")
+skip_gene <- c("GIMD1")
+
+pdf(paste0("Figures/", header, "correlations.pdf"))
 for (i in seq_len(nrow(df))) {
-  genus <- df$genus[i]
+  family <- df$family[i]
   gene <- df$genes[i]
 
   x <- frna2[gene, ]
-  y <- fOTUS2[genus, ]
+  y <- fOTUS2[family, ]
 
   names(x) <- NULL
   names(y) <- NULL
@@ -206,7 +213,7 @@ for (i in seq_len(nrow(df))) {
     df$p.value[i] <- co$p.value
     df$r[i] <- co$estimate
     if (co$p.value < 0.05) {
-      plot(x, y, xlab = gene, ylab = genus,
+      plot(x, y, xlab = gene, ylab = family,
            main = paste0("Correlation: ",
                          round(co$estimate, 4), "\n",
                          "p-value: ", round(co$p.value, 4)))
@@ -222,7 +229,7 @@ saveRDS(df, paste0("data_out/", header, "correlations.RDS"))
 
 # * Plot distributions ####
 df %>%
-  group_by(genus) %>%
+  group_by(family) %>%
   summarise(n = sum(p.value < 0.05)) %>%
   filter(n != 0) %>%
   arrange(desc(n)) %>%
@@ -255,7 +262,7 @@ sum(abs(df$r) > q & !is.na(df$p.value))
 
 # Redo just those correlations above the threshold to be able to check that they are fit
 subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
-subDF <- subDF[order(subDF$genus, subDF$p.value, decreasing = FALSE), c("genes", "genus")]
+subDF <- subDF[order(subDF$family, subDF$p.value, decreasing = FALSE), c("genes", "family")]
 # write.csv(meta, "data_out/20200629_refined_meta.csv", na = "", row.names = FALSE)
 
 subMeta <- meta3[match(colnames(frna2), meta3$Original), ]
@@ -265,16 +272,22 @@ ibd <- as.character(subMeta$IBD)
 ibd[is.na(ibd)] <- "C"
 ibd <- factor(ibd, levels = c("C", "CD", "UC"))
 
-pdf(paste0("Figures/", header, "high_correlations_genus.pdf"))
+pdf(paste0("Figures/", header, "high_correlations_family.pdf"))
 for (i in seq_len(nrow(subDF))) {
-  genus <- subDF$genus[i]
+  family <- subDF$family[i]
   gene <- subDF$genes[i]
 
+  if (family %in% skip_micro){
+    next
+  }
+  if (gene %in% skip_gene){
+    next
+  }
 
   x <- frna2[gene, ]
-  x <- rm_outliers(x, qrna)
-  y <- fOTUS2[genus, ]
-  y <- rm_outliers(y, qdna)
+  # x <- rm_outliers(x, qrna)
+  y <- fOTUS2[family, ]
+  # y <- rm_outliers(y, qdna)
   names(x) <- NULL
   names(y) <- NULL
   rm_samples <- !is.na(x) & !is.na(y)
@@ -296,7 +309,7 @@ for (i in seq_len(nrow(subDF))) {
     if (co$p.value >= 0.05) {
       next
     }
-    plot(g, o, xlab = gene, ylab = genus, pch = 14+as.numeric(loc2),
+    plot(g, o, xlab = gene, ylab = family, pch = 14+as.numeric(loc2),
          col = ibd2,
          main = paste0("Correlation: ",
                        round(co$estimate, 4), "\n",
@@ -313,11 +326,11 @@ for (i in seq_len(nrow(subDF))) {
 }
 dev.off()
 subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
-write.csv(subDF, paste0("data_out/", header, "high_correlations_genus.csv"),
+write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
           na = "", row.names = FALSE)
 
 subDF %>%
-  count(genus, sort = TRUE) %>%
+  count(family, sort = TRUE) %>%
   head()
 subDF %>%
   count(genes, sort = TRUE) %>%
