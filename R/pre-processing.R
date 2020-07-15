@@ -110,6 +110,9 @@ meta4$Date_diagnostic[meta4$ID %in% "017"] <- as.Date("03/06/2013", "%d/%m/%Y")
 meta4$Date_diagnostic[meta4$ID %in% "122"] <- as.Date("28/07/2015", "%d/%m/%Y")
 meta4$Date_diagnostic[meta4$ID %in% "123"] <- as.Date("10/11/2015", "%d/%m/%Y")
 
+meta4$Activity[meta4$Original == "017-w014"] <- "ACTIVE"
+meta4$Involved_Healthy[meta4$Original == "017-w014"] <- "INVOLVED"
+meta4$Aftected_area[meta4$Original == "017-w014"] <- "DESCENDING COLON"
 # Use the imported metadata from the TRIM project
 # For the controls that are shared
 meta_trim <- readRDS("data/metaTRIM.RDS")
