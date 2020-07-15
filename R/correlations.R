@@ -158,10 +158,10 @@ w_dna <- model$a[[2]][, 1]
 
 
 # Select options ####
-sOTUs2 <- otus_ileum
-srna2 <- rna_ileum
-b <- b_ileum
-header <- "20200713_ileum_family_"
+sOTUs2 <- otus_colon
+srna2 <- rna_colon
+b <- b_colon
+header <- "20200715_colon_family_"
 
 fOTUS2 <- sOTUs2[b != 0, ]
 frna2 <- srna2[rownames(srna2) %in% names_rna, ]
@@ -271,6 +271,9 @@ loc <- factor(loc, levels = c("colon", "ileum"))
 ibd <- as.character(subMeta$IBD)
 ibd[is.na(ibd)] <- "C"
 ibd <- factor(ibd, levels = c("C", "CD", "UC"))
+act <- subMeta$Activity
+act[is.na(act)] <- "INACTIVE"
+pch <- ifelse(act == "ACTIVE", 15, 0) + as.numeric(loc) -1
 
 pdf(paste0("Figures/", header, "high_correlations_family.pdf"))
 for (i in seq_len(nrow(subDF))) {
@@ -309,7 +312,7 @@ for (i in seq_len(nrow(subDF))) {
     if (co$p.value >= 0.05) {
       next
     }
-    plot(g, o, xlab = gene, ylab = family, pch = 14+as.numeric(loc2),
+    plot(g, o, xlab = gene, ylab = family, pch = pch,
          col = ibd2,
          main = paste0("Correlation: ",
                        round(co$estimate, 4), "\n",
@@ -318,8 +321,9 @@ for (i in seq_len(nrow(subDF))) {
            legend = levels(ibd),
            fill = as.factor(levels(ibd)))
     legend("right",
-           legend = levels(loc),
-           pch = 14 + as.numeric(as.factor(levels(loc))))
+           legend = c("Inactive colon", "Inactive ileum",
+                      "Active colon", "Active ileum"),
+           pch = c(0, 1, 15, 16))
   },
   silent = FALSE
   )
