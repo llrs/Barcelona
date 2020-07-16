@@ -70,9 +70,6 @@ tidy_family <- family %>%
   arrange(IBD, Time, SEX) %>%
   mutate(Sample = Original)
 
-
-
-
 tidy_family %>%
   ggplot() +
   geom_point(aes(Sample, Family, size = ratio, col = IBD)) +
@@ -85,6 +82,60 @@ tidy_family %>%
   labs(fill = element_blank()) +
   guides(fill = FALSE) +
   scale_y_continuous(labels = scales::percent, expand = expansion())
+tidy_family <- tidy_family %>%
+  mutate(IBD = fct_relevel(IBD, c("CONTROL", "UC", "CD")),
+         Time = fct_relevel(Time, c("C", "0", "14", "46")))
+
+tidy_family %>%
+  filter(Family == "Enterobacteriaceae") %>%
+  ggplot() +
+  geom_jitter(aes(IBD, ratio, shape = IBD)) +
+  labs(x = element_blank(), y = "Beta diversity") +
+  theme_minimal()
+tidy_family %>%
+  filter(Family == "Streptococcaceae") %>%
+  ggplot() +
+  geom_jitter(aes(IBD,ratio, shape = IBD)) +
+  labs(x = element_blank(), y = "Beta diversity") +
+  theme_minimal()
+library("ggh4x") # from teunbrand/ggh4x
+tidy_family %>%
+  filter(Family == "Streptococcaceae") %>%
+  ggplot() +
+  geom_jitter(aes(IBD, ratio, col = Time, shape = IBD)) +
+  labs(x = element_blank(), y = "Beta diversity", title = "Streptococcaceae") +
+  theme_minimal() +
+  facet_nested(~Time + IBD,
+               scales = "free_x", switch = "x", nest_line = TRUE) +
+  theme(axis.text.x = element_blank())
+tidy_family %>%
+  filter(Family == "Streptococcaceae") %>%
+  ggplot() +
+  geom_jitter(aes(IBD, ratio, shape = IBD)) +
+  labs(x = element_blank(), y = "Beta diversity", title = "Streptococcaceae") +
+  theme_minimal() +
+  facet_nested(~ IBD + Activity,
+               scales = "free_x", switch = "x", nest_line = TRUE) +
+  theme(axis.text.x = element_blank())
+tidy_family %>%
+  filter(Family == "Enterobacteriaceae") %>%
+  ggplot() +
+  geom_jitter(aes(IBD, ratio, shape = IBD)) +
+  labs(x = element_blank(), y = "Beta diversity", title = "Enterobacteriaceae") +
+  theme_minimal() +
+  facet_nested(~ IBD + Activity,
+               scales = "free_x", switch = "x", nest_line = TRUE) +
+  theme(axis.text.x = element_blank())
+tidy_family %>%
+  filter(Family == "Enterobacteriaceae") %>%
+  mutate(Ileum = ifelse(Exact_location == "ileum", "ileum", "colon")) %>%
+  ggplot() +
+  geom_jitter(aes(Ileum, ratio, shape = Ileum)) +
+  labs(x = element_blank(), y = "Beta diversity", title = "Enterobacteriaceae") +
+  theme_minimal() +
+  facet_nested(~ IBD + Activity + Ileum,
+               scales = "free_x", switch = "x", nest_line = TRUE) +
+  theme(axis.text.x = element_blank())
 
 tidy_family %>%
   arrange(IBD) %>%
