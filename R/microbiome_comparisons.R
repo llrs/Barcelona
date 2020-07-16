@@ -82,9 +82,13 @@ tidy_family %>%
   labs(fill = element_blank()) +
   guides(fill = FALSE) +
   scale_y_continuous(labels = scales::percent, expand = expansion())
+
 tidy_family <- tidy_family %>%
+  mutate(Activity = ifelse(is.na(Activity), "INACTIVE", Activity),
+         Ileum = ifelse(Exact_location == "ileum", "ileum", "colon")) %>%
   mutate(IBD = fct_relevel(IBD, c("CONTROL", "UC", "CD")),
-         Time = fct_relevel(Time, c("C", "0", "14", "46")))
+         Time = fct_relevel(Time, c("C", "0", "14", "46")),
+         Activity = fct_relevel(Activity, c("INACTIVE", "ACTIVE")))
 
 tidy_family %>%
   filter(Family == "Enterobacteriaceae") %>%
@@ -128,13 +132,40 @@ tidy_family %>%
   theme(axis.text.x = element_blank())
 tidy_family %>%
   filter(Family == "Enterobacteriaceae") %>%
-  mutate(Ileum = ifelse(Exact_location == "ileum", "ileum", "colon")) %>%
   ggplot() +
   geom_jitter(aes(Ileum, ratio, shape = Ileum)) +
   labs(x = element_blank(), y = "Beta diversity", title = "Enterobacteriaceae") +
   theme_minimal() +
-  facet_nested(~ IBD + Activity + Ileum,
+  facet_nested(~ Ileum + IBD + Activity,
                scales = "free_x", switch = "x", nest_line = TRUE) +
+  theme(axis.text.x = element_blank())
+tidy_family %>%
+  filter(Family == "Acidaminococcaceae") %>%
+  ggplot() +
+  geom_jitter(aes(Ileum, ratio, shape = Ileum)) +
+  labs(x = element_blank(), y = "Beta diversity", title = "Acidaminococcaceae") +
+  theme_minimal() +
+  facet_nested(~ Ileum + IBD + Activity,
+               scales = "free_x", switch = "x", nest_line = TRUE) +
+  theme(axis.text.x = element_blank())
+
+tidy_family %>%
+  filter(Family == "Acidaminococcaceae") %>%
+  mutate(cat = paste(Ileum, IBD, Activity, sep = "_")) %>%
+  mutate(cat = fct_relevel(cat,
+                           c("colon_CONTROL_INACTIVE", "colon_UC_INACTIVE",
+                             "colon_UC_ACTIVE", "colon_CD_INACTIVE",
+                             "colon_CD_ACTIVE", "ileum_CONTROL_INACTIVE",
+                             "ileum_CD_INACTIVE", "ileum_CD_ACTIVE"))) %>%
+  ggplot(aes(cat, ratio)) +
+  geom_boxplot() +
+  stat_compare_means() +
+  labs(x = element_blank(), y = "Beta diversity", title = "Acidaminococcaceae") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+  facet_nested(~ Ileum + IBD + Activity,
+               scales = "free", switch = "x", nest_line = TRUE) +
   theme(axis.text.x = element_blank())
 
 tidy_family %>%
@@ -382,12 +413,14 @@ meta2$t3 <- paste(meta$Time, meta$Study, sep = " & ")
 meta2$t4 <- paste(meta$Study, meta$IBD, sep = " & ")
 meta2$t5 <- paste(meta$ileum, meta$IBD, sep = " & ")
 meta2$t6 <- paste(meta$ileum, meta$Study, sep = " & ")
+meta2$t7 <- paste(meta$IBD, meta$Activity, sep = " & ")
 (family_time_ileum <- extract_genus(full_prevalence(fam2, meta2, "ti")))
 (family_time_ibd <- extract_genus(full_prevalence(fam2, meta2, "tI")))
 (family_time_t3 <- extract_genus(full_prevalence(fam2, meta2, "t3")))
 (family_time_t4 <- extract_genus(full_prevalence(fam2, meta2, "t4")))
 (family_time_t5 <- extract_genus(full_prevalence(fam2, meta2, "t5")))
 (family_time_t6 <- extract_genus(full_prevalence(fam2, meta2, "t6")))
+(family_time_t7 <- extract_genus(full_prevalence(fam2, meta2, "t7")))
 
 
 (time_fam <- extract_genus(gen))
