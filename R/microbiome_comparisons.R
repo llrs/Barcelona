@@ -10,6 +10,7 @@ library("ggplot2")
 library("lubridate")
 library("org.Hs.eg.db")
 library("forcats")
+library("ggh4x") # from teunbrand/ggh4x
 
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
@@ -68,7 +69,13 @@ tidy_family <- family %>%
   # mutate(IBD = case_when(grepl(x = Name, pattern = "^C") & is.na(IBD) ~ "CONTROL",
   #                        TRUE ~ IBD)) %>%
   arrange(IBD, Time, SEX) %>%
-  mutate(Sample = Original)
+  mutate(Sample = Original,
+         Activity = ifelse(is.na(Activity), "INACTIVE", Activity),
+         Ileum = ifelse(Exact_location == "ileum", "ileum", "colon"),
+         IBD = fct_recode(IBD, C = "CONTROL")) %>%
+  mutate(IBD = fct_relevel(IBD, c("C", "UC", "CD")),
+         Time = fct_relevel(Time, c("C", "0", "14", "46")),
+         Activity = fct_relevel(Activity, c("INACTIVE", "ACTIVE")))
 
 tidy_family %>%
   ggplot() +
@@ -83,12 +90,7 @@ tidy_family %>%
   guides(fill = FALSE) +
   scale_y_continuous(labels = scales::percent, expand = expansion())
 
-tidy_family <- tidy_family %>%
-  mutate(Activity = ifelse(is.na(Activity), "INACTIVE", Activity),
-         Ileum = ifelse(Exact_location == "ileum", "ileum", "colon")) %>%
-  mutate(IBD = fct_relevel(IBD, c("CONTROL", "UC", "CD")),
-         Time = fct_relevel(Time, c("C", "0", "14", "46")),
-         Activity = fct_relevel(Activity, c("INACTIVE", "ACTIVE")))
+
 
 tidy_family %>%
   filter(Family == "Enterobacteriaceae") %>%
@@ -102,7 +104,7 @@ tidy_family %>%
   geom_jitter(aes(IBD,ratio, shape = IBD)) +
   labs(x = element_blank(), y = "Beta diversity") +
   theme_minimal()
-library("ggh4x") # from teunbrand/ggh4x
+
 tidy_family %>%
   filter(Family == "Streptococcaceae") %>%
   ggplot() +
@@ -124,31 +126,59 @@ tidy_family %>%
 tidy_family %>%
   filter(Family == "Enterobacteriaceae") %>%
   ggplot() +
-  geom_jitter(aes(IBD, ratio, shape = IBD)) +
+  geom_jitter(aes(IBD, ratio, col = Time, shape = IBD)) +
   labs(x = element_blank(), y = "Beta diversity", title = "Enterobacteriaceae") +
   theme_minimal() +
-  facet_nested(~ IBD + Activity,
-               scales = "free_x", switch = "x", nest_line = TRUE) +
-  theme(axis.text.x = element_blank())
-tidy_family %>%
-  filter(Family == "Enterobacteriaceae") %>%
-  ggplot() +
-  geom_jitter(aes(Ileum, ratio, shape = Ileum)) +
-  labs(x = element_blank(), y = "Beta diversity", title = "Enterobacteriaceae") +
-  theme_minimal() +
-  facet_nested(~ Ileum + IBD + Activity,
-               scales = "free_x", switch = "x", nest_line = TRUE) +
-  theme(axis.text.x = element_blank())
-tidy_family %>%
-  filter(Family == "Acidaminococcaceae") %>%
-  ggplot() +
-  geom_jitter(aes(Ileum, ratio, shape = Ileum)) +
-  labs(x = element_blank(), y = "Beta diversity", title = "Acidaminococcaceae") +
-  theme_minimal() +
-  facet_nested(~ Ileum + IBD + Activity,
+  facet_nested(~Time + IBD,
                scales = "free_x", switch = "x", nest_line = TRUE) +
   theme(axis.text.x = element_blank())
 
+
+
+ts0 <- tidy_family %>%
+  nest_by(Family, .key = "data_plots") %>%
+  mutate(plot = list(ggplot(data = data_plots) +
+           geom_jitter(aes(IBD, ratio, shape = IBD, col = IBD)) +
+           labs(x = element_blank(), y = "Beta diversity", title = Family) +
+           theme_minimal() +
+           facet_nested(~ Time + IBD,
+                        scales = "free_x", switch = "x", nest_line = TRUE) +
+           theme(axis.text.x = element_blank())))
+pdf("Figures/Time_IBD_prevalence.pdf")
+for (i in seq_len(nrow(ts0))) {
+  print(ts0$plot[[i]])
+}
+dev.off()
+
+ts <- tidy_family %>%
+  nest_by(Family, .key = "data_plots") %>%
+  mutate(plot = list(ggplot(data = data_plots) +
+           geom_jitter(aes(IBD, ratio, shape = IBD)) +
+           labs(x = element_blank(), y = "Beta diversity", title = Family) +
+           theme_minimal() +
+           facet_nested(~ IBD + Activity,
+                        scales = "free_x", switch = "x", nest_line = TRUE) +
+           theme(axis.text.x = element_blank())))
+pdf("Figures/IBD_activity_prevalence.pdf")
+for (i in seq_len(nrow(ts0))) {
+  print(ts$plot[[i]])
+}
+dev.off()
+ts2 <- tidy_family %>%
+  nest_by(Family, .key = "data_plots") %>%
+  mutate(plot = list(
+    ggplot(data = data_plots) +
+      geom_jitter(aes(IBD, ratio, shape = Ileum)) +
+      labs(x = element_blank(), y = "Beta diversity", title = Family) +
+      theme_minimal() +
+      facet_nested(~ Ileum + IBD + Activity,
+                   scales = "free_x", switch = "x", nest_line = TRUE) +
+      theme(axis.text.x = element_blank())))
+pdf("Figures/Ileum_IBD_activity_prevalence.pdf")
+for (i in seq_len(nrow(ts0))) {
+  print(ts2$plot[[i]])
+}
+dev.off()
 tidy_family %>%
   filter(Family == "Acidaminococcaceae") %>%
   mutate(cat = paste(Ileum, IBD, Activity, sep = "_")) %>%
