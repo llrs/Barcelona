@@ -58,11 +58,10 @@ tidy_family <- family %>%
   filter(Sample %in% meta$Name) %>%
   dplyr::rename(Family = "Sample name") %>%
   filter(!str_detect(Sample, "^500") &
-           str_detect(Sample, "^C|^([0-9]+-w)")) %>%
+           str_detect(Sample, "^C|^([0-9]+-w)"),
+         Count != 0) %>%
   group_by(Sample) %>%
   mutate(ratio = Count/sum(Count)) %>%
-  ungroup() %>%
-  group_by(Family) %>%
   ungroup() %>%
   left_join(meta, by = c("Sample" = "Name")) %>%
   mutate_if(is.factor, as.character) %>%
@@ -135,48 +134,53 @@ tidy_family %>%
 
 
 
-ts0 <- tidy_family %>%
-  nest_by(Family, .key = "data_plots") %>%
-  mutate(plot = list(ggplot(data = data_plots) +
-           geom_jitter(aes(IBD, ratio, shape = IBD, col = IBD)) +
-           labs(x = element_blank(), y = "Beta diversity", title = Family) +
-           theme_minimal() +
-           facet_nested(~ Time + IBD,
-                        scales = "free_x", switch = "x", nest_line = TRUE) +
-           theme(axis.text.x = element_blank())))
-pdf("Figures/Time_IBD_prevalence.pdf")
-for (i in seq_len(nrow(ts0))) {
-  print(ts0$plot[[i]])
-}
-dev.off()
-
 ts <- tidy_family %>%
   nest_by(Family, .key = "data_plots") %>%
-  mutate(plot = list(ggplot(data = data_plots) +
-           geom_jitter(aes(IBD, ratio, shape = IBD)) +
-           labs(x = element_blank(), y = "Beta diversity", title = Family) +
-           theme_minimal() +
-           facet_nested(~ IBD + Activity,
-                        scales = "free_x", switch = "x", nest_line = TRUE) +
-           theme(axis.text.x = element_blank())))
-pdf("Figures/IBD_activity_prevalence.pdf")
-for (i in seq_len(nrow(ts0))) {
-  print(ts$plot[[i]])
-}
-dev.off()
-ts2 <- tidy_family %>%
-  nest_by(Family, .key = "data_plots") %>%
-  mutate(plot = list(
+  mutate(Time_IBD = list(
     ggplot(data = data_plots) +
-      geom_jitter(aes(IBD, ratio, shape = Ileum)) +
+      geom_boxplot(aes(IBD, ratio), alpha = 0, outlier.size = -1) +
+      geom_jitter(aes(IBD, ratio, shape = IBD, col = IBD), height = 0) +
       labs(x = element_blank(), y = "Beta diversity", title = Family) +
       theme_minimal() +
-      facet_nested(~ Ileum + IBD + Activity,
+      facet_nested(~ Time + IBD,
                    scales = "free_x", switch = "x", nest_line = TRUE) +
-      theme(axis.text.x = element_blank())))
+      theme(axis.text.x = element_blank()) +
+      scale_y_continuous(labels = scales::percent, limits = c(0, NA))),
+    IBD_activity = list(
+      ggplot(data = data_plots) +
+        geom_boxplot(aes(IBD, ratio), alpha = 0, outlier.size = -1) +
+        geom_jitter(aes(IBD, ratio, shape = IBD), height = 0) +
+        labs(x = element_blank(), y = "Beta diversity", title = Family) +
+        theme_minimal() +
+        facet_nested(~ IBD + Activity,
+                     scales = "free_x", switch = "x", nest_line = TRUE) +
+        theme(axis.text.x = element_blank()) +
+        scale_y_continuous(labels = scales::percent, limits = c(0, NA))),
+    Ileum_IBD_activity = list(
+      ggplot(data = data_plots) +
+        geom_boxplot(aes(IBD, ratio), alpha = 0, outlier.size = -1) +
+        geom_jitter(aes(IBD, ratio, shape = Ileum), height = 0) +
+        labs(x = element_blank(), y = "Beta diversity", title = Family) +
+        theme_minimal() +
+        facet_nested(~ Ileum + IBD + Activity,
+                     scales = "free_x", switch = "x", nest_line = TRUE) +
+        theme(axis.text.x = element_blank()) +
+        scale_y_continuous(labels = scales::percent, limits = c(0, NA)))
+  )
+
+pdf("Figures/Time_IBD_prevalence.pdf")
+for (i in seq_len(nrow(ts0))) {
+  print(ts$Time_IBD[[i]])
+}
+dev.off()
+pdf("Figures/IBD_activity_prevalence.pdf")
+for (i in seq_len(nrow(ts0))) {
+  print(ts$IBD_activity[[i]])
+}
+dev.off()
 pdf("Figures/Ileum_IBD_activity_prevalence.pdf")
 for (i in seq_len(nrow(ts0))) {
-  print(ts2$plot[[i]])
+  print(ts$Ileum_IBD_activity[[i]])
 }
 dev.off()
 tidy_family %>%
