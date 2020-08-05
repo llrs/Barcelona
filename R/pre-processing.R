@@ -222,7 +222,8 @@ incidence <- t(incidence)
 meta5 <- mutate(meta5,
                 treatment = if_else(Time != "0" & !is.na(Time), "Yes", "No"),
                 IBD = if_else(is.na(IBD), "CONTROL", as.character(IBD)),
-                SEX = if_else(is.na(SEX) | SEX == "", "female", as.character(SEX))
+                SEX = if_else(is.na(SEX) | SEX == "", "female", as.character(SEX)),
+                Exact_location = if_else(is.na(Exact_location), "colon", as.character(Exact_location)),
                 )
 
 # Check that the metadata is in the right order
