@@ -10,6 +10,7 @@ library("ggplot2")
 library("lubridate")
 library("org.Hs.eg.db")
 library("forcats")
+library("ggh4x") # from teunbrand/ggh4x
 
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
@@ -43,6 +44,11 @@ meta$Time[is.na(meta$Time)] <- "C"
 # * Family level ####
 family <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv",
                      check.names = FALSE)
+family_tax <- family[, 1]
+fam <- family[ , -1]
+colnames(fam) <- gsub("_S.*", "", colnames(fam)) # Remove trailing numbers
+fam2 <- fam[, match(meta$Original, colnames(fam))]
+fam2 <- as.matrix(fam2)
 
 tidy_family <- family %>%
   gather(Sample, Count, -'Sample name') %>%
@@ -52,19 +58,23 @@ tidy_family <- family %>%
   filter(Sample %in% meta$Name) %>%
   dplyr::rename(Family = "Sample name") %>%
   filter(!str_detect(Sample, "^500") &
-           str_detect(Sample, "^C|^([0-9]+-w)")) %>%
+           str_detect(Sample, "^C|^([0-9]+-w)"),
+         Count != 0) %>%
   group_by(Sample) %>%
   mutate(ratio = Count/sum(Count)) %>%
-  ungroup() %>%
-  group_by(Family) %>%
   ungroup() %>%
   left_join(meta, by = c("Sample" = "Name")) %>%
   mutate_if(is.factor, as.character) %>%
   # mutate(IBD = case_when(grepl(x = Name, pattern = "^C") & is.na(IBD) ~ "CONTROL",
   #                        TRUE ~ IBD)) %>%
   arrange(IBD, Time, SEX) %>%
-  mutate(Sample = Original)
-
+  mutate(Sample = Original,
+         Activity = ifelse(is.na(Activity), "INACTIVE", Activity),
+         Ileum = ifelse(Exact_location == "ileum", "ileum", "colon"),
+         IBD = fct_recode(IBD, C = "CONTROL")) %>%
+  mutate(IBD = fct_relevel(IBD, c("C", "UC", "CD")),
+         Time = fct_relevel(Time, c("C", "0", "14", "46")),
+         Activity = fct_relevel(Activity, c("INACTIVE", "ACTIVE")))
 theme_set(theme_minimal())
 
 tidy_family %>%
@@ -80,6 +90,119 @@ tidy_family %>%
   guides(fill = FALSE) +
   scale_y_continuous(labels = scales::percent, expand = expansion())
 
+
+
+tidy_family %>%
+  filter(Family == "Enterobacteriaceae") %>%
+  ggplot() +
+  geom_jitter(aes(IBD, ratio, shape = IBD)) +
+  labs(x = element_blank(), y = "Beta diversity") +
+  theme_minimal()
+tidy_family %>%
+  filter(Family == "Streptococcaceae") %>%
+  ggplot() +
+  geom_jitter(aes(IBD,ratio, shape = IBD)) +
+  labs(x = element_blank(), y = "Beta diversity") +
+  theme_minimal()
+
+tidy_family %>%
+  filter(Family == "Streptococcaceae") %>%
+  ggplot() +
+  geom_jitter(aes(IBD, ratio, col = Time, shape = IBD)) +
+  labs(x = element_blank(), y = "Beta diversity", title = "Streptococcaceae") +
+  theme_minimal() +
+  facet_nested(~Time + IBD,
+               scales = "free_x", switch = "x", nest_line = TRUE) +
+  theme(axis.text.x = element_blank())
+tidy_family %>%
+  filter(Family == "Streptococcaceae") %>%
+  ggplot() +
+  geom_jitter(aes(IBD, ratio, shape = IBD)) +
+  labs(x = element_blank(), y = "Beta diversity", title = "Streptococcaceae") +
+  theme_minimal() +
+  facet_nested(~ IBD + Activity,
+               scales = "free_x", switch = "x", nest_line = TRUE) +
+  theme(axis.text.x = element_blank())
+tidy_family %>%
+  filter(Family == "Enterobacteriaceae") %>%
+  ggplot() +
+  geom_jitter(aes(IBD, ratio, col = Time, shape = IBD)) +
+  labs(x = element_blank(), y = "Beta diversity", title = "Enterobacteriaceae") +
+  theme_minimal() +
+  facet_nested(~Time + IBD,
+               scales = "free_x", switch = "x", nest_line = TRUE) +
+  theme(axis.text.x = element_blank())
+
+
+
+ts <- tidy_family %>%
+  nest_by(Family, .key = "data_plots") %>%
+  mutate(Time_IBD = list(
+    ggplot(data = data_plots) +
+      geom_boxplot(aes(IBD, ratio), alpha = 0, outlier.size = -1) +
+      geom_jitter(aes(IBD, ratio, shape = IBD, col = IBD), height = 0) +
+      labs(x = element_blank(), y = "Beta diversity", title = Family) +
+      theme_minimal() +
+      facet_nested(~ Time + IBD,
+                   scales = "free_x", switch = "x", nest_line = TRUE) +
+      theme(axis.text.x = element_blank()) +
+      scale_y_continuous(labels = scales::percent, limits = c(0, NA))),
+    IBD_activity = list(
+      ggplot(data = data_plots) +
+        geom_boxplot(aes(IBD, ratio), alpha = 0, outlier.size = -1) +
+        geom_jitter(aes(IBD, ratio, shape = IBD), height = 0) +
+        labs(x = element_blank(), y = "Beta diversity", title = Family) +
+        theme_minimal() +
+        facet_nested(~ IBD + Activity,
+                     scales = "free_x", switch = "x", nest_line = TRUE) +
+        theme(axis.text.x = element_blank()) +
+        scale_y_continuous(labels = scales::percent, limits = c(0, NA))),
+    Ileum_IBD_activity = list(
+      ggplot(data = data_plots) +
+        geom_boxplot(aes(IBD, ratio), alpha = 0, outlier.size = -1) +
+        geom_jitter(aes(IBD, ratio, shape = Ileum), height = 0) +
+        labs(x = element_blank(), y = "Beta diversity", title = Family) +
+        theme_minimal() +
+        facet_nested(~ Ileum + IBD + Activity,
+                     scales = "free_x", switch = "x", nest_line = TRUE) +
+        theme(axis.text.x = element_blank()) +
+        scale_y_continuous(labels = scales::percent, limits = c(0, NA)))
+  )
+
+pdf("Figures/Time_IBD_prevalence.pdf")
+for (i in seq_len(nrow(ts0))) {
+  print(ts$Time_IBD[[i]])
+}
+dev.off()
+pdf("Figures/IBD_activity_prevalence.pdf")
+for (i in seq_len(nrow(ts0))) {
+  print(ts$IBD_activity[[i]])
+}
+dev.off()
+pdf("Figures/Ileum_IBD_activity_prevalence.pdf")
+for (i in seq_len(nrow(ts0))) {
+  print(ts$Ileum_IBD_activity[[i]])
+}
+dev.off()
+tidy_family %>%
+  filter(Family == "Acidaminococcaceae") %>%
+  mutate(cat = paste(Ileum, IBD, Activity, sep = "_")) %>%
+  mutate(cat = fct_relevel(cat,
+                           c("colon_CONTROL_INACTIVE", "colon_UC_INACTIVE",
+                             "colon_UC_ACTIVE", "colon_CD_INACTIVE",
+                             "colon_CD_ACTIVE", "ileum_CONTROL_INACTIVE",
+                             "ileum_CD_INACTIVE", "ileum_CD_ACTIVE"))) %>%
+  ggplot(aes(cat, ratio)) +
+  geom_boxplot() +
+  stat_compare_means() +
+  labs(x = element_blank(), y = "Beta diversity", title = "Acidaminococcaceae") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+  facet_nested(~ Ileum + IBD + Activity,
+               scales = "free", switch = "x", nest_line = TRUE) +
+  theme(axis.text.x = element_blank())
+
 tidy_family %>%
   arrange(IBD) %>%
   mutate(f2 = fct_lump_prop(as.factor(Family), prop = 0.01, w = ratio),
@@ -94,7 +217,7 @@ tidy_family %>%
   # guides(fill = FALSE) +
   scale_y_continuous(labels = scales::percent, expand = expansion())
 
-# * Comparisons of genus ####
+# * genus level ####
 
 tidy_genus <- tab %>%
   gather(Sample, Count, -"Sample name") %>%
@@ -189,14 +312,21 @@ write.csv(tt, "data_out/colon_vs_ileum.csv", row.names = TRUE)
 
 # Prevalence ####
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> cba0b0866e61c0ab831434555eab07b3067dfbe1
 filter_prev <- function(x) {
   x <- x[apply(x, 1, function(y){any(y != 1)}), , drop = FALSE]
   x[, apply(x, 2, function(y){any(y != 1)}), drop = FALSE]
 }
 
+<<<<<<< HEAD
 
 extract_rownames <- function(x) {
+=======
+extract_genus <- function(x) {
+>>>>>>> cba0b0866e61c0ab831434555eab07b3067dfbe1
   unique(rownames(which(x < 0.05, arr.ind = TRUE)))
 }
 
@@ -213,6 +343,7 @@ count_prevalence <- function(tidy_data, selected_genus, ...) {
     filter(Genus %in% selected_genus)
 }
 
+<<<<<<< HEAD
 #### * Family level ####
 
 rownames(family) <- family$`Sample name`
@@ -273,6 +404,9 @@ fam_loc <- fam %>%
 
 
 #### * Genus level ####
+=======
+# * genus level ####
+>>>>>>> cba0b0866e61c0ab831434555eab07b3067dfbe1
 rownames(OTUs2) <- genus[, 1]
 
 gen <- filter_prev(comb_prevalence(OTUs2, meta, c("Time")))
@@ -284,7 +418,6 @@ ibdm <- comb_prevalence(OTUs2, meta, c("IBD", "Time", "ileum")) %>% filter_prev(
 ibd <- comb_prevalence(OTUs2, meta, c("IBD", "ileum")) %>% filter_prev()
 loc <- comb_prevalence(OTUs2, meta, c("ileum")) %>% filter_prev()
 write.csv(ibd, "data_out/prevalence_disease_location.csv", row.names = TRUE)
-
 
 p <- full_prevalence(OTUs2, meta, "Time")
 p <- full_prevalence(OTUs2, meta, "ileum")
@@ -307,6 +440,7 @@ genus_time_t6 <- extract_rownames(full_prevalence(OTUs2, meta2, "t6"))
 
 
 
+<<<<<<< HEAD
 (time_genus <- extract_rownames(gen))
 (time_sex_genus <- extract_rownames(gen_se))
 (tre_genus <- extract_rownames(tre))
@@ -315,10 +449,25 @@ genus_time_t6 <- extract_rownames(full_prevalence(OTUs2, meta2, "t6"))
 (ibdm_genus <- extract_rownames(ibdm))
 (ibd_genus <- extract_rownames(ibd))
 (loc_genus <- extract_rownames(loc))
+=======
+(time_genus <- extract_genus(gen))
+(time_sex_genus <- extract_genus(gen_se))
+(tre_genus <- extract_genus(tre))
+(se_genus <- extract_genus(se))
+(std_genus <- extract_genus(std))
+(ibdm_genus <- extract_genus(ibdm))
+(ibd_genus <- extract_genus(ibd))
+(loc_genus <- extract_genus(loc))
+>>>>>>> cba0b0866e61c0ab831434555eab07b3067dfbe1
 
 # So basically I need to plot for ibdm and ibd_genus
 
 
+<<<<<<< HEAD
+=======
+
+theme_set(theme_minimal())
+>>>>>>> cba0b0866e61c0ab831434555eab07b3067dfbe1
 
 count_prevalence(tidy_genus, ibdm_genus, ileum, Time) %>%
   ggplot() +
@@ -357,3 +506,49 @@ count_prevalence(tidy_genus, genus_study, Study) %>%
   labs(x = element_blank(), y = "Samples", title = genus_study)
 ggsave("Figures/Ralstonia_study.png")
 
+
+
+# * family level ####
+rownames(fam2) <- family_tax
+
+gen <- filter_prev(comb_prevalence(fam2, meta, c("Time")))
+gen_se <- comb_prevalence(fam2, meta, c("Time", "SEX")) %>% filter_prev()
+tre <- comb_prevalence(fam2, meta, c("treatment")) %>% filter_prev()
+se <- comb_prevalence(fam2, meta, c("SEX")) %>% filter_prev()
+std <- comb_prevalence(fam2, meta, c("Study")) %>% filter_prev()
+ibdm <- comb_prevalence(fam2, meta, c("IBD", "Time", "ileum")) %>% filter_prev()
+ibd <- comb_prevalence(fam2, meta, c("IBD", "ileum")) %>% filter_prev()
+loc <- comb_prevalence(fam2, meta, c("ileum")) %>% filter_prev()
+write.csv(ibd, "data_out/prevalence_disease_family_location.csv", row.names = TRUE)
+
+
+(p <- extract_genus(full_prevalence(fam2, meta, "Time")))
+(p <- extract_genus(full_prevalence(fam2, meta, "ileum")))
+(genus_ibd <- extract_genus(full_prevalence(fam2, meta, "IBD")))
+(genus_study <- extract_genus(full_prevalence(fam2, meta, "Study")))
+
+meta2 <- meta
+meta2$ti <- paste(meta$Time, meta$ileum, sep = " & ")
+meta2$tI <- paste(meta$Time, meta$IBD, sep = " & ")
+meta2$t3 <- paste(meta$Time, meta$Study, sep = " & ")
+meta2$t4 <- paste(meta$Study, meta$IBD, sep = " & ")
+meta2$t5 <- paste(meta$ileum, meta$IBD, sep = " & ")
+meta2$t6 <- paste(meta$ileum, meta$Study, sep = " & ")
+meta2$t7 <- paste(meta$IBD, meta$Activity, sep = " & ")
+(family_time_ileum <- extract_genus(full_prevalence(fam2, meta2, "ti")))
+(family_time_ibd <- extract_genus(full_prevalence(fam2, meta2, "tI")))
+(family_time_t3 <- extract_genus(full_prevalence(fam2, meta2, "t3")))
+(family_time_t4 <- extract_genus(full_prevalence(fam2, meta2, "t4")))
+(family_time_t5 <- extract_genus(full_prevalence(fam2, meta2, "t5")))
+(family_time_t6 <- extract_genus(full_prevalence(fam2, meta2, "t6")))
+(family_time_t7 <- extract_genus(full_prevalence(fam2, meta2, "t7")))
+
+
+(time_fam <- extract_genus(gen))
+(time_sex_fam <- extract_genus(gen_se))
+(tre_fam <- extract_genus(tre))
+(se_fam <- extract_genus(se))
+(std_fam <- extract_genus(std))
+(ibdm_fam <- extract_genus(ibdm))
+(ibd_fam <- extract_genus(ibd))
+(loc_fam <- extract_genus(loc))
