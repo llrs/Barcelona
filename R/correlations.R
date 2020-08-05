@@ -1,4 +1,4 @@
-`library("ggplot2")
+library("ggplot2")
 # load data ####
 library("readxl")
 library("dplyr")
@@ -158,10 +158,10 @@ w_dna <- model$a[[2]][, 1]
 
 
 # Select options ####
-sOTUs2 <- otus_colon_UC
-srna2 <- rna_colon_UC
-b <- b_colon_UC
-header <- "20200703_colon_UC_"
+sOTUs2 <- otus_ileum
+srna2 <- rna_ileum
+b <- b_ileum
+header <- "20200706_ileum_"
 
 fOTUS2 <- sOTUs2[w_dna != 0 & b != 0, ]
 frna2 <- srna2[rownames(srna2) %in% names_rna, ]
@@ -292,7 +292,7 @@ subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
 subDF <- subDF[order(subDF$p.value, decreasing = FALSE), c("genes", "genus")]
 # write.csv(meta, "data_out/20200629_refined_meta.csv", na = "", row.names = FALSE)
 
-subMeta <- meta3[match(colnames(frna2), meta3$Original), ]
+subMeta <- meta2[match(colnames(frna2), meta2$Original), ]
 loc <- ifelse(subMeta$Exact_location == "ileum", "ileum", "colon")
 loc <- factor(loc, levels = c("colon", "ileum"))
 ibd <- as.character(subMeta$IBD)
