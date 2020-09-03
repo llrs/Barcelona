@@ -1,4 +1,5 @@
 # Calculate the alpha diversity
+# Preparation steps ####
 library("tidyr")
 library("ggplot2")
 library("dplyr")
@@ -15,6 +16,7 @@ library("lubridate")
 library("org.Hs.eg.db")
 library("forcats")
 
+{
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
@@ -54,6 +56,7 @@ stopifnot(all(colnames(OTUs2) == meta$Original))
 genus <- read.csv("data/genus.csv", row.names = 1)
 
 meta$ileum <- ifelse(meta$Exact_location == "ileum", "Ileum", "colon")
+# The missing values of Exact location
 meta$ileum[is.na(meta$ileum )] <- "colon"
 meta$SEX[is.na(meta$SEX) | meta$SEX == ""] <- "female"
 meta$Time[is.na(meta$Time)] <- "C"
@@ -63,8 +66,7 @@ otus <- as.matrix(OTUs2)
 phyloseq <- phyloseq(otu_table(OTUs2, taxa_are_rows = TRUE),
               sample_data(meta),
               tax_table(genus))
-
-
+}
 # Alpha diversity ####
 alpha <- prop.table(otus, 2)*100
 a <- as.data.frame(alpha)
@@ -123,24 +125,143 @@ ggsave("Figures/alpha_simpson_responders_ibd.png")
 # Beta diversity ####
 # Remove empty lines
 e <- apply(otus, 1, function(x){sum(x == 0)})
-beta <- vegdist(t(otus[e != 194, ]), method = "jaccard")
-cmd <- cmdscale(d = beta)
-png("Figures/beta_jaccard_sex.png")
+{method <- "bray"
+beta <- vegdist(t(otus[e != 194, ]), method = method)
+}
+{cmd <- cmdscale(d = beta)
+stopifnot(all(rownames(cmd) == meta$Original))
+#  * All samples ####
+png(paste0("Figures/beta_", method, "_sex.png"))
 plot(cmd, col = as.factor(meta$SEX), main = "Beta diversity",
      xlab = "Dimension 1", ylab = "Dimension 2")
 legend("topleft", legend = c("male", "female"), fill = c("red", "black"))
 dev.off()
-png("Figures/beta_jaccard_location.png")
+png(paste0("Figures/beta_", method, "_location.png"))
 plot(cmd, col = as.factor(meta$ileum), main = "Beta diversity",
      xlab = "Dimension 1", ylab = "Dimension 2")
 legend("topleft", legend = c("ileum", "colon"), fill = c("red", "black"))
 dev.off()
-png("Figures/beta_jaccard_location.png")
-plot(cmd, col = as.factor(meta$IBD), main = "Beta diversity",
+png(paste0("Figures/beta_", method, "_location.png"))
+ibds <- meta$IBD
+ibds[is.na(ibds)] <- "CONTROL"
+plot(cmd, col = as.factor(ibds), main = "Beta diversity",
      xlab = "Dimension 1", ylab = "Dimension 2")
 legend("topleft", legend = c("CD", "C", "UC"),
-       fill = c("red", "black", "green"))
+       fill = c("black", "red", "green"))
+dev.off()}
+
+# * Comparing beta diversity ####
+# Using refined meta because we want only those that were used on the integration
+{m <- readRDS("data_out/refined_meta.RDS")
+m$IBD <- as.character(m$IBD)
+m$IBD[is.na(m$IBD)] <- "CONTROL"
+b <- as.matrix(beta)
+f <- function(m, l1, l2) {
+  out <- m[l1, l2]
+  stopifnot(ncol(out) == length(l2))
+  stopifnot(nrow(out) == length(l1))
+  diag(out) <- NA
+  dim(out) <- NULL
+  out[!is.na(out)]
+}
+controls <- m$Original[m$IBD %in% "CONTROL"]
+cases <- m$Original[!m$IBD %in% "CONTROL"]
+UC <- m$Original[m$IBD %in% "UC"]
+CD <- m$Original[m$IBD %in% "CD"]
+male <- m$Original[m$SEX %in% "male"]
+female <- m$Original[m$SEX %in% "female"]
+ileum <- m$Original[m$Exact_location == "ileum"]
+colon <- m$Original[m$Exact_location != "ileum"]
+
+controls_beta <- f(b, controls, controls)
+UC_beta <- f(b, UC, UC)
+CD_beta <- f(b, CD, CD)
+controls_ileum_beta <- f(b, intersect(controls, ileum),
+                         intersect(controls, ileum))
+UC_ileum_beta <- f(b, intersect(UC, ileum), intersect(UC, ileum))
+CD_ileum_beta <- f(b, intersect(CD, ileum), intersect(CD, ileum))
+controls_colon_beta <- f(b, intersect(controls, colon),
+                         intersect(controls, colon))
+UC_colon_beta <- f(b, intersect(UC, colon), intersect(UC, colon))
+CD_colon_beta <- f(b, intersect(CD, colon), intersect(CD, colon))
+
+ungroup_list <- function(x) {
+  data.frame(group = rep(names(x), lengths(x)),
+             beta = unlist(x, FALSE, FALSE), stringsAsFactors = FALSE)
+}
+}
+{
+pdf(paste0("Figures/beta_diversity_", method, ".pdf"))
+l1 <- list("C" = controls_beta, UC = UC_beta, CD = CD_beta,
+           "C vs UC" = f(b, controls, UC),
+           "C vs CD" = f(b, controls, CD),
+           "UC vs CD" = f(b, UC, CD))
+# boxplot(x = l1,
+#         main = "Beta diversity", ylab = "Jaccard similarity",
+#         ylim = c(0, 1), frame.plot = FALSE)
+df1 <- ungroup_list(l1)
+comparisons <- list(c("C", "UC"), c("C", "CD"), c("UC", "CD"),
+                    c("C vs CD", "C vs UC"))
+p1 <- ggplot(df1,
+       aes(x = fct_relevel(group, names(l1)), y = beta)) +
+  geom_violin(fill = NA) +
+  geom_boxplot(width = 0.1, fill = NA) +
+  ggpubr::stat_compare_means(comparisons = comparisons) +
+  labs(x = element_blank(), y = paste0(method, " dissimilarity"),
+       title = "Comparing all samples") +
+  theme_minimal()
+print(p1)
+# Significant differences between UC and CD and between UC and CD.
+l2 <- list(
+  "C" = controls_colon_beta,
+  "UC" = UC_colon_beta,
+  "CD" = CD_colon_beta,
+  "C vs CD" = f(b, intersect(controls, colon),
+                intersect(CD, colon)),
+  "C vs UC" = f(b, intersect(controls, colon),
+                intersect(UC, colon)),
+  "UC vs CD" = f(b, intersect(UC, colon),
+                 intersect(CD, colon)))
+# On colon nothing is significant
+# boxplot(x = l2,
+#   main = "Beta diversity on colon", ylab = "Jaccard similarity",
+#   ylim = c(0, 1),frame.plot = FALSE)
+df2 <- ungroup_list(l2)
+comparisons <- list(c("C", "UC"), c("C", "CD"), c("UC", "CD"),
+                    c("C vs CD", "C vs UC"))
+p2 <- ggplot(df2,
+       aes(x = fct_relevel(group, names(l2)), y = beta)) +
+  geom_violin(fill = NA) +
+  geom_boxplot(width = 0.1, fill = NA) +
+  ggpubr::stat_compare_means(comparisons = comparisons) +
+  labs(x = element_blank(), y = paste0(method, " dissimilarity"),
+       title = "Comparing colon samples") +
+  theme_minimal()
+print(p2)
+l3 <- list(
+  "C" = controls_ileum_beta,
+  "CD" = CD_ileum_beta,
+  "C vs CD" = f(b, intersect(controls, ileum),
+                intersect(CD, ileum)))
+# boxplot(x = l3,
+#   main = "Beta diversity on ileum", ylab = "Jaccard similarity",
+#   # ylim = c(0, 1),
+#   frame.plot = FALSE)
+# Not significant differences between CD and C on the ileum alone.
+df3 <- ungroup_list(l3)
+comparisons <- list(c("C", "CD"))
+p3 <- ggplot(df3,
+       aes(x = fct_relevel(group, names(l3)), y = beta)) +
+  geom_violin(fill = NA) +
+  geom_boxplot(width = 0.1, fill = NA) +
+  ggpubr::stat_compare_means(comparisons = comparisons) +
+  labs(x = element_blank(), y = paste0(method, " dissimilarity"),
+       title = "Comparing ileum samples") +
+  theme_minimal()
+print(p3)
 dev.off()
+}
+f2()
 
 # metagenomeSeq ####
 MR <- phyloseq_to_metagenomeSeq(phyloseq) # For testing and comparing data
