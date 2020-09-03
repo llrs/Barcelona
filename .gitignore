@@ -6,10 +6,14 @@ data
 *.RDS
 *.xlsx
 *.pdf
-
+nohup.out
+data_out/*
 data/Raw
 data/fastp
 data/fastQC
 Figures/*
 GSM*
 GSE*
+renv/library/*
+renv/python/*
+renv/staging/*
