@@ -158,17 +158,10 @@ w_dna <- model$a[[2]][, 1]
 
 
 # Select options ####
-<<<<<<< HEAD
-sOTUs2 <- otus_ileum
-srna2 <- rna_ileum
-b <- b_ileum
-header <- "20200706_ileum_"
-=======
 sOTUs2 <- otus_colon
 srna2 <- rna_colon
 b <- b_colon
 header <- "20200715_colon_family_"
->>>>>>> cba0b0866e61c0ab831434555eab07b3067dfbe1
 
 fOTUS2 <- sOTUs2[b != 0, ]
 frna2 <- srna2[rownames(srna2) %in% names_rna, ]
