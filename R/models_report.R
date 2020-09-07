@@ -1,4 +1,4 @@
-library("integration")
+{library("integration")
 library("RGCCA")
 library("dplyr")
 library("ggplot2")
@@ -8,8 +8,8 @@ library("pROC")
 
 theme_set(theme_bw())
 theme_update(strip.background = element_blank())
-
-models0 <- readRDS("data_out/models0.RDS")
+}
+{models0 <- readRDS("data_out/models0.RDS")
 model0 <- models0[[1]]
 model0i <- models0[[2]]
 models2 <- readRDS("data_out/models2.RDS")
@@ -29,7 +29,7 @@ model3i <- models3[[2]]
 # model3_besti <- models3[[4]]
 
 model3_best <- readRDS("data_out/model3_best_treatment.RDS") # Best according to antiTNF
-
+}
 
 l <- list("0" = model0, "0 i" = model0i, "1" = model1, "1 i" = model1i,
           "1.1" = model2, "1.1 i" = model2i,  "1.2" = model2_best,
