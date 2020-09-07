@@ -8,7 +8,7 @@ library("purrr")
 library("ggplot2")
 library("lubridate")
 library("org.Hs.eg.db")
-
+{
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
@@ -87,8 +87,9 @@ rownames(meta2) <- 1:nrow(meta2)
 
 OTUs2 <- as.matrix(OTUs2)
 rna2 <- as.matrix(rna2)
-
+}
 # * ileum ####
+{
 keep_ileum <- meta2$Exact_location %in% "ileum"
 rna_ileum <- rna2[, keep_ileum]
 otus_ileum <- OTUs2[, keep_ileum]
@@ -100,7 +101,8 @@ b_ileum <- rowSums(ab > abundance)
 otus_ileum <- norm_RNAseq(otus_ileum)
 rna_ileum <- norm_RNAseq(rna_ileum)
 rna_ileum <- filter_RNAseq(rna_ileum)
-
+}
+{
 # * colon ####
 keep_colon <- !keep_ileum
 keep_uc <- meta2$IBD %in% "UC"
@@ -115,9 +117,9 @@ b_colon <- rowSums(ab > abundance)
 otus_colon <- norm_RNAseq(otus_colon)
 rna_colon <- norm_RNAseq(rna_colon)
 rna_colon <- filter_RNAseq(rna_colon)
-
+}
+{
 # ** Colon CD C ####
-
 rna_colon_CD <- rna2[, keep_colon  & !keep_uc]
 otus_colon_CD <- OTUs2[, keep_colon  & !keep_uc]
 
@@ -128,7 +130,8 @@ b_colon_CD <- rowSums(ab > abundance)
 otus_colon_CD <- norm_RNAseq(otus_colon_CD)
 rna_colon_CD <- norm_RNAseq(rna_colon_CD)
 rna_colon_CD <- filter_RNAseq(rna_colon_CD)
-
+}
+{
 # ** Colon UC C ####
 rna_colon_UC <- rna2[, keep_colon & (keep_uc | keep_c)]
 otus_colon_UC <- OTUs2[, keep_colon & (keep_uc | keep_c)]
@@ -140,7 +143,8 @@ b_colon_UC <- rowSums(ab > abundance)
 otus_colon_UC <- norm_RNAseq(otus_colon_UC)
 rna_colon_UC <- norm_RNAseq(rna_colon_UC)
 rna_colon_UC <- filter_RNAseq(rna_colon_UC)
-
+}
+{
 # * All ####
 abundance <- 0.005 # 0.5%
 a <- prop.table(OTUs2, 2)
@@ -149,15 +153,17 @@ b_all <- rowSums(a > abundance)
 OTUs_all <- norm_RNAseq(OTUs2)
 rna_all <- norm_RNAseq(rna2)
 rna_all <- filter_RNAseq(rna_all)
-
+}
+{
 # Filter by model ####
 model <- readRDS("data_out/model2b_sgcca.RDS")
 w_rna <- model$a[[1]][, 1]
 names_rna <- names(w_rna)[w_rna != 0]
 w_dna <- model$a[[2]][, 1]
 
-
+}
 # Select options ####
+{
 sOTUs2 <- otus_colon
 srna2 <- rna_colon
 b <- b_colon
@@ -226,7 +232,7 @@ for (i in seq_len(nrow(df))) {
 dev.off()
 df <- df[!is.na(df$r), ]
 saveRDS(df, paste0("data_out/", header, "correlations.RDS"))
-
+}
 # * Plot distributions ####
 df %>%
   group_by(family) %>%
