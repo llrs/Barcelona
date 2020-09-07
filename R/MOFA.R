@@ -12,16 +12,17 @@ library("org.Hs.eg.db")
 library("MultiAssayExperiment")
 library("MOFA")
 
+{
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
 genus <- tab[, 1, FALSE]
-write.csv(genus, "data/genus.csv")
 
 # From the QC step
 meta <- readRDS("data_out/info_samples.RDS")
 meta$Counts <- colSums(counts)
-
+}
+{
 # filter (keep in mind that it should be on the same order)
 if (!all(colnames(counts) == meta$Name)) {
   stop("Reorder the samples to match the condition!!")
@@ -43,7 +44,8 @@ keepDup <- replicate_samples %>%
 nam <- c(names(replicates[replicates == 1]), keepDup$Name)
 otus <- bcn[, colnames(bcn) %in% nam]
 meta <- meta[meta$Name %in% nam, ]
-
+}
+{
 # Working with RNAseq
 # From Juanjo: The original counts are ok, but I need to remove the reseq samples as they
 # have different length and bias the PCA
@@ -87,7 +89,7 @@ rna2 <- norm_RNAseq(rna2)
 rna2 <- filter_RNAseq(rna2)
 
 experiments <- list(RNA = rna2, OTUS = OTUs2)
-
+}
 mae <- MultiAssayExperiment(
   experiments = experiments,
   # colData = meta2
