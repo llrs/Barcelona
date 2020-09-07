@@ -1,6 +1,5 @@
 # load data ####
 library("readxl")
-library("dplyr")
 library("tidyr")
 library("metagenomeSeq")
 library("integration")
@@ -12,6 +11,8 @@ library("org.Hs.eg.db")
 library("forcats")
 library("ggh4x") # from teunbrand/ggh4x
 library("ggpubr")
+library("dplyr")
+
 {
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
@@ -198,24 +199,50 @@ ts2 <- ts %>%
     activity_test =
       ifelse(n_distinct(data_plots$Activity) >= 2,
                   kruskal.test(ratio ~ Activity, data = data_plots)$p.value,
-                NA))
-pdf("Figures/Time_IBD_prevalence.pdf")
-for (i in seq_len(nrow(ts0))) {
+                NA),
+    Location_test =
+      ifelse(n_distinct(data_plots$Ileum) >= 2,
+             kruskal.test(ratio ~ Ileum, data = data_plots)$p.value,
+             NA),
+    IBD_activity_test =
+      ifelse(all(group_by(data_plots, Activity, IBD) %>% count() %>% pull(n) >= 2) &
+               length(unique(paste0(data_plots$IBD, data_plots$Activity))) != 1,
+             kruskal.test(ratio ~ paste0(IBD, Activity), data = data_plots)$p.value,
+             NA),
+    IBD_loc_test =
+      ifelse(all(group_by(data_plots, Ileum, IBD) %>% count() %>% pull(n) >= 2) &
+               length(unique(paste0(data_plots$IBD, data_plots$Ileum))) != 1,
+             kruskal.test(ratio ~ paste0(IBD, Ileum), data = data_plots)$p.value,
+             NA))
+df <- ts2 %>%
+  ungroup() %>%
+  dplyr::select(Family, ends_with("_test"))
+colnames(df)[2:ncol(df)] <- c("IBD (p.val)", "Time (p.val)", "Activity (p.val)",
+                       "Location (p.val)",  "IBD & Activity (p.val)",
+                       "IBD & Location (p.val)")
+df2 <- apply(df[, 2:ncol(df)], 2, p.adjust)
+colnames(df2) <- gsub(pattern = "p.val", replacement = "adj.p.val", x = colnames(df2))
+df3 <- cbind(df, df2)
+write.csv(x = df3, file = "data_out/abundance_p_values.csv",
+          row.names = FALSE)
+pdf("Figures/Time_IBD_abundance.pdf")
+for (i in seq_len(nrow(ts))) {
   print(ts$Time_IBD[[i]])
 }
 dev.off()
-pdf("Figures/IBD_activity_prevalence.pdf")
-for (i in seq_len(nrow(ts0))) {
+pdf("Figures/IBD_activity_abundance.pdf")
+for (i in seq_len(nrow(ts))) {
   print(ts$IBD_activity[[i]])
 }
 dev.off()
-pdf("Figures/Ileum_IBD_activity_prevalence.pdf")
-for (i in seq_len(nrow(ts0))) {
+pdf("Figures/Ileum_IBD_activity_abundance.pdf")
+for (i in seq_len(nrow(ts))) {
   print(ts$Ileum_IBD_activity[[i]])
 }
-dev.off()}
+dev.off()
 
-tidy_family %>%
+
+p <- tidy_family %>%
   filter(Family == "Acidaminococcaceae") %>%
   mutate(cat = paste(Ileum, IBD, Activity, sep = "_")) %>%
   mutate(cat = fct_relevel(cat,
@@ -228,13 +255,12 @@ tidy_family %>%
   stat_compare_means() +
   labs(x = element_blank(), y = "Beta diversity", title = "Acidaminococcaceae") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1))
-
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   facet_nested(~ Ileum + IBD + Activity,
                scales = "free", switch = "x", nest_line = TRUE) +
   theme(axis.text.x = element_blank())
-
-tidy_family %>%
+print(p)
+p <- tidy_family %>%
   arrange(IBD) %>%
   mutate(f2 = fct_lump_prop(as.factor(Family), prop = 0.01, w = ratio),
          # Reorder such that the levels are according to the ratio on the plot
@@ -247,7 +273,8 @@ tidy_family %>%
   scale_fill_viridis_d() +
   # guides(fill = FALSE) +
   scale_y_continuous(labels = scales::percent, expand = expansion())
-
+print(p)
+}
 # * genus level ####
 
 tidy_genus <- tab %>%
@@ -400,12 +427,9 @@ fam %>%
   comb_prevalence(meta, c("ileum")) %>%
   filter_prev() %>%
   extract_rownames()
-
-
 fam %>%
   full_prevalence(meta, c("Time")) %>%
   extract_rownames()
-
 fam %>%
   full_prevalence(meta, c("treatment")) %>%
   extract_rownames()
