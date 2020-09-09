@@ -68,7 +68,7 @@ colnames2 <- colnames(rna) %>%
 colnames(rna) <- colnames2
 
 
-# Filter the samples
+# Filter the samples ####
 rna2 <- rna[, colnames(rna) %in% meta$Original]
 meta2 <- droplevels(meta[meta$Original %in% colnames(rna2), ])
 OTUs2 <- otus[, colnames(otus) %in% meta2$Name]
@@ -164,10 +164,10 @@ w_dna <- model$a[[2]][, 1]
 }
 # Select options ####
 {
-sOTUs2 <- otus_colon
-srna2 <- rna_colon
-b <- b_colon
-header <- "20200715_colon_family_"
+sOTUs2 <- OTUs_all
+srna2 <- rna_all
+b <- b_all
+header <- "20200908_all_family_"
 
 fOTUS2 <- sOTUs2[b != 0, ]
 frna2 <- srna2[rownames(srna2) %in% names_rna, ]
@@ -187,12 +187,6 @@ df <- expand.grid(family = rownames(fOTUS2), genes = rownames(frna2),
 df$r <- 0
 df$p.value <- 1
 df <- arrange(df, family)
-
-skip_micro <- c("Tsukamurellaceae", "Cyclobacteriaceae", "Beutenbergiaceae",
-                "Conexibacteriaceae", "Dermacoccaceae", "Nocardiaceae",
-                "Thermaceae", "Thermomicrobiaceae", "Beijerinckiaceae",
-                "Campylobacteraceae", "Halanaerobiaceae")
-skip_gene <- c("GIMD1")
 
 pdf(paste0("Figures/", header, "correlations.pdf"))
 for (i in seq_len(nrow(df))) {
@@ -228,11 +222,17 @@ for (i in seq_len(nrow(df))) {
   silent = TRUE
   )
 }
-
 dev.off()
 df <- df[!is.na(df$r), ]
 saveRDS(df, paste0("data_out/", header, "correlations.RDS"))
-}
+
+# As decided on July remove some after manually inspecting the above files.
+skip_micro <- c("Tsukamurellaceae", "Cyclobacteriaceae", "Beutenbergiaceae",
+                "Conexibacteriaceae", "Dermacoccaceae", "Nocardiaceae",
+                "Thermaceae", "Thermomicrobiaceae", "Beijerinckiaceae",
+                "Campylobacteraceae", "Halanaerobiaceae")
+skip_gene <- c("GIMD1")
+
 # * Plot distributions ####
 df %>%
   group_by(family) %>%
@@ -268,8 +268,12 @@ sum(abs(df$r) > q & !is.na(df$p.value))
 
 # Redo just those correlations above the threshold to be able to check that they are fit
 subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
-subDF <- subDF[order(subDF$family, subDF$p.value, decreasing = FALSE), c("genes", "family")]
+subDF <- subDF[!subDF$family %in% skip_micro & !subDF$genes %in% skip_gene, ]
+subDF <- subDF[order(subDF$family, subDF$p.value, decreasing = FALSE), ]
 # write.csv(meta, "data_out/20200629_refined_meta.csv", na = "", row.names = FALSE)
+# write.csv(subDF, header, na = "", row.names = FALSE)
+write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
+          na = "", row.names = FALSE)
 
 subMeta <- meta2[match(colnames(frna2), meta2$Original), ]
 loc <- ifelse(subMeta$Exact_location == "ileum", "ileum", "colon")
@@ -285,13 +289,6 @@ pdf(paste0("Figures/", header, "high_correlations_family.pdf"))
 for (i in seq_len(nrow(subDF))) {
   family <- subDF$family[i]
   gene <- subDF$genes[i]
-
-  if (family %in% skip_micro){
-    next
-  }
-  if (gene %in% skip_gene){
-    next
-  }
 
   x <- frna2[gene, ]
   # x <- rm_outliers(x, qrna)
@@ -335,9 +332,7 @@ for (i in seq_len(nrow(subDF))) {
   )
 }
 dev.off()
-subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
-write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
-          na = "", row.names = FALSE)
+}
 
 subDF %>%
   count(family, sort = TRUE) %>%
