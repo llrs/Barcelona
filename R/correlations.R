@@ -79,7 +79,7 @@ colnames(OTUs2) <- meta2$Original[match(colnames(OTUs2), meta2$Name)]
 meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
 meta3 <- readRDS("data_out/refined_meta.RDS")
 meta3$IBD <- as.character(meta3$IBD)
-meta3$IBD[is.na(meta3$IBD)] <- "C"
+meta3$IBD[meta3$IBD == "CONTROL"] <- "C"
 stopifnot(all(meta3$Original == meta2$Original))
 meta2 <- meta3
 OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
@@ -87,9 +87,10 @@ rownames(meta2) <- 1:nrow(meta2)
 
 OTUs2 <- as.matrix(OTUs2)
 rna2 <- as.matrix(rna2)
+rownames(rna2) <- trimVer(rownames(rna2))
 }
-# * ileum ####
 {
+# * ileum: CD + C ####
 keep_ileum <- meta2$Exact_location %in% "ileum"
 rna_ileum <- rna2[, keep_ileum]
 otus_ileum <- OTUs2[, keep_ileum]
@@ -98,15 +99,15 @@ abundance <- 0.005 # 0.5%
 ab <- prop.table(otus_ileum, 2)
 b_ileum <- rowSums(ab > abundance)
 
-otus_ileum <- norm_RNAseq(otus_ileum)
-rna_ileum <- norm_RNAseq(rna_ileum)
-rna_ileum <- filter_RNAseq(rna_ileum)
+otus_ileum_norm <- norm_RNAseq(otus_ileum)
+rna_ileum_norm <- norm_RNAseq(rna_ileum)
+rna_ileum_norm <- filter_RNAseq(rna_ileum_norm)
 }
 {
 # * colon ####
 keep_colon <- !keep_ileum
 keep_uc <- meta2$IBD %in% "UC"
-keep_c <- meta2$IBD %in% "C"
+keep_c <- meta2$IBD %in% "C" | is.na(meta2$IBD)
 rna_colon <- rna2[, keep_colon]
 otus_colon <- OTUs2[, keep_colon]
 
@@ -114,12 +115,12 @@ abundance <- 0.005 # 0.5%
 ab <- prop.table(otus_colon, 2)
 b_colon <- rowSums(ab > abundance)
 
-otus_colon <- norm_RNAseq(otus_colon)
-rna_colon <- norm_RNAseq(rna_colon)
-rna_colon <- filter_RNAseq(rna_colon)
+otus_colon_norm <- norm_RNAseq(otus_colon)
+rna_colon_norm <- norm_RNAseq(rna_colon)
+rna_colon_norm <- filter_RNAseq(rna_colon_norm)
 }
 {
-# ** Colon CD C ####
+# ** Colon CD + C ####
 rna_colon_CD <- rna2[, keep_colon  & !keep_uc]
 otus_colon_CD <- OTUs2[, keep_colon  & !keep_uc]
 
@@ -127,12 +128,12 @@ abundance <- 0.005 # 0.5%
 ab <- prop.table(otus_colon_CD, 2)
 b_colon_CD <- rowSums(ab > abundance)
 
-otus_colon_CD <- norm_RNAseq(otus_colon_CD)
-rna_colon_CD <- norm_RNAseq(rna_colon_CD)
-rna_colon_CD <- filter_RNAseq(rna_colon_CD)
+otus_colon_CD_norm <- norm_RNAseq(otus_colon_CD)
+rna_colon_CD_norm <- norm_RNAseq(rna_colon_CD)
+rna_colon_CD_norm <- filter_RNAseq(rna_colon_CD_norm)
 }
 {
-# ** Colon UC C ####
+# ** Colon UC + C ####
 rna_colon_UC <- rna2[, keep_colon & (keep_uc | keep_c)]
 otus_colon_UC <- OTUs2[, keep_colon & (keep_uc | keep_c)]
 
@@ -140,9 +141,9 @@ abundance <- 0.005 # 0.5%
 ab <- prop.table(otus_colon_UC, 2)
 b_colon_UC <- rowSums(ab > abundance)
 
-otus_colon_UC <- norm_RNAseq(otus_colon_UC)
-rna_colon_UC <- norm_RNAseq(rna_colon_UC)
-rna_colon_UC <- filter_RNAseq(rna_colon_UC)
+otus_colon_UC_norm <- norm_RNAseq(otus_colon_UC)
+rna_colon_UC_norm <- norm_RNAseq(rna_colon_UC)
+rna_colon_UC_norm <- filter_RNAseq(rna_colon_UC_norm)
 }
 {
 # * All ####
@@ -150,31 +151,35 @@ abundance <- 0.005 # 0.5%
 a <- prop.table(OTUs2, 2)
 b_all <- rowSums(a > abundance)
 
-OTUs_all <- norm_RNAseq(OTUs2)
-rna_all <- norm_RNAseq(rna2)
-rna_all <- filter_RNAseq(rna_all)
+OTUs_all_norm <- norm_RNAseq(OTUs2)
+rna_all_norm <- norm_RNAseq(rna2)
+rna_all_norm <- filter_RNAseq(rna_all_norm)
 }
 {
 # Filter by model ####
 model <- readRDS("data_out/model2b_sgcca.RDS")
 w_rna <- model$a[[1]][, 1]
-names_rna <- names(w_rna)[w_rna != 0]
+names_rna <- trimVer(names(w_rna)[w_rna != 0])
 w_dna <- model$a[[2]][, 1]
 
 }
 # Select options ####
 {
-sOTUs2 <- OTUs_all
-srna2 <- rna_all
+sOTUs2 <- OTUs_all_norm
+oOTUs2 <- OTUs2
+srna2 <- rna_all_norm
+orna2 <- rna2
 b <- b_all
-header <- "20200908_all_family_"
+header <- "20200910_all_family_"
+
+stopifnot(length(unique(meta2$IBD[meta2$Original == colnames(sOTUs2)]))  >= 2)
 
 fOTUS2 <- sOTUs2[b != 0, ]
 frna2 <- srna2[rownames(srna2) %in% names_rna, ]
 
 # Fix names ####
 # Gene names instead of ENSEMBL
-s <- mapIds(org.Hs.eg.db, keys = trimVer(rownames(frna2)),
+s <- mapIds(org.Hs.eg.db, keys = rownames(frna2),
             keytype = "ENSEMBL", column = "SYMBOL")
 frna2 <- frna2[!is.na(s), ]
 rownames(frna2) <- s[!is.na(s)]
@@ -185,11 +190,20 @@ rownames(fOTUS2) <- as.character(family_all[b != 0, 1])
 df <- expand.grid(family = rownames(fOTUS2), genes = rownames(frna2),
                   stringsAsFactors = FALSE)
 df$r <- 0
+df$gene_outliers <- 0
+df$family_outliers <- 0
 df$p.value <- 1
 df <- arrange(df, family)
 
+outliers <- function(x){
+  q <- quantile(x, c(0.25, 0.5, 0.75))
+  iqr <- q[3] - q[1]
+  k <- 1.5
+  x > q[1] + k*iqr | x < q[3] - k*iqr
+}
+
 pdf(paste0("Figures/", header, "correlations.pdf"))
-for (i in seq_len(nrow(df))) {
+for (i in seq_len(100000)) {
   family <- df$family[i]
   gene <- df$genes[i]
 
@@ -199,6 +213,12 @@ for (i in seq_len(nrow(df))) {
   names(x) <- NULL
   names(y) <- NULL
 
+  # Filter based on that the original matrix had 0
+  x_remove <- orna2[names(gene), ] != 0
+  y_remove <- oOTUs2[family, ] != 0
+  xx <- x[x_remove | y_remove]
+  yy <- y[x_remove | y_remove]
+
   # Filter based on the number of pairwise values existing
   d <- rbind(x, y)
   pairwise <- apply(d, 2, function(z){all(!is.na(z))})
@@ -206,10 +226,12 @@ for (i in seq_len(nrow(df))) {
   if (k/length(pairwise) < 0.15 & k < 4) {
     next
   }
-
+  x_out <- outliers(xx)
+  y_out <- outliers(yy)
+  df$gene_outliers[i] <- sum(x_out)
+  df$micro_outliers[i] <- sum(y_out)
   try({
-    co <- cor.test(x, y, use = "spearman",
-                   use = "pairwise.complete.obs")
+    co <- cor.test(xx[!outliers], yy[!outliers], use = "spearman", use = "pairwise.complete.obs")
     df$p.value[i] <- co$p.value
     df$r[i] <- co$estimate
     if (co$p.value < 0.05) {
@@ -263,11 +285,12 @@ df %>%
        x = "Correlation (absolute value)", y = "n")
 
 # ** Higher correlations ####
-q <- quantile(abs(df$r[df$p.value < 0.05 & !is.na(df$p.value)]), 0.99)
-sum(abs(df$r) > q & !is.na(df$p.value))
+# On 10/09/2020 decided to remove the 0/lowest offset of the correlation,
+# but plot it anyway.
+# Also to include the controls in all the correlations
 
 # Redo just those correlations above the threshold to be able to check that they are fit
-subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
+subDF <- df[df$p.value < 0.05, ]
 subDF <- subDF[!subDF$family %in% skip_micro & !subDF$genes %in% skip_gene, ]
 subDF <- subDF[order(subDF$family, subDF$p.value, decreasing = FALSE), ]
 # write.csv(meta, "data_out/20200629_refined_meta.csv", na = "", row.names = FALSE)
