@@ -165,14 +165,14 @@ w_dna <- model$a[[2]][, 1]
 }
 # Select options ####
 {
-sOTUs2 <- OTUs_all_norm
-oOTUs2 <- OTUs2
-srna2 <- rna_all_norm
-orna2 <- rna2
-b <- b_all
-header <- "20200910_all_family_"
+sOTUs2 <- otus_colon_UC_norm
+oOTUs2 <- otus_colon_UC
+srna2 <- rna_colon_UC_norm
+orna2 <- rna_colon_UC
+b <- b_colon
+header <- "20200910_colon_UC_family_"
 
-stopifnot(length(unique(meta2$IBD[meta2$Original == colnames(sOTUs2)]))  >= 2)
+stopifnot(length(unique(meta2$IBD[meta2$Original %in% colnames(sOTUs2)]))  >= 2)
 
 fOTUS2 <- sOTUs2[b != 0, ]
 frna2 <- srna2[rownames(srna2) %in% names_rna, ]
@@ -190,20 +190,20 @@ rownames(fOTUS2) <- as.character(family_all[b != 0, 1])
 df <- expand.grid(family = rownames(fOTUS2), genes = rownames(frna2),
                   stringsAsFactors = FALSE)
 df$r <- 0
-df$gene_outliers <- 0
-df$family_outliers <- 0
 df$p.value <- 1
+df$gene_outliers <- 0
+df$micro_outliers <- 0
 df <- arrange(df, family)
 
-outliers <- function(x){
+outliers <- function(x, k = 3){
   q <- quantile(x, c(0.25, 0.5, 0.75))
   iqr <- q[3] - q[1]
-  k <- 1.5
   x > q[1] + k*iqr | x < q[3] - k*iqr
 }
 
+# * Plot correlations ####
 pdf(paste0("Figures/", header, "correlations.pdf"))
-for (i in seq_len(100000)) {
+for (i in seq_len(nrow(df))) {
   family <- df$family[i]
   gene <- df$genes[i]
 
@@ -216,22 +216,24 @@ for (i in seq_len(100000)) {
   # Filter based on that the original matrix had 0
   x_remove <- orna2[names(gene), ] != 0
   y_remove <- oOTUs2[family, ] != 0
-  xx <- x[x_remove | y_remove]
-  yy <- y[x_remove | y_remove]
+  xx <- x[x_remove & y_remove]
+  yy <- y[x_remove & y_remove]
 
   # Filter based on the number of pairwise values existing
-  d <- rbind(x, y)
-  pairwise <- apply(d, 2, function(z){all(!is.na(z))})
-  k <- sum(pairwise, na.rm = TRUE)
-  if (k/length(pairwise) < 0.15 & k < 4) {
-    next
-  }
   x_out <- outliers(xx)
   y_out <- outliers(yy)
+
   df$gene_outliers[i] <- sum(x_out)
   df$micro_outliers[i] <- sum(y_out)
+
+  xx <- xx[!x_out & !y_out]
+  yy <- yy[!x_out & !y_out]
+  stopifnot(length(xx) == length(yy))
+  if (length(xx)/length(x) < 0.15 & length(xx) < 4) {
+    next
+  }
   try({
-    co <- cor.test(xx[!outliers], yy[!outliers], use = "spearman", use = "pairwise.complete.obs")
+    co <- cor.test(xx, yy, use = "spearman", use = "pairwise.complete.obs")
     df$p.value[i] <- co$p.value
     df$r[i] <- co$estimate
     if (co$p.value < 0.05) {
@@ -284,19 +286,23 @@ df %>%
   labs(title = "Distribution of significant correlations",
        x = "Correlation (absolute value)", y = "n")
 
-# ** Higher correlations ####
+ # ** Higher correlations ####
 # On 10/09/2020 decided to remove the 0/lowest offset of the correlation,
 # but plot it anyway.
 # Also to include the controls in all the correlations
 
 # Redo just those correlations above the threshold to be able to check that they are fit
 subDF <- df[df$p.value < 0.05, ]
+q <- quantile(abs(subDF$r), 0.95)
+subDF <- subDF[abs(subDF$r) >= q, ]
 subDF <- subDF[!subDF$family %in% skip_micro & !subDF$genes %in% skip_gene, ]
 subDF <- subDF[order(subDF$family, subDF$p.value, decreasing = FALSE), ]
 # write.csv(meta, "data_out/20200629_refined_meta.csv", na = "", row.names = FALSE)
 # write.csv(subDF, header, na = "", row.names = FALSE)
 write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
           na = "", row.names = FALSE)
+write.xlsx(subDF, file = paste0("data_out/", header, "high_correlations_family.xlsx"),
+           colNames = TRUE)
 
 subMeta <- meta2[match(colnames(frna2), meta2$Original), ]
 loc <- ifelse(subMeta$Exact_location == "ileum", "ileum", "colon")
@@ -314,31 +320,34 @@ for (i in seq_len(nrow(subDF))) {
   gene <- subDF$genes[i]
 
   x <- frna2[gene, ]
-  # x <- rm_outliers(x, qrna)
   y <- fOTUS2[family, ]
-  # y <- rm_outliers(y, qdna)
   names(x) <- NULL
   names(y) <- NULL
-  rm_samples <- !is.na(x) & !is.na(y)
-  loc2 <- loc[rm_samples]
-  ibd2 <- ibd[rm_samples]
-  g <- x[rm_samples]
-  o <- y[rm_samples]
 
-  if (var(g, use = "everything") < .Machine$double.eps) {
-    next
-  }
-  if (var(o, use = "everything") < .Machine$double.eps) {
+  # Filter based on that the original matrix had 0
+  x_remove <- orna2[names(gene), ] != 0
+  y_remove <- oOTUs2[family, ] != 0
+  xx <- x[x_remove & y_remove]
+  yy <- y[x_remove & y_remove]
+
+  # Filter based on the number of pairwise values existing
+  x_out <- outliers(xx)
+  y_out <- outliers(yy)
+
+  df$gene_outliers[i] <- sum(x_out)
+  df$micro_outliers[i] <- sum(y_out)
+
+  xx <- xx[!x_out & !y_out]
+  yy <- yy[!x_out & !y_out]
+  stopifnot(length(xx) == length(yy))
+  if (length(xx)/length(x) < 0.15 & length(xx) < 4) {
     next
   }
 
   try({
-    co <- cor.test(g, o, use = "spearman",
+    co <- cor.test(xx, yy, use = "spearman",
                    use = "pairwise.complete.obs")
-    if (co$p.value >= 0.05) {
-      next
-    }
-    plot(g, o, xlab = gene, ylab = family, pch = pch,
+    plot(x, y, xlab = gene, ylab = family, pch = pch,
          col = ibd2,
          main = paste0("Correlation: ",
                        round(co$estimate, 4), "\n",
