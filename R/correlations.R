@@ -164,207 +164,222 @@ w_dna <- model$a[[2]][, 1]
 
 }
 # Select options ####
-{
-sOTUs2 <- otus_colon_UC_norm
-oOTUs2 <- otus_colon_UC
-srna2 <- rna_colon_UC_norm
-orna2 <- rna_colon_UC
-b <- b_colon
-header <- "20200910_colon_UC_family_"
-
-stopifnot(length(unique(meta2$IBD[meta2$Original %in% colnames(sOTUs2)]))  >= 2)
-
-fOTUS2 <- sOTUs2[b != 0, ]
-frna2 <- srna2[rownames(srna2) %in% names_rna, ]
-
-# Fix names ####
-# Gene names instead of ENSEMBL
-s <- mapIds(org.Hs.eg.db, keys = rownames(frna2),
-            keytype = "ENSEMBL", column = "SYMBOL")
-frna2 <- frna2[!is.na(s), ]
-rownames(frna2) <- s[!is.na(s)]
-# Tax family instead of numbers
-rownames(fOTUS2) <- as.character(family_all[b != 0, 1])
-
-# Correlations ####
-df <- expand.grid(family = rownames(fOTUS2), genes = rownames(frna2),
-                  stringsAsFactors = FALSE)
-df$r <- 0
-df$p.value <- 1
-df$gene_outliers <- 0
-df$micro_outliers <- 0
-df <- arrange(df, family)
-
 outliers <- function(x, k = 3){
   q <- quantile(x, c(0.25, 0.5, 0.75))
   iqr <- q[3] - q[1]
   x > q[1] + k*iqr | x < q[3] - k*iqr
 }
 
-# * Plot correlations ####
-pdf(paste0("Figures/", header, "correlations.pdf"))
-for (i in seq_len(nrow(df))) {
-  family <- df$family[i]
-  gene <- df$genes[i]
+correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
+                             meta, names_rna, families) {
 
-  x <- frna2[gene, ]
-  y <- fOTUS2[family, ]
+  stopifnot(length(unique(meta2$IBD[meta2$Original %in% colnames(otus_norm)]))  >= 2)
 
-  names(x) <- NULL
-  names(y) <- NULL
+  fOTUS2 <- otus_norm[b != 0, ]
+  frna2 <- rna_norm[rownames(rna_norm) %in% names_rna, ]
 
-  # Filter based on that the original matrix had 0
-  x_remove <- orna2[names(gene), ] != 0
-  y_remove <- oOTUs2[family, ] != 0
-  xx <- x[x_remove & y_remove]
-  yy <- y[x_remove & y_remove]
+  # Fix names ####
+  # Gene names instead of ENSEMBL
+  s <- mapIds(org.Hs.eg.db, keys = rownames(frna2),
+              keytype = "ENSEMBL", column = "SYMBOL")
+  frna2 <- frna2[!is.na(s), ]
+  rownames(frna2) <- s[!is.na(s)]
+  # Tax family instead of numbers
+  rownames(fOTUS2) <- as.character(family_all[b != 0, 1])
 
-  # Filter based on the number of pairwise values existing
-  x_out <- outliers(xx)
-  y_out <- outliers(yy)
+  # Correlations ####
+  df <- expand.grid(family = rownames(fOTUS2), genes = rownames(frna2),
+                    stringsAsFactors = FALSE)
+  df$r <- 0
+  df$p.value <- 1
+  df$gene_outliers <- 0
+  df$micro_outliers <- 0
+  df <- arrange(df, family)
 
-  df$gene_outliers[i] <- sum(x_out)
-  df$micro_outliers[i] <- sum(y_out)
 
-  xx <- xx[!x_out & !y_out]
-  yy <- yy[!x_out & !y_out]
-  stopifnot(length(xx) == length(yy))
-  if (length(xx)/length(x) < 0.15 & length(xx) < 4) {
-    next
+  # * Plot correlations ####
+  pdf(paste0("Figures/", header, "correlations.pdf"))
+  for (i in seq_len(nrow(df))) {
+    family <- df$family[i]
+    gene <- df$genes[i]
+
+    x <- frna2[gene, ]
+    y <- fOTUS2[family, ]
+
+    names(x) <- NULL
+    names(y) <- NULL
+
+    # Filter based on that the original matrix had 0
+    x_remove <- rna[names(gene), ] != 0
+    y_remove <- otus[family, ] != 0
+    xx <- x[x_remove & y_remove]
+    yy <- y[x_remove & y_remove]
+
+    # Filter based on the number of pairwise values existing
+    x_out <- outliers(xx)
+    y_out <- outliers(yy)
+
+    df$gene_outliers[i] <- sum(x_out)
+    df$micro_outliers[i] <- sum(y_out)
+
+    xx <- xx[!x_out & !y_out]
+    yy <- yy[!x_out & !y_out]
+    stopifnot(length(xx) == length(yy))
+    if (length(xx)/length(x) < 0.15 & length(xx) < 4) {
+      next
+    }
+    try({
+      co <- cor.test(xx, yy, use = "spearman", use = "pairwise.complete.obs")
+      df$p.value[i] <- co$p.value
+      df$r[i] <- co$estimate
+      if (co$p.value < 0.05) {
+        plot(x, y, xlab = gene, ylab = family,
+             main = paste0("Correlation: ",
+                           round(co$estimate, 4), "\n",
+                           "p-value: ", round(co$p.value, 4)))
+      }
+    },
+    silent = TRUE
+    )
   }
-  try({
-    co <- cor.test(xx, yy, use = "spearman", use = "pairwise.complete.obs")
-    df$p.value[i] <- co$p.value
-    df$r[i] <- co$estimate
-    if (co$p.value < 0.05) {
-      plot(x, y, xlab = gene, ylab = family,
+  dev.off()
+  df <- df[!is.na(df$r), ]
+  saveRDS(df, paste0("data_out/", header, "correlations.RDS"))
+
+  # As decided on July remove some after manually inspecting the above files.
+  skip_micro <- c("Tsukamurellaceae", "Cyclobacteriaceae", "Beutenbergiaceae",
+                  "Conexibacteriaceae", "Dermacoccaceae", "Nocardiaceae",
+                  "Thermaceae", "Thermomicrobiaceae", "Beijerinckiaceae",
+                  "Campylobacteraceae", "Halanaerobiaceae")
+  skip_gene <- c("GIMD1")
+
+  # ** Higher correlations ####
+  # On 10/09/2020 decided to remove the 0/lowest offset of the correlation,
+  # but plot it anyway.
+  # Also to include the controls in all the correlations
+
+  # Redo just those correlations above the threshold to be able to check that they are fit
+  subDF <- df[df$p.value < 0.05, ]
+  q <- quantile(abs(subDF$r), 0.95)
+  subDF <- subDF[abs(subDF$r) >= q, ]
+  subDF <- subDF[!subDF$family %in% skip_micro & !subDF$genes %in% skip_gene, ]
+  subDF <- subDF[order(subDF$family, subDF$p.value, decreasing = FALSE), ]
+  # write.csv(meta, "data_out/20200629_refined_meta.csv", na = "", row.names = FALSE)
+  # write.csv(subDF, header, na = "", row.names = FALSE)
+  write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
+            na = "", row.names = FALSE)
+  write.xlsx(subDF, file = paste0("data_out/", header, "high_correlations_family.xlsx"),
+             colNames = TRUE)
+
+  subMeta <- meta2[match(colnames(frna2), meta2$Original), ]
+  loc <- ifelse(subMeta$Exact_location == "ileum", "ileum", "colon")
+  loc <- factor(loc, levels = c("colon", "ileum"))
+  ibd <- as.character(subMeta$IBD)
+  ibd[is.na(ibd)] <- "C"
+  ibd <- factor(ibd, levels = c("C", "CD", "UC"))
+  act <- subMeta$Activity
+  act[is.na(act)] <- "INACTIVE"
+  pch <- ifelse(act == "ACTIVE", 15, 0) + as.numeric(loc) -1
+
+  pdf(paste0("Figures/", header, "high_correlations_family.pdf"))
+  for (i in seq_len(nrow(subDF))) {
+    family <- subDF$family[i]
+    gene <- subDF$genes[i]
+
+    x <- frna2[gene, ]
+    y <- fOTUS2[family, ]
+    names(x) <- NULL
+    names(y) <- NULL
+
+    # Filter based on that the original matrix had 0
+    x_remove <- rna[names(gene), ] != 0
+    y_remove <- otus[family, ] != 0
+    keep1 <- x_remove & y_remove
+    xx <- x[keep1]
+    yy <- y[keep1]
+
+    # Filter based on the number of pairwise values existing
+    x_out <- outliers(xx)
+    y_out <- outliers(yy)
+    keep2 <- !x_out & !y_out
+    df$gene_outliers[i] <- sum(x_out)
+    df$micro_outliers[i] <- sum(y_out)
+
+    xx <- xx[keep2]
+    yy <- yy[keep2]
+    stopifnot(length(xx) == length(yy))
+    if (length(xx)/length(x) < 0.15 & length(xx) < 4) {
+      next
+    }
+
+    try({
+      co <- cor.test(xx, yy, use = "spearman",
+                     use = "pairwise.complete.obs")
+      plot(x, y, xlab = gene, ylab = family, pch = pch,
+           col = ibd,
            main = paste0("Correlation: ",
                          round(co$estimate, 4), "\n",
                          "p-value: ", round(co$p.value, 4)))
-    }
-  },
-  silent = TRUE
-  )
-}
-dev.off()
-df <- df[!is.na(df$r), ]
-saveRDS(df, paste0("data_out/", header, "correlations.RDS"))
-
-# As decided on July remove some after manually inspecting the above files.
-skip_micro <- c("Tsukamurellaceae", "Cyclobacteriaceae", "Beutenbergiaceae",
-                "Conexibacteriaceae", "Dermacoccaceae", "Nocardiaceae",
-                "Thermaceae", "Thermomicrobiaceae", "Beijerinckiaceae",
-                "Campylobacteraceae", "Halanaerobiaceae")
-skip_gene <- c("GIMD1")
-
-# * Plot distributions ####
-df %>%
-  group_by(family) %>%
-  summarise(n = sum(p.value < 0.05)) %>%
-  filter(n != 0) %>%
-  arrange(desc(n)) %>%
-  ggplot() +
-  geom_histogram(aes(n)) +
-  theme_minimal() +
-  labs(x = element_blank(), title = "Significant correlations by microorganism", y = "n")
-
-df %>%
-  group_by(genes) %>%
-  summarise(n = sum(p.value < 0.05)) %>%
-  filter(n != 0) %>%
-  arrange(desc(n)) %>%
-  ggplot() +
-  geom_histogram(aes(n)) +
-  theme_minimal() +
-  labs(x = element_blank(), title = "Significant correlations by gene", y = "n")
-df %>%
-  filter(p.value < 0.05) %>%
-  ggplot() +
-  geom_histogram(aes(abs(r)), binwidth = 0.005) +
-  scale_y_log10() +
-  theme_minimal() +
-  labs(title = "Distribution of significant correlations",
-       x = "Correlation (absolute value)", y = "n")
-
- # ** Higher correlations ####
-# On 10/09/2020 decided to remove the 0/lowest offset of the correlation,
-# but plot it anyway.
-# Also to include the controls in all the correlations
-
-# Redo just those correlations above the threshold to be able to check that they are fit
-subDF <- df[df$p.value < 0.05, ]
-q <- quantile(abs(subDF$r), 0.95)
-subDF <- subDF[abs(subDF$r) >= q, ]
-subDF <- subDF[!subDF$family %in% skip_micro & !subDF$genes %in% skip_gene, ]
-subDF <- subDF[order(subDF$family, subDF$p.value, decreasing = FALSE), ]
-# write.csv(meta, "data_out/20200629_refined_meta.csv", na = "", row.names = FALSE)
-# write.csv(subDF, header, na = "", row.names = FALSE)
-write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
-          na = "", row.names = FALSE)
-write.xlsx(subDF, file = paste0("data_out/", header, "high_correlations_family.xlsx"),
-           colNames = TRUE)
-
-subMeta <- meta2[match(colnames(frna2), meta2$Original), ]
-loc <- ifelse(subMeta$Exact_location == "ileum", "ileum", "colon")
-loc <- factor(loc, levels = c("colon", "ileum"))
-ibd <- as.character(subMeta$IBD)
-ibd[is.na(ibd)] <- "C"
-ibd <- factor(ibd, levels = c("C", "CD", "UC"))
-act <- subMeta$Activity
-act[is.na(act)] <- "INACTIVE"
-pch <- ifelse(act == "ACTIVE", 15, 0) + as.numeric(loc) -1
-
-pdf(paste0("Figures/", header, "high_correlations_family.pdf"))
-for (i in seq_len(nrow(subDF))) {
-  family <- subDF$family[i]
-  gene <- subDF$genes[i]
-
-  x <- frna2[gene, ]
-  y <- fOTUS2[family, ]
-  names(x) <- NULL
-  names(y) <- NULL
-
-  # Filter based on that the original matrix had 0
-  x_remove <- orna2[names(gene), ] != 0
-  y_remove <- oOTUs2[family, ] != 0
-  xx <- x[x_remove & y_remove]
-  yy <- y[x_remove & y_remove]
-
-  # Filter based on the number of pairwise values existing
-  x_out <- outliers(xx)
-  y_out <- outliers(yy)
-
-  df$gene_outliers[i] <- sum(x_out)
-  df$micro_outliers[i] <- sum(y_out)
-
-  xx <- xx[!x_out & !y_out]
-  yy <- yy[!x_out & !y_out]
-  stopifnot(length(xx) == length(yy))
-  if (length(xx)/length(x) < 0.15 & length(xx) < 4) {
-    next
+      legend("top",
+             legend = levels(ibd),
+             fill = as.factor(levels(ibd)))
+      legend("right",
+             legend = c("Inactive colon", "Inactive ileum",
+                        "Active colon", "Active ileum"),
+             pch = c(0, 1, 15, 16))
+    },
+    silent = FALSE
+    )
   }
+  dev.off()
+  return(df)
+}
 
-  try({
-    co <- cor.test(xx, yy, use = "spearman",
-                   use = "pairwise.complete.obs")
-    plot(x, y, xlab = gene, ylab = family, pch = pch,
-         col = ibd2,
-         main = paste0("Correlation: ",
-                       round(co$estimate, 4), "\n",
-                       "p-value: ", round(co$p.value, 4)))
-    legend("top",
-           legend = levels(ibd),
-           fill = as.factor(levels(ibd)))
-    legend("right",
-           legend = c("Inactive colon", "Inactive ileum",
-                      "Active colon", "Active ileum"),
-           pch = c(0, 1, 15, 16))
-  },
-  silent = FALSE
-  )
-}
-dev.off()
-}
+df_all <- correlations_all(otus_norm = OTUs_all_norm,
+                 otus = OTUS2,
+                 rna_norm = rna_all_norm,
+                 rna = rna,
+                 b = b_all,
+                 header = "20200910_all_family_",
+                 meta = meta2,
+                 names_rna = names_rna,
+                 families = family_all)
+df_colon <- correlations_all(otus_norm = otus_colon_norm,
+                 otus = otus_colon,
+                 rna_norm = rna_colon_norm,
+                 rna = rna_colon,
+                 b = b_colon,
+                 header = "20200910_colon_family_",
+                 meta = meta2,
+                 names_rna = names_rna,
+                 families = family_all)
+df_colon_UC <- correlations_all(otus_norm = otus_colon_UC_norm,
+                 otus = otus_colon_UC,
+                 rna_norm = rna_colon_UC_norm,
+                 rna = rna_colon_UC,
+                 b = b_colon_UC,
+                 header = "20200910_colon_UC_family_",
+                 meta = meta2,
+                 names_rna = names_rna,
+                 families = family_all)
+df_colon_CD <- correlations_all(otus_norm = otus_colon_CD_norm,
+                 otus = otus_colon_CD,
+                 rna_norm = rna_colon_CD_norm,
+                 rna = rna_colon_CD,
+                 b = b_colon_CD,
+                 header = "20200910_colon_CD_family_",
+                 meta = meta2,
+                 names_rna = names_rna,
+                 families = family_all)
+df_ileum <- correlations_all(otus_norm = otus_ileum_norm,
+                 otus = otus_ileum,
+                 rna_norm = rna_ileum_norm,
+                 rna = rna_ileum,
+                 b = b_ileum,
+                 header = "20200910_ileum_family_",
+                 meta = meta2,
+                 names_rna = names_rna,
+                 families = family_all)
 
 subDF %>%
   count(family, sort = TRUE) %>%
