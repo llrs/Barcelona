@@ -90,15 +90,19 @@ rna2 <- filter_RNAseq(rna2)
 
 experiments <- list(RNA = rna2, OTUS = OTUs2)
 }
-mae <- MultiAssayExperiment(
-  experiments = experiments,
-  # colData = meta2
-)
 sm <- data.frame(assay = rep(names(experiments), each = nrow(meta2)),
                  primary = rep(meta2$Original, 2),
                  colname = c(colnames(rna2), colnames(OTUs2)))
-sampleMap(mae) <- as(sm, "DataFrame")
-colData(mae) <- as(meta2[, c("IBD", "SEX", "Exact_location")], "DataFrame")
+sm <- as(sm, "DataFrame")
+cData <- as(meta2[, c("Original", "IBD", "SEX", "Exact_location")], "DataFrame")
+colnames(cData)[1] <- "primary"
+rownames(cData) <- cData$primary
+mae <- MultiAssayExperiment(
+  experiments = experiments,
+  sampleMap = sm,
+  colData = cData
+)
+
 MOFAobject <- createMOFAobject(mae)
 plotDataOverview(MOFAobject)
 
