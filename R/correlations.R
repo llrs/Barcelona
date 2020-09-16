@@ -1,5 +1,6 @@
 # load data ####
 library("readxl")
+library("openxlsx")
 library("dplyr")
 library("metagenomeSeq")
 library("integration")
@@ -150,8 +151,10 @@ rna_colon_UC_norm <- filter_RNAseq(rna_colon_UC_norm)
 abundance <- 0.005 # 0.5%
 a <- prop.table(OTUs2, 2)
 b_all <- rowSums(a > abundance)
-
+otus_all <- OTUs2
 OTUs_all_norm <- norm_RNAseq(OTUs2)
+
+rna_all <- rna2
 rna_all_norm <- norm_RNAseq(rna2)
 rna_all_norm <- filter_RNAseq(rna_all_norm)
 }
@@ -163,13 +166,16 @@ names_rna <- trimVer(names(w_rna)[w_rna != 0])
 w_dna <- model$a[[2]][, 1]
 
 }
-# Select options ####
+# Functions ####
 outliers <- function(x, k = 3){
-  q <- quantile(x, c(0.25, 0.5, 0.75))
+  q <- quantile(x, c(0.25, 0.5, 0.75), na.rm = TRUE)
   iqr <- q[3] - q[1]
   x > q[1] + k*iqr | x < q[3] - k*iqr
 }
 
+remove_na <- function(x){
+  x[!is.na(x)]
+}
 correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
                              meta, names_rna, families) {
 
@@ -178,7 +184,7 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   fOTUS2 <- otus_norm[b != 0, ]
   frna2 <- rna_norm[rownames(rna_norm) %in% names_rna, ]
 
-  # Fix names ####
+  # Fix names
   # Gene names instead of ENSEMBL
   s <- mapIds(org.Hs.eg.db, keys = rownames(frna2),
               keytype = "ENSEMBL", column = "SYMBOL")
@@ -187,7 +193,7 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   # Tax family instead of numbers
   rownames(fOTUS2) <- as.character(family_all[b != 0, 1])
 
-  # Correlations ####
+  # Correlations
   df <- expand.grid(family = rownames(fOTUS2), genes = rownames(frna2),
                     stringsAsFactors = FALSE)
   df$r <- 0
@@ -197,7 +203,7 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   df <- arrange(df, family)
 
 
-  # * Plot correlations ####
+  # * Plot correlations
   pdf(paste0("Figures/", header, "correlations.pdf"))
   for (i in seq_len(nrow(df))) {
     family <- df$family[i]
@@ -212,8 +218,8 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
     # Filter based on that the original matrix had 0
     x_remove <- rna[names(gene), ] != 0
     y_remove <- otus[family, ] != 0
-    xx <- x[x_remove & y_remove]
-    yy <- y[x_remove & y_remove]
+    xx <- remove_na(x[x_remove & y_remove])
+    yy <- remove_na(y[x_remove & y_remove])
 
     # Filter based on the number of pairwise values existing
     x_out <- outliers(xx)
@@ -225,7 +231,7 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
     xx <- xx[!x_out & !y_out]
     yy <- yy[!x_out & !y_out]
     stopifnot(length(xx) == length(yy))
-    if (length(xx)/length(x) < 0.15 & length(xx) < 4) {
+    if (length(xx)/length(x) < 0.15 & length(xx) < 4 | var(xx) == 0 | var(yy) == 0) {
       next
     }
     try({
@@ -253,7 +259,7 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
                   "Campylobacteraceae", "Halanaerobiaceae")
   skip_gene <- c("GIMD1")
 
-  # ** Higher correlations ####
+  # ** Higher correlations
   # On 10/09/2020 decided to remove the 0/lowest offset of the correlation,
   # but plot it anyway.
   # Also to include the controls in all the correlations
@@ -264,8 +270,6 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   subDF <- subDF[abs(subDF$r) >= q, ]
   subDF <- subDF[!subDF$family %in% skip_micro & !subDF$genes %in% skip_gene, ]
   subDF <- subDF[order(subDF$family, subDF$p.value, decreasing = FALSE), ]
-  # write.csv(meta, "data_out/20200629_refined_meta.csv", na = "", row.names = FALSE)
-  # write.csv(subDF, header, na = "", row.names = FALSE)
   write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
             na = "", row.names = FALSE)
   write.xlsx(subDF, file = paste0("data_out/", header, "high_correlations_family.xlsx"),
@@ -295,8 +299,8 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
     x_remove <- rna[names(gene), ] != 0
     y_remove <- otus[family, ] != 0
     keep1 <- x_remove & y_remove
-    xx <- x[keep1]
-    yy <- y[keep1]
+    xx <- remove_na(x[keep1])
+    yy <- remove_na(y[keep1])
 
     # Filter based on the number of pairwise values existing
     x_out <- outliers(xx)
@@ -308,7 +312,8 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
     xx <- xx[keep2]
     yy <- yy[keep2]
     stopifnot(length(xx) == length(yy))
-    if (length(xx)/length(x) < 0.15 & length(xx) < 4) {
+    if (length(xx)/length(x) < 0.15 & length(xx) < 4 | var(xx) == 0 |
+        var(yy) == 0) {
       next
     }
 
@@ -334,13 +339,13 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   dev.off()
   return(df)
 }
-
+# Run for each ####
 df_all <- correlations_all(otus_norm = OTUs_all_norm,
-                 otus = OTUS2,
+                 otus = otus_all,
                  rna_norm = rna_all_norm,
                  rna = rna,
                  b = b_all,
-                 header = "20200910_all_family_",
+                 header = "20200915_all_family_",
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -349,7 +354,7 @@ df_colon <- correlations_all(otus_norm = otus_colon_norm,
                  rna_norm = rna_colon_norm,
                  rna = rna_colon,
                  b = b_colon,
-                 header = "20200910_colon_family_",
+                 header = "20200915_colon_family_",
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -358,7 +363,7 @@ df_colon_UC <- correlations_all(otus_norm = otus_colon_UC_norm,
                  rna_norm = rna_colon_UC_norm,
                  rna = rna_colon_UC,
                  b = b_colon_UC,
-                 header = "20200910_colon_UC_family_",
+                 header = "20200915_colon_UC_family_",
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -367,7 +372,7 @@ df_colon_CD <- correlations_all(otus_norm = otus_colon_CD_norm,
                  rna_norm = rna_colon_CD_norm,
                  rna = rna_colon_CD,
                  b = b_colon_CD,
-                 header = "20200910_colon_CD_family_",
+                 header = "20200915_colon_CD_family_",
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -376,7 +381,7 @@ df_ileum <- correlations_all(otus_norm = otus_ileum_norm,
                  rna_norm = rna_ileum_norm,
                  rna = rna_ileum,
                  b = b_ileum,
-                 header = "20200910_ileum_family_",
+                 header = "20200915_ileum_family_",
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
