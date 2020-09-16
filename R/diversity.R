@@ -17,56 +17,35 @@ library("org.Hs.eg.db")
 library("forcats")
 
 {
+# Read ####
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
 genus <- tab[, 1, FALSE]
 
 # From the QC step
-meta <- readRDS("data_out/refined_meta_all.RDS")
-ccounts <- colSums(counts)
-meta <- meta[meta$Name %in% colnames(counts), ]
-
-bcn <- counts[, meta$Study %in% c("BCN", "Controls")]
-meta <- meta[meta$Study %in% c("BCN", "Controls"), ]
-
-# Remove duplicate samples
-replicates <- table(meta$Original)
-replicate_samples <- meta[meta$Original %in% names(replicates[replicates > 1]), ]
-
-## By keeping those more sequenced
-keepDup <- replicate_samples %>%
-  group_by(Original) %>%
-  filter(Counts == max(Counts)) %>%
-  arrange(desc(abs(Counts))) %>%
-  ungroup()
-
-nam <- c(names(replicates[replicates == 1]), keepDup$Name)
-otus <- bcn[, colnames(bcn) %in% nam]
-meta <- meta[meta$Name %in% nam, ]
-
-# Filter the samples
-OTUs2 <- otus[, colnames(otus) %in% meta$Name]
-
-colnames(OTUs2) <- meta$Original[match(colnames(OTUs2), meta$Name)]
+meta <- readRDS("data_out/refined_meta.RDS")
+otus <- bcn[, colnames(bcn) %in% meta$Name]
+colnames(otus) <- meta$Original[match(colnames(otus), meta$Name)]
 
 # Reorder samples to match!
-OTUs2 <- OTUs2[, match(meta$Original, colnames(OTUs2))]
-stopifnot(all(colnames(OTUs2) == meta$Original))
+otus <- otus[, match(meta$Original, colnames(otus))]
+rownames(meta) <- meta$Original
+stopifnot(all(colnames(otus) == meta$Original))
 genus <- read.csv("data/genus.csv", row.names = 1)
 
-meta$ileum <- ifelse(meta$Exact_location == "ileum", "Ileum", "colon")
+meta$ileum <- ifelse(meta$Exact_location == "ileum", "Ileum", "Colon")
 # The missing values of Exact location
-meta$ileum[is.na(meta$ileum )] <- "colon"
+meta$ileum[is.na(meta$ileum )] <- "Colon"
 meta$SEX[is.na(meta$SEX) | meta$SEX == ""] <- "female"
 meta$Time[is.na(meta$Time)] <- "C"
 
-rownames(meta) <- colnames(OTUs2)
-otus <- as.matrix(OTUs2)
-phyloseq <- phyloseq(otu_table(OTUs2, taxa_are_rows = TRUE),
+otus <- as.matrix(otus)
+phyloseq <- phyloseq(otu_table(otus, taxa_are_rows = TRUE),
               sample_data(meta),
               tax_table(genus))
 }
+{
 # Alpha diversity ####
 alpha <- prop.table(otus, 2)*100
 a <- as.data.frame(alpha)
@@ -76,20 +55,27 @@ a <- pivot_longer(a, colnames(alpha))
 b <- a %>%
   group_by(name) %>%
   mutate(cumsum = cumsum(value),
-         otus = forcats::fct_lump(otus, n = 20, w = value),
          n = 1:n()) %>%
   ungroup() %>%
-  arrange(name)
-
+  arrange(name) %>%
+  filter(value != 0)
+b <- merge(b, meta, by.x = "name", by.y = "Original")
+b2 <- b
+b2$otus <- forcats::fct_lump(b2$otus, n = 7, prop = value)
+c2 <- b2 %>%
+  group_by(name, otus) %>%
+  summarize(value = sum(value))
 
 ggplot(b) +
-  geom_col(aes(name, value, fill = otus), col = "transparent") +
-  guides(fill = FALSE) +
+  geom_col(aes(name, value, fill = otus, col = otus)) +
+  guides(fill = FALSE, col = FALSE) +
   theme_minimal() +
   labs(x = element_blank(), y = "%") +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
-        panel.grid.major.x = element_blank())
+        panel.grid.major.x = element_blank()) +
+  scale_fill_brewer(type= "qual") +
+  scale_color_brewer(type = "qual")
 
 
 alpha_meas <- c("Simpson", "Shannon")
@@ -97,35 +83,62 @@ theme_set(theme_minimal())
 richness <- estimate_richness(phyloseq)
 richness$Sample <- meta$Original
 richness <- merge(richness, meta, by.x = "Sample", by.y = "Original")
+richness$Time <- fct_relevel(richness$Time, "C", after = 0)
 ggplot(richness) +
   geom_col(aes(Shannon, fct_reorder(Sample, IBD), fill = IBD, col = IBD)) +
   labs(y = "Sample") +
   theme(panel.grid.major.y = element_blank())
 ggplot(richness) +
-  geom_jitter(aes(x = SEX,  y = Shannon, col = IBD, shape = IBD))
+  geom_jitter(aes(x = SEX,  y = Shannon, col = IBD, shape = IBD),
+              height = 0, width = 0.3)
+ggplot(richness) +
+  geom_jitter(aes(x = SEX,  y = Simpson, col = IBD, shape = IBD),
+              height = 0, width = 0.3)
 
-p <- plot_richness(phyloseq, "SEX", "IBD", measures = alpha_meas)
-remove_geom(p, 'point', 1) + geom_jitter()
-ggsave("Figures/alpha_simpson_sex_ibd.png")
-q <- plot_richness(phyloseq, "Time", "IBD", measures = alpha_meas)
-remove_geom(q, 'point', 1) + geom_jitter()
-ggsave("Figures/alpha_simpson_time_ibd.png")
-r <- plot_richness(phyloseq, "IBD", measures = alpha_meas)
-remove_geom(r, 'point', 1) + geom_jitter()
-s <- plot_richness(phyloseq, "Exact_location", "IBD", measures = alpha_meas)
-remove_geom(s, 'point', 1) + geom_jitter()
+# p <- plot_richness(phyloseq, "SEX", "IBD", measures = alpha_meas)
+# remove_geom(p, 'point', 1) + geom_jitter()
+
+r2 <- pivot_longer(richness, cols = Chao1:Fisher, names_to = "Alpha diversity")
+richness_rel <- filter(r2, `Alpha diversity` %in% c("Shannon", "Simpson"))
+
+ggplot(richness_rel) +
+  geom_jitter(aes(SEX, value, col = IBD, shape = IBD), height = 0, width = 0.25) +
+  facet_grid(`Alpha diversity`~ ileum, scale = "free_y") +
+  labs(y = "Alpha diversity", x = element_blank())
+ggsave("Figures/alpha_sex_location.png")
+
+ggplot(richness_rel) +
+  geom_jitter(aes(Time, value, col = IBD, shape = IBD), height= 0, width = 0.25) +
+  facet_grid(`Alpha diversity`~ ileum, scale = "free_y") +
+  labs(y = "Alpha diversity", x = element_blank())
+# ggplot(richness_rel) +
+#   geom_jitter(aes(IBD, value, col = IBD, shape = IBD), height= 0, width = 0.25) +
+#   facet_wrap(~ `Alpha diversity`, scale = "free_y", drop = TRUE) +
+#   labs(y = "Alpha diversity", x = element_blank())
+ggsave("Figures/alpha_time_ibd.png")
+ggplot(richness_rel) +
+  geom_jitter(aes(IBD, value, col = IBD, shape = IBD), height= 0, width = 0.25) +
+  facet_grid(`Alpha diversity` ~ ileum, scale = "free_y", drop = TRUE) +
+  labs(y = "Alpha diversity", x = element_blank())
+ggsave("Figures/alpha_ocation_ibd.png")
+# s <- plot_richness(phyloseq, "ileum", "IBD", measures = alpha_meas)
+# remove_geom(s, 'point', 1) + geom_jitter()
 ggsave("Figures/alpha_simpson_location_ibd.png")
-s <- plot_richness(phyloseq, "ileum", "IBD", measures = alpha_meas)
-remove_geom(s, 'point', 1) + geom_jitter()
-ggsave("Figures/alpha_simpson_location_ibd.png")
-u <- plot_richness(phyloseq, "ANTITNF_responder", "IBD", measures = alpha_meas)
-remove_geom(u, 'point', 1) + geom_jitter()
+# u <- plot_richness(phyloseq, "ANTITNF_responder", "IBD", measures = alpha_meas)
+# remove_geom(u, 'point', 1) + geom_jitter()
+ggplot(richness_rel) +
+  geom_jitter(aes(ANTITNF_responder, value, col = IBD, shape = IBD),
+              height = 0, width = 0.25) +
+  facet_wrap(~`Alpha diversity`, scales = "free_y") +
+  labs(y = "Alpha diversity", x = element_blank(), title = "Responders")
 ggsave("Figures/alpha_simpson_responders_ibd.png")
-
+}
 # Beta diversity ####
 # Remove empty lines
 e <- apply(otus, 1, function(x){sum(x == 0)})
-{method <- "bray"
+{ # Decided to do Shannon on the 10/09/2020
+  # Should be the Shannon effective  and the Simpson effective and be considered as alpha
+method <- "shannon"
 beta <- vegdist(t(otus[e != 194, ]), method = method)
 }
 {cmd <- cmdscale(d = beta)
