@@ -78,17 +78,21 @@ ggplot(b) +
 
 # Decided to do Shannon on the 10/09/2020
 # Should be the Shannon and the Simpson effective but I couldn't find how to calculate them
-date <- "20200916"
+date <- "20200917"
 alpha_meas <- c("Simpson", "Shannon")
 theme_set(theme_minimal())
 richness <- estimate_richness(phyloseq)
-richness$Sample <- meta$Original
-richness <- merge(richness, meta, by.x = "Sample", by.y = "Original")
+richness <- cbind(richness, meta)
 richness$Time[is.na(richness$Time)] <- "C"
+richness$Time <- as.factor(richness$Time)
 richness$Time <- fct_relevel(richness$Time, "C", after = 0)
+richness$IBD <- as.factor(richness$IBD)
 richness$IBD <- fct_relevel(richness$IBD, "CONTROL", after = 0)
+richness <- richness %>%
+  arrange(IBD, ileum, SEX) %>%
+  mutate(Original = factor(Original, levels = unique(Original)))
 ggplot(richness) +
-  geom_col(aes(Shannon, fct_reorder(Sample, IBD), fill = IBD, col = IBD)) +
+  geom_col(aes(Shannon, Original, fill = IBD, col = IBD)) +
   labs(y = "Sample") +
   theme(panel.grid.major.y = element_blank())
 ggplot(richness) +
@@ -110,37 +114,40 @@ richness_rel <- filter(r2, `Alpha diversity` %in% c("Shannon", "Simpson")) %>%
     `Alpha diversity` == "Simpson" ~ 1/value,
   ))
 
-ggplot(richness_rel) +
-  geom_jitter(aes(SEX, effective, col = IBD, shape = IBD), height = 0, width = 0.25) +
-  facet_grid(`Alpha diversity`~ ileum, scale = "free_y") +
+ggplot(richness_rel,aes(SEX, effective, col = IBD, shape = IBD)) +
+  geom_boxplot(alpha = 0, outlier.size = 0) +
+  geom_point(position = position_jitterdodge(jitter.height = 0)) +
+  facet_grid(`Alpha diversity`~ ileum, scale = "free") +
   labs(y = "Alpha diversity", x = element_blank())
 ggsave(paste0("Figures/", date, "_alpha_sex_location.png"))
 
-ggplot(richness_rel) +
-  geom_jitter(aes(Time, effective, col = IBD, shape = IBD), height= 0, width = 0.25) +
-  facet_grid(`Alpha diversity`~ ileum, scale = "free_y") +
+ggplot(richness_rel, aes(Time, effective, col = IBD, shape = IBD)) +
+  geom_boxplot(alpha = 0, outlier.size = 0) +
+  geom_point(position = position_jitterdodge( jitter.height = 0)) +
+  facet_grid(`Alpha diversity`~ ileum, scale = "free") +
   labs(y = "Alpha diversity", x = element_blank())
-# ggplot(richness_rel) +
-#   geom_jitter(aes(IBD, value, col = IBD, shape = IBD), height= 0, width = 0.25) +
-#   facet_wrap(~ `Alpha diversity`, scale = "free_y", drop = TRUE) +
-#   labs(y = "Alpha diversity", x = element_blank())
 ggsave(paste0("Figures/", date, "_alpha_time_location.png"))
-ggplot(richness_rel) +
-  geom_jitter(aes(IBD, effective, col = IBD, shape = IBD), height= 0, width = 0.25) +
-  facet_grid(`Alpha diversity` ~ ileum, scale = "free_y", drop = TRUE) +
+
+ggplot(richness_rel, aes(IBD, effective, col = Time, shape = Time)) +
+  geom_boxplot(alpha = 0, outlier.size = 0) +
+  geom_point(position = position_jitterdodge( jitter.height = 0)) +
+  facet_grid(`Alpha diversity` ~ ileum, scale = "free", drop = TRUE) +
   labs(y = "Alpha diversity", x = element_blank())
 ggsave(paste0("Figures/", date, "_alpha_location_ibd.png"))
-# s <- plot_richness(phyloseq, "ileum", "IBD", measures = alpha_meas)
-# remove_geom(s, 'point', 1) + geom_jitter()
-# ggsave(paste0("Figures/", date, "alpha_simpson_location_ibd.png"))
-# u <- plot_richness(phyloseq, "ANTITNF_responder", "IBD", measures = alpha_meas)
-# remove_geom(u, 'point', 1) + geom_jitter()
-ggplot(richness_rel) +
-  geom_jitter(aes(ANTITNF_responder, value, col = IBD, shape = IBD),
-              height = 0, width = 0.25) +
-  facet_wrap(~`Alpha diversity`, scales = "free_y") +
+
+ggplot(richness_rel, aes(ANTITNF_responder, effective, col = IBD, shape = IBD)) +
+  geom_boxplot(alpha = 0, outlier.size = 0) +
+  geom_point(position = position_jitterdodge( jitter.height = 0)) +
+  facet_wrap(~`Alpha diversity`, scales = "free") +
   labs(y = "Alpha diversity", x = element_blank(), title = "Responders")
 ggsave(paste0("Figures/", date, "_alpha_responders_ibd.png"))
+
+ggplot(richness_rel, aes(ANTITNF_responder, effective, col = IBD, shape = IBD)) +
+  geom_boxplot(alpha = 0, outlier.size = 0) +
+  geom_point(position = position_jitterdodge( jitter.height = 0)) +
+  facet_grid(`Alpha diversity` ~ ileum, scales = "free") +
+  labs(y = "Alpha diversity", x = element_blank(), title = "Responders")
+ggsave(paste0("Figures/", date, "_alpha_responders_ibd2.png"))
 }
 # Beta diversity ####
 # Remove empty lines
