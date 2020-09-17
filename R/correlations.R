@@ -184,6 +184,10 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   fOTUS2 <- otus_norm[b != 0, ]
   frna2 <- rna_norm[rownames(rna_norm) %in% names_rna, ]
 
+  # Internal options to filter samples
+  proportion_lost <- 0.15
+  samples_correlated <- 20
+
   # Fix names
   # Gene names instead of ENSEMBL
   s <- mapIds(org.Hs.eg.db, keys = rownames(frna2),
@@ -198,8 +202,7 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
                     stringsAsFactors = FALSE)
   df$r <- 0
   df$p.value <- 1
-  df$gene_outliers <- 0
-  df$micro_outliers <- 0
+  df$samples <- 0
   df <- arrange(df, family)
 
 
@@ -221,19 +224,12 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
     xx <- remove_na(x[x_remove & y_remove])
     yy <- remove_na(y[x_remove & y_remove])
 
-    # Filter based on the number of pairwise values existing
-    x_out <- outliers(xx)
-    y_out <- outliers(yy)
-
-    df$gene_outliers[i] <- sum(x_out)
-    df$micro_outliers[i] <- sum(y_out)
-
-    xx <- xx[!x_out & !y_out]
-    yy <- yy[!x_out & !y_out]
     stopifnot(length(xx) == length(yy))
-    if (length(xx)/length(x) < 0.15 & length(xx) < 4 | var(xx) == 0 | var(yy) == 0) {
+    if (length(xx)/length(x) < proportion_lost &
+        length(xx) < samples_correlated | var(xx) == 0 | var(yy) == 0) {
       next
     }
+    df$samples[i] <- length(xx)
     try({
       co <- cor.test(xx, yy, use = "spearman", use = "pairwise.complete.obs")
       df$p.value[i] <- co$p.value
@@ -302,17 +298,9 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
     xx <- remove_na(x[keep1])
     yy <- remove_na(y[keep1])
 
-    # Filter based on the number of pairwise values existing
-    x_out <- outliers(xx)
-    y_out <- outliers(yy)
-    keep2 <- !x_out & !y_out
-    df$gene_outliers[i] <- sum(x_out)
-    df$micro_outliers[i] <- sum(y_out)
-
-    xx <- xx[keep2]
-    yy <- yy[keep2]
     stopifnot(length(xx) == length(yy))
-    if (length(xx)/length(x) < 0.15 & length(xx) < 4 | var(xx) == 0 |
+    if (length(xx)/length(x) < proportion_lost &
+        length(xx) < samples_correlated | var(xx) == 0 |
         var(yy) == 0) {
       next
     }
@@ -345,7 +333,7 @@ df_all <- correlations_all(otus_norm = OTUs_all_norm,
                  rna_norm = rna_all_norm,
                  rna = rna,
                  b = b_all,
-                 header = "20200915_all_family_",
+                 header = "20200917_all_family_",
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -354,7 +342,7 @@ df_colon <- correlations_all(otus_norm = otus_colon_norm,
                  rna_norm = rna_colon_norm,
                  rna = rna_colon,
                  b = b_colon,
-                 header = "20200915_colon_family_",
+                 header = "20200917_colon_family_",
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -363,7 +351,7 @@ df_colon_UC <- correlations_all(otus_norm = otus_colon_UC_norm,
                  rna_norm = rna_colon_UC_norm,
                  rna = rna_colon_UC,
                  b = b_colon_UC,
-                 header = "20200915_colon_UC_family_",
+                 header = "20200917_colon_UC_family_",
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -372,7 +360,7 @@ df_colon_CD <- correlations_all(otus_norm = otus_colon_CD_norm,
                  rna_norm = rna_colon_CD_norm,
                  rna = rna_colon_CD,
                  b = b_colon_CD,
-                 header = "20200915_colon_CD_family_",
+                 header = "20200917_colon_CD_family_",
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -381,7 +369,7 @@ df_ileum <- correlations_all(otus_norm = otus_ileum_norm,
                  rna_norm = rna_ileum_norm,
                  rna = rna_ileum,
                  b = b_ileum,
-                 header = "20200915_ileum_family_",
+                 header = "20200917_ileum_family_",
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
