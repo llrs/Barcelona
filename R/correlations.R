@@ -328,12 +328,13 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   return(df)
 }
 # Run for each ####
+date <- format(lubridate::today(), "%Y%m%d")
 df_all <- correlations_all(otus_norm = OTUs_all_norm,
                  otus = otus_all,
                  rna_norm = rna_all_norm,
                  rna = rna,
                  b = b_all,
-                 header = "20200917_all_family_",
+                 header = paste0(date, "_all_family_"),
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -342,7 +343,7 @@ df_colon <- correlations_all(otus_norm = otus_colon_norm,
                  rna_norm = rna_colon_norm,
                  rna = rna_colon,
                  b = b_colon,
-                 header = "20200917_colon_family_",
+                 header = paste0(date, "_colon_family_"),
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -351,7 +352,7 @@ df_colon_UC <- correlations_all(otus_norm = otus_colon_UC_norm,
                  rna_norm = rna_colon_UC_norm,
                  rna = rna_colon_UC,
                  b = b_colon_UC,
-                 header = "20200917_colon_UC_family_",
+                 header = paste0(date, "_colon_UC_family_"),
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -360,7 +361,7 @@ df_colon_CD <- correlations_all(otus_norm = otus_colon_CD_norm,
                  rna_norm = rna_colon_CD_norm,
                  rna = rna_colon_CD,
                  b = b_colon_CD,
-                 header = "20200917_colon_CD_family_",
+                 header = paste0(date, "_colon_CD_family_"),
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
@@ -369,14 +370,7 @@ df_ileum <- correlations_all(otus_norm = otus_ileum_norm,
                  rna_norm = rna_ileum_norm,
                  rna = rna_ileum,
                  b = b_ileum,
-                 header = "20200917_ileum_family_",
+                 header = paste0(date, "_ileum_family_"),
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
-
-subDF %>%
-  count(family, sort = TRUE) %>%
-  head()
-subDF %>%
-  count(genes, sort = TRUE) %>%
-  head()
