@@ -30,7 +30,8 @@ model2b_sgcca <- sgcca(A = Ab, c1 = shrinkage, scheme = "centroid", C = model2b,
 
 model2b_sgcca <- improve.sgcca(model2b_sgcca, names(A))
 saveRDS(model2b_sgcca, "data_out/model2b_sgcca.RDS")
-plot(model2b_sgcca$Y$RNAseq[, 1], model2b_sgcca$Y$Micro[, 1], col = meta$Exact_location)
+model2b_sgcca <- readRDS("data_out/model2b_sgcca.RDS")
+plot(model2b_sgcca$Y$RNAseq[, 1], model2b_sgcca$Y$Micro[, 1], col = as.factor(meta$Exact_location))
 
 A3 <- model_RGCCA(meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX", "IBD"))
 Ab[[3]] <- scale2(A3, bias = TRUE)/sqrt(NCOL(A3))
@@ -62,5 +63,5 @@ model2b2_sgcca <- sgcca(A = Ab, c1 = shrinkage, scheme = "centroid", C = model2b
 model2b2_sgcca <- improve.sgcca(model2b2_sgcca, names(A))
 saveRDS(model2b2_sgcca, "data_out/model2b2_sgcca.RDS")
 
-plot(model2b2_sgcca$Y$RNAseq[, 1], model2b2_sgcca$Y$Micro[, 1], col = meta$IBD)
+plot(model2b2_sgcca$Y$RNAseq[, 1], model2b2_sgcca$Y$Micro[, 1], col = as.factor(meta$IBD))
 plot(model2b2_sgcca$Y$RNAseq[, 1], model2b2_sgcca$Y$Micro[, 1], col = as.factor(ifelse(meta$Exact_location == "ileum", "ileum", "colon")))
