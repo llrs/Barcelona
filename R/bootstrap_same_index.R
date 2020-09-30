@@ -6,13 +6,13 @@ library("ggplot2")
 
 # Index ####
 A <- readRDS("data/RGCCA_data.RDS")
-# boots <- 1000
-# set.seed(9876156)
-# index <- vector("list", length = boots)
-# for (i in seq_len(boots)) {
-#   index[[i]] <- sample(nrow(A[[1]]), replace = TRUE)
-# }
-# saveRDS(index, file = "data_out/index_boot.RDS")
+boots <- 1000
+set.seed(9876156)
+index <- vector("list", length = boots)
+for (i in seq_len(boots)) {
+  index[[i]] <- sample(nrow(A[[1]]), replace = TRUE)
+}
+saveRDS(index, file = "data_out/index_boot.RDS")
 index <- readRDS("data_out/index_boot.RDS")
 
 # * Model 0 ####
