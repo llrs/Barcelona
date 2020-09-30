@@ -25,8 +25,14 @@ microorganism <- tab[, 1, FALSE]
 
 # From the QC step
 meta <- readRDS("data_out/refined_meta.RDS")
-otus <- bcn[, colnames(bcn) %in% meta$Name]
+otus <- tab[, colnames(tab) %in% meta$Name]
 colnames(otus) <- meta$Original[match(colnames(otus), meta$Name)]
+{
+  # Check that they match
+  otus_new <- meta$Original[match(colnames(otus), meta$Name)]
+  names(otus_new) <- colnames(otus)
+  otus_new[names(otus_new) != otus_new]
+}
 
 # Reorder samples to match!
 otus <- otus[, match(meta$Original, colnames(otus))]
@@ -50,7 +56,7 @@ phyloseq <- phyloseq(otu_table(otus, taxa_are_rows = TRUE),
 # Alpha diversity ####
 alpha <- prop.table(otus, 2)*100
 a <- as.data.frame(alpha)
-a$otus <- genus[, 1]
+a$otus <- microorganism[, 1]
 a <- pivot_longer(a, colnames(alpha))
 
 b <- a %>%
@@ -78,7 +84,7 @@ ggplot(b) +
 
 # Decided to do Shannon on the 10/09/2020
 # Should be the Shannon and the Simpson effective but I couldn't find how to calculate them
-date <- "20200917"
+date <- "20200922"
 alpha_meas <- c("Simpson", "Shannon")
 theme_set(theme_minimal())
 richness <- estimate_richness(phyloseq)
@@ -148,6 +154,14 @@ ggplot(richness_rel, aes(ANTITNF_responder, effective, col = IBD, shape = IBD)) 
   facet_grid(`Alpha diversity` ~ ileum, scales = "free") +
   labs(y = "Alpha diversity", x = element_blank(), title = "Responders")
 ggsave(paste0("Figures/", date, "_alpha_responders_ibd2.png"))
+richness_rel %>%
+  filter(`Alpha diversity` == "Shannon") %>%
+  ggplot(aes(IBD, effective, col = ileum, shape = ileum)) +
+  geom_boxplot(alpha = 0, outlier.size = 0) +
+  geom_point(position = position_jitterdodge( jitter.height = 0)) +
+  # facet_grid(`Alpha diversity` ~ ileum, scales = "free") +
+  labs(y = "Shannon Effective", x = element_blank(), title = "Alpha diversity")
+ggsave(paste0("Figures/", date, "_alpha_ibd_location.png"))
 }
 # Beta diversity ####
 # Remove empty lines
