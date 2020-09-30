@@ -41,7 +41,7 @@ b1.2 <- boot_index_sgcca(index, A = Ab, c1 = shrinkage, scheme = "centroid",
 saveRDS(b1.2, "data_out/boot_1.2.RDS")
 
 # * Model 2.2 ####
-model3_best <- readRDS("data_out/model3_best.RDS")
+model3_best <- readRDS("data_out/model3_best_treatment.RDS")
 A <- readRDS("data_out/model3_BCN.RDS")
 C2.2 <- model3_best$C
 
