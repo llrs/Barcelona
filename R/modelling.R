@@ -13,9 +13,10 @@ C <- matrix(
 model0 <- subSymm(C, "Micro", "RNAseq", 1)
 model0i <- subSymm(model0, 1, 1, 1)
 
-# We cannnot comput the tau.estimate for A[[1]]
+# We cannot calculate the tau.estimate for A[[1]]
 shrinkage <- rep(1, 3) #Calculated from the server for the data derived from original data
-(shrinkage[1:2] <- sapply(A[1:2], tau.estimate))
+# (shrinkage[1:2] <- sapply(A[1:2], tau.estimate))
+shrinkage[1:2] <- c(0.322297910454825, 0.584050643977808)
 (min_shrinkage <- sapply(A, function(x) {
   1 / sqrt(ncol(x))
 }))
@@ -154,17 +155,17 @@ theme_update(strip.background = element_blank())
 comm <- ggplot(out3[out3$Interaction != 1, ], aes(RNAseq, Micro)) +
   facet_wrap(~model, scale = "free")
 comm +
-  geom_point(aes(color = IBD))
+  geom_point(aes(color = IBD, shape = IBD))
 comm +
-  geom_point(aes(color = RNA_seq_batch))
+  geom_point(aes(color = RNA_seq_batch, shape = RNA_seq_batch))
 comm +
-  geom_point(aes(color = Exact_location))
+  geom_point(aes(color = Exact_location, shape = Exact_location))
 comm +
   geom_point(aes(color = AgeDiag))
 comm +
   geom_point(aes(color = diagTime))
 comm +
-  geom_point(aes(color = SEX))
+  geom_point(aes(color = SEX, shape = SEX))
 
 
 genes <- sapply(names(models), function(x) {
