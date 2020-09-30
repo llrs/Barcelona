@@ -99,6 +99,14 @@ dates$`Date of diagnosis` <- as.Date(dates$`Date of diagnosis`)
 colnames(dates) <- c("Visit", "ID", "DATE_SAMPLE", "Date_diagnostic")
 meta4 <- merge(meta3, dates, by.x = "Original", by.y = "Visit", all.x = TRUE, all.y = FALSE)
 
+
+# Detect incorrectly ID assignments
+meta4 %>%
+  count(Patient_ID, ID) %>%
+  group_by(Patient_ID) %>%
+  filter(n_distinct(ID) > 1)
+meta4$ID[meta4$Original == "123-w046"] <- "123" # Manually inspection of the data
+
 # Arrange the IDs
 contr4_original <- grepl("^C", meta4$Original)
 meta4$ID[contr4_original] <- gsub("^(C[0-9]+)-.+", "\\1", meta4$Original[contr4_original])
@@ -111,6 +119,7 @@ meta4$Date_diagnostic[meta4$ID %in% "122"] <- as.Date("28/07/2015", "%d/%m/%Y")
 meta4$Date_diagnostic[meta4$ID %in% "123"] <- as.Date("10/11/2015", "%d/%m/%Y")
 
 meta4$Activity[meta4$Original == "017-w014"] <- "ACTIVE"
+meta4$ANTITNF_responder[meta4$Original == "017-w014"] <- "YES"
 meta4$Involved_Healthy[meta4$Original == "017-w014"] <- "INVOLVED"
 meta4$Aftected_area[meta4$Original == "017-w014"] <- "DESCENDING COLON"
 # Use the imported metadata from the TRIM project
@@ -227,7 +236,8 @@ meta5 <- mutate(meta5,
                 IBD = if_else(is.na(IBD), "CONTROL", as.character(IBD)),
                 SEX = if_else(is.na(SEX) | SEX == "", "female", as.character(SEX)),
                 Exact_location = if_else(is.na(Exact_location), "colon", as.character(Exact_location)),
-                )
+
+)
 
 # Check that the metadata is in the right order
 meta6 <- droplevels(meta5[match(colnames(OTUs2), meta5$Original), ])
