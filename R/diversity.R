@@ -19,6 +19,7 @@ library("forcats")
 {
 # Read ####
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
+# tab <- read.delim("data/20200529_Partek_Michigan3_Kraken_Classified_phylum.txt", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
 microorganism <- tab[, 1, FALSE]
@@ -38,7 +39,7 @@ colnames(otus) <- meta$Original[match(colnames(otus), meta$Name)]
 otus <- otus[, match(meta$Original, colnames(otus))]
 rownames(meta) <- meta$Original
 stopifnot(all(colnames(otus) == meta$Original))
-microorganism <- read.csv("data/family.csv", row.names = 1)
+# microorganism <- read.csv("data/family.csv", row.names = 1)
 
 meta$ileum <- ifelse(meta$Exact_location == "ileum", "Ileum", "Colon")
 # The missing values of Exact location
@@ -47,7 +48,7 @@ meta$SEX[is.na(meta$SEX) | meta$SEX == ""] <- "female"
 meta$Time[is.na(meta$Time)] <- "C"
 
 otus <- as.matrix(otus)
-rownames(otus) <- seq_len(nrow(otus))
+rownames(otus) <- paste0("sp", seq_len(nrow(otus)))
 phyloseq <- phyloseq(otu_table(otus, taxa_are_rows = TRUE),
               sample_data(meta),
               tax_table(as.matrix(microorganism)))
