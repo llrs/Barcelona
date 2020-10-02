@@ -6,6 +6,8 @@ data
 *.RDS
 *.xlsx
 *.pdf
+*.Rout
+*.out
 nohup.out
 data_out/*
 data/Raw
