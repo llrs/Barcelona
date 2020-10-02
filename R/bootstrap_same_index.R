@@ -14,16 +14,16 @@ A <- readRDS("data/RGCCA_data.RDS")
 # }
 # saveRDS(index, file = "data_out/index_boot.RDS")
 index <- readRDS("data_out/index_boot.RDS")
-
-# * Model 0 ####
-shrinkage <- c(0.285693348851943, 0) #Calculated from the server for the data derived from original data
-shrinkage[2] <- tau.estimate(A[[2]])
-Ab <- lapply(A[1:2], function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
-names(Ab) <- names(A[1:2])
-ab <- clean_unvariable(Ab)
-b0 <- boot_index_sgcca(index, A = ab, c1 = shrinkage, scheme = "centroid",
-                         scale = FALSE, verbose = FALSE, bias = TRUE)
-saveRDS(b0, "data_out/boot_0.RDS")
+#
+# # * Model 0 ####
+# shrinkage <- c(0.322297910454825, 0.584050643977808) #Calculated from the server for the data derived from original data
+# shrinkage[2] <- tau.estimate(A[[2]])
+# Ab <- lapply(A[1:2], function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
+# names(Ab) <- names(A[1:2])
+# ab <- clean_unvariable(Ab)
+# b0 <- boot_index_sgcca(index, A = ab, c1 = shrinkage, scheme = "centroid",
+#                          scale = FALSE, verbose = FALSE, bias = TRUE)
+# saveRDS(b0, "data_out/boot_0.RDS")
 
 # * Model 1.2 ####
 model2_best <- readRDS("data_out/model2b_sgcca.RDS")
@@ -33,7 +33,7 @@ A$Meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "
 Ab <- lapply(A, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 Ab <- clean_unvariable(Ab)
 shrinkage <- rep(1, 3)
-shrinkage[1:2] <- c(0.11503779803812, 0.318145965316924)
+shrinkage[1:2] <- c(0.322297910454825, 0.584050643977808)
 
 
 b1.2 <- boot_index_sgcca(index, A = Ab, c1 = shrinkage, scheme = "centroid",
@@ -47,7 +47,7 @@ C2.2 <- model3_best$C
 
 shrinkage <- rep(1, 5)
 names(shrinkage) <- names(A)
-shrinkage[1:2] <- c(0.11503779803812, 0.318145965316924)
+shrinkage[1:2] <- c(0.322297910454825, 0.584050643977808)
 shrinkage[3:5] <- 1
 names(shrinkage) <- names(A)
 Ab <- lapply(A, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
