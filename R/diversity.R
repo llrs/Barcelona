@@ -85,7 +85,7 @@ ggplot(b) +
 
 # Decided to do Shannon on the 10/09/2020
 # Should be the Shannon and the Simpson effective but I couldn't find how to calculate them
-date <- "20200922"
+date <- "20201013"
 alpha_meas <- c("Simpson", "Shannon")
 theme_set(theme_minimal())
 richness <- estimate_richness(phyloseq)
@@ -119,7 +119,27 @@ richness_rel <- filter(r2, `Alpha diversity` %in% c("Shannon", "Simpson")) %>%
   mutate(effective = case_when(
     `Alpha diversity` == "Shannon" ~ exp(value),
     `Alpha diversity` == "Simpson" ~ 1/value,
-  ))
+  ),
+  resp_w14_46 = case_when(
+    Time %in% c("14", "46") ~ "14/46",
+    TRUE ~ as.character(Time)),
+  resp_w14_46 = fct_relevel(resp_w14_46, c("C", "0", "14/46"))
+  )
+richness_rel %>%
+  ggplot(aes(x = resp_w14_46, y = effective, col = ANTITNF_responder)) +
+  geom_boxplot(alpha = 0, outlier.size = 0) +
+  geom_point(position = position_jitterdodge(jitter.height = 0)) +
+  facet_grid(`Alpha diversity`~ ileum, scale = "free") +
+  labs(y = "Alpha diversity", x = element_blank())
+ggsave(paste0("Figures/", date, "_alpha_w14_46_location.png"))
+
+richness_rel %>%
+  ggplot(aes(x = resp_w14_46, y = effective, col = ANTITNF_responder)) +
+  geom_boxplot(alpha = 0, outlier.size = 0) +
+  geom_point(position = position_jitterdodge(jitter.height = 0)) +
+  facet_wrap(~ `Alpha diversity`, scale = "free_y") +
+  labs(y = "Alpha diversity", x = element_blank())
+ggsave(paste0("Figures/", date, "_alpha_w14_46.png"))
 
 ggplot(richness_rel,aes(SEX, effective, col = IBD, shape = IBD)) +
   geom_boxplot(alpha = 0, outlier.size = 0) +
