@@ -20,7 +20,7 @@ model2i <- models2[[4]]
 # bests according to TRIM
 # model2_best <- models2[[5]]
 # model2_besti <- models2[[6]]
-model2_best <- readRDS("data_out/model2b_sgcca.RDS") # Best according to antiTNF
+model2_best <- readRDS("data_out/model2b_sgcca.RDS")
 models3 <- readRDS("data_out/models3.RDS")
 model3 <- models3[[1]]
 model3i <- models3[[2]]

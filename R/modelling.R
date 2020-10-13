@@ -103,6 +103,7 @@ A3 <- A[1:2]
 A3$Demographics <- Demographics
 A3$Localization <- Localization
 A3$Time <- Time
+saveRDS(A3, "data_out/model3_BCN.RDS")
 A3b <- lapply(A3, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 
 C <- matrix(
