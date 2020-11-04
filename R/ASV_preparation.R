@@ -1,8 +1,6 @@
-library("R.utils")
-
 # Read files to copy ####
 meta <- readRDS("data_out/refined_meta.RDS")
-samples <- meta$Original
+samples <- meta$Name
 stopifnot(length(samples) == 128)
 
 # Copy from the disk to the computer ####
@@ -13,6 +11,7 @@ out <- lapply(samples, function(x) {
   dest <- "/home/lrevilla/Documents/projects/design_ngs/data/fastq_ASV/"
   file.copy(from = loc, to = dest, copy.date = TRUE, overwrite = FALSE)
 })
+summary(unlist(out))
 # Remove some files I souldn't copy ####
 dest <- "/home/lrevilla/Documents/projects/design_ngs/data/fastq_ASV"
 keep <- lapply(samples, function(x){
@@ -22,5 +21,5 @@ all_files <- list.files(path = dest, full.names = TRUE)
 remove_files <- all_files[!all_files %in% keep]
 file.remove(remove_files)
 
-# Uncompress files ####
-f <- lapply(keep, gunzip)
+remaining <- list.files(path = dest, full.names = FALSE)
+stopifnot(length(remaining) == 2*length(samples))
