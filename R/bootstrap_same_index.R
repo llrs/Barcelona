@@ -101,3 +101,4 @@ p <- ggplot(b) +
   stat_ellipse(aes(inner, outer, col = model)) +
   labs(title = "AVE in bootstraps", x = "Inner AVE", y = "Outer AVE") +
   theme(legend.position = "bottom")
+ggsave(plot = p, filename = "Figures/bootstrap_same_index.png", dpi = 300)
