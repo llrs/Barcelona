@@ -166,6 +166,7 @@ names_rna <- trimVer(names(w_rna)[w_rna != 0])
 w_dna <- model$a[[2]][, 1]
 
 }
+
 # Functions ####
 outliers <- function(x, k = 3){
   q <- quantile(x, c(0.25, 0.5, 0.75), na.rm = TRUE)
@@ -327,6 +328,7 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   dev.off()
   return(df)
 }
+
 # Run for each ####
 date <- format(lubridate::today(), "%Y%m%d")
 df_all <- correlations_all(otus_norm = OTUs_all_norm,
@@ -374,3 +376,16 @@ df_ileum <- correlations_all(otus_norm = otus_ileum_norm,
                  meta = meta2,
                  names_rna = names_rna,
                  families = family_all)
+
+dev.off()
+subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
+write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
+          na = "", row.names = FALSE)
+}
+subDF %>%
+  count(family, sort = TRUE) %>%
+  head()
+subDF %>%
+  count(genes, sort = TRUE) %>%
+  head()
+
