@@ -326,7 +326,7 @@ dev.off()
 }
 f2()
 
-# metagenomeSeq ####
+# metagenomeSeq comparisons ####
 MR <- phyloseq_to_metagenomeSeq(phyloseq) # For testing and comparing data
 filterData(MR, present = 10, depth = 1000)
 p <- cumNormStatFast(MR)

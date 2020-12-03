@@ -12,7 +12,7 @@ out <- lapply(samples, function(x) {
   file.copy(from = loc, to = dest, copy.date = TRUE, overwrite = FALSE)
 })
 summary(unlist(out))
-# Remove some files I souldn't copy ####
+# Remove some files I shouldn't copy ####
 dest <- "/home/lrevilla/Documents/projects/design_ngs/data/fastq_ASV"
 keep <- lapply(samples, function(x){
   list.files(path = dest, full.names = TRUE, pattern = x)})

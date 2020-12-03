@@ -38,10 +38,11 @@ colnames(counts_ASV) <- NULL
 ASV_counts <- t(counts_ASV)
 cASV <- sort(colSums(ASV_counts))
 barplot(log10(cASV))
-abline(h = c(log10(1500), log10(median(cASV))), col = c("red", "green"))
+abline(h = c(log10(500), log10(median(cASV))), col = c("red", "green"))
 
-
-
+out <- assignTaxonomy(head(ASV), refFasta = "data/silva_nr99_v138_train_set.fa.gz",
+                      outputBootstraps = TRUE,
+               tryRC = TRUE, multithread = TRUE)
 
 ## Keep track of read along the pipeline:
 getN <- function(x) sum(getUniques(x))
