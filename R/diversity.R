@@ -18,20 +18,34 @@ library("forcats")
 
 {
 # Read ####
-tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
+taxonomy <- readRDS("data_out/taxonomy_ASV.RDS")
+tax <- taxonomy$tax
+# tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
 # tab <- read.delim("data/20200529_Partek_Michigan3_Kraken_Classified_phylum.txt", check.names = FALSE)
+seqtab.nochim <- readRDS("data/ASV.RDS")
+
+ASV <- colnames(seqtab.nochim)
+counts_ASV <- seqtab.nochim
+colnames(counts_ASV) <- NULL
+
+tab <- t(counts_ASV)
+
+
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
+colnames(tab) <- gsub("_p.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
-microorganism <- tab[, 1, FALSE]
+# microorganism <- tab[, 1, FALSE]
+microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
 
 # From the QC step
 meta <- readRDS("data_out/refined_meta.RDS")
-otus <- tab[, colnames(tab) %in% meta$Name]
-colnames(otus) <- meta$Original[match(colnames(otus), meta$Name)]
+otus <- tab[, colnames(tab) %in% meta$Original]
+colnames(otus) <- meta$Original[match(colnames(otus), meta$Original)]
 {
   # Check that they match
-  otus_new <- meta$Original[match(colnames(otus), meta$Name)]
+  otus_new <- meta$Original[match(colnames(otus), meta$Original)]
   names(otus_new) <- colnames(otus)
+  stopifnot(all(names(otus_new) == otus_new))
   otus_new[names(otus_new) != otus_new]
 }
 
@@ -49,6 +63,7 @@ meta$Time[is.na(meta$Time)] <- "C"
 
 otus <- as.matrix(otus)
 rownames(otus) <- paste0("sp", seq_len(nrow(otus)))
+rownames(microorganism) <- paste0("sp", seq_len(nrow(otus)))
 phyloseq <- phyloseq(otu_table(otus, taxa_are_rows = TRUE),
               sample_data(meta),
               tax_table(as.matrix(microorganism)))
@@ -57,7 +72,7 @@ phyloseq <- phyloseq(otu_table(otus, taxa_are_rows = TRUE),
 # Alpha diversity ####
 alpha <- prop.table(otus, 2)*100
 a <- as.data.frame(alpha)
-a$otus <- microorganism[, 1]
+a$otus <- microorganism[, "Phylum"]
 a <- pivot_longer(a, colnames(alpha))
 
 b <- a %>%
@@ -80,12 +95,13 @@ ggplot(b) +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         panel.grid.major.x = element_blank()) +
-  scale_fill_brewer(type= "qual") +
+  scale_fill_brewer(type = "qual") +
   scale_color_brewer(type = "qual")
 
 # Decided to do Shannon on the 10/09/2020
 # Should be the Shannon and the Simpson effective but I couldn't find how to calculate them
-date <- "20201013"
+# Based on Rhea code the effective * is calculated below (see next comment)
+date <- format(Sys.Date(), "%Y%m%d")
 alpha_meas <- c("Simpson", "Shannon")
 theme_set(theme_minimal())
 richness <- estimate_richness(phyloseq)
@@ -114,6 +130,7 @@ ggplot(richness) +
 # p <- plot_richness(phyloseq, "SEX", "IBD", measures = alpha_meas)
 # remove_geom(p, 'point', 1) + geom_jitter()
 
+# Calculate the effective Shannon and simpson alpha diversity index
 r2 <- pivot_longer(richness, cols = Chao1:Fisher, names_to = "Alpha diversity")
 richness_rel <- filter(r2, `Alpha diversity` %in% c("Shannon", "Simpson")) %>%
   mutate(effective = case_when(
@@ -189,7 +206,7 @@ ggsave(paste0("Figures/", date, "_alpha_ibd_location.png"))
 e <- apply(otus, 1, function(x){sum(x == 0)})
 {
 method <- "bray"
-beta <- vegdist(t(otus[e != 194, ]), method = method)
+beta <- vegdist(t(otus[e != nrow(otus), ]), method = method)
 }
 {cmd <- cmdscale(d = beta)
 stopifnot(all(rownames(cmd) == meta$Original))
@@ -254,7 +271,7 @@ ungroup_list <- function(x) {
 }
 }
 {
-pdf(paste0("Figures/beta_diversity_", method, ".pdf"))
+pdf(paste0("Figures/beta_diversity_", date, "_", method, ".pdf"))
 l1 <- list("C" = controls_beta, UC = UC_beta, CD = CD_beta,
            "C vs UC" = f(b, controls, UC),
            "C vs CD" = f(b, controls, CD),
@@ -324,7 +341,7 @@ p3 <- ggplot(df3,
 print(p3)
 dev.off()
 }
-f2()
+
 
 # metagenomeSeq comparisons ####
 MR <- phyloseq_to_metagenomeSeq(phyloseq) # For testing and comparing data
