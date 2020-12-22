@@ -29,7 +29,8 @@ merger1 <- mergePairs(dadaF1, derepF1, dadaR1, derepR1, verbose = TRUE)
 seqtab <- makeSequenceTable(merger1)
 seqtab.nochim <- removeBimeraDenovo(seqtab, verbose = TRUE)
 
-saveRDS(seqtab.nochim, file = "data/ASV.RDS")
+# saveRDS(seqtab.nochim, file = "data/ASV.RDS")
+seqtab.nochim <- readRDS("data/ASV.RDS")
 
 ASV <- colnames(seqtab.nochim)
 counts_ASV <- seqtab.nochim
@@ -40,10 +41,11 @@ cASV <- sort(colSums(ASV_counts))
 barplot(log10(cASV))
 abline(h = c(log10(500), log10(median(cASV))), col = c("red", "green"))
 
-out <- assignTaxonomy(head(ASV), refFasta = "data/silva_nr99_v138_train_set.fa.gz",
-                      outputBootstraps = TRUE,
-               tryRC = TRUE, multithread = TRUE)
-
+# out <- assignTaxonomy(head(ASV), refFasta = "data/silva_nr99_v138_train_set.fa.gz",
+#                       outputBootstraps = TRUE,
+#                tryRC = TRUE, multithread = TRUE)
+# saveRDS(out, "data_out/taxonomy_ASV.RDS")
+taxonomy <- readRDS("data_out/taxonomy_ASV.RDS")
 ## Keep track of read along the pipeline:
 getN <- function(x) sum(getUniques(x))
 track <- cbind(out, sapply(dadaF1, getN), sapply(dadaR1, getN), sapply(merger1, getN), rowSums(seqtab.nochim))
