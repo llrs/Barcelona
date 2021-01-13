@@ -10,9 +10,9 @@ shrinkage[3] <- 1
 
 A$Meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX"))
 Ab <- lapply(A, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
-# shrinkage[1:2] <- vapply(Ab[1:2], tau.estimate, numeric(1L)) # c(0.322297910454825, 0.578751235707392)
+# shrinkage[1:2] <- vapply(Ab[1:2], tau.estimate, numeric(1L)) # c(0.322297910454825, 0.959997006295785)
 
-shrinkage[1:2] <- c(0.322297910454825, 0.584050643977808)
+shrinkage[1:2] <- c(0.322297910454825, 0.959997006295785)
 
 
 out_model <- search_model(A = Ab, c1 = shrinkage, scheme = "centroid",

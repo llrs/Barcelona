@@ -38,8 +38,8 @@ saveRDS(A2, "data_out/model3_BCN_treatment.RDS")
 shrinkage <- rep(1, 5)
 names(shrinkage) <- names(A2)
 Ab <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
-shrinkage[1:2] <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.318145965316924
-# shrinkage[1:2] <- c(0.11503779803812, 0.318145965316924)
+shrinkage[1:2] <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.959997006295785
+# shrinkage[1:2] <- c(0.11503779803812, 0.959997006295785)
 dput(shrinkage)
 
 # The design of model 3
