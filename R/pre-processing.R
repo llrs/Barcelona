@@ -17,25 +17,25 @@ colnames(counts_ASV) <- NULL
 
 tab <- t(counts_ASV)
 
-
-colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
-colnames(tab) <- gsub("_p.*", "", colnames(tab)) # Remove trailing numbers
+# Remove trailing numbers
+colnames(tab) <- gsub("_S.*", "", colnames(tab))
+colnames(tab) <- gsub("_p.*", "", colnames(tab))
 microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
-#
-#
+
 # tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 # colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 # counts <- tab[, -1]
-genus <- tab[, "Genus", FALSE]
+# genus <- tab[, "Genus", FALSE]
 # write.csv(genus, "data/genus.csv")
-rownames(counts) <- as.character(genus[, 1])
+# rownames(counts) <- as.character(genus[, 1])
 
 # From the QC step (QC-sequencing.R)
 meta <- readRDS("data_out/info_samples.RDS")
-meta$Counts <- colSums(counts)
+meta <- meta[match(colnames(tab), meta$Original), ]
+meta$Counts <- colSums(tab)
 
 # filter (keep in mind that it should be on the same order)
-if (!all(colnames(counts) == meta$Name)) {
+if (!all(colnames(tab) == meta$Original)) {
   stop("Reorder the samples to match the condition!!")
 }
 
@@ -48,9 +48,6 @@ bcn_samples <- meta %>%
   filter(Study %in% c("BCN", "Controls")) %>%
   pull(Name)
 
-# Subset and change the names
-otus <- counts[, bcn_samples]
-colnames(otus) <- meta$Original[match(colnames(otus), meta$Name)]
 
 # Working with RNAseq
 # From Juanjo: The original counts are ok, but I need to remove the reseq samples as they
@@ -79,18 +76,18 @@ colnames(rna) <- colnames2
 
 
 # Filter the samples
-OTUs2 <- otus[, colnames(otus) %in% colnames(rna)]
+tab2 <- tab[, colnames(tab) %in% colnames(rna)]
 rna2 <- rna[, colnames(rna) %in% meta$Original]
-stopifnot(length(intersect(colnames(rna2), colnames(OTUs2))) == 128)
+stopifnot(length(intersect(colnames(rna2), colnames(tab2))) == 128)
 
 # Subset meta to all the samples that belong to the study and were sequenced
-meta0 <- meta[meta$Original %in% unique(c(colnames(rna), colnames(otus))), ]
+meta0 <- meta[meta$Original %in% unique(c(colnames(rna), colnames(tab))), ]
 
 # Reorder samples to match!
-OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
+tab2 <- tab2[ ,match(colnames(rna2), colnames(tab2))]
 
 # normalize the data
-OTUs2 <- norm_RNAseq(OTUs2)
+tab2 <- norm_RNAseq(tab2)
 rna2 <- norm_RNAseq(rna2) # Omit because is already normalized
 rna2 <- filter_RNAseq(rna2)
 
@@ -121,7 +118,14 @@ meta4 %>%
   count(Patient_ID, ID) %>%
   group_by(Patient_ID) %>%
   filter(n_distinct(ID) > 1)
-meta4$ID[meta4$Original == "123-w046"] <- "123" # Manually inspection of the data
+# Manually inspection of the data and correct the right samples
+meta4$ID[meta4$Original == "123-w046"] <- "123"
+meta4$ID[meta4$Original == "001-w000"] <- "001"
+stopifnot(meta4 %>%
+  count(Patient_ID, ID) %>%
+  group_by(Patient_ID) %>%
+  filter(n_distinct(ID) > 1) %>%
+  nrow() == 0)
 
 # Arrange the IDs
 contr4_original <- grepl("^C", meta4$Original)
@@ -256,13 +260,13 @@ meta5 <- mutate(meta5,
 )
 
 # Check that the metadata is in the right order
-meta6 <- droplevels(meta5[match(colnames(OTUs2), meta5$Original), ])
+meta6 <- droplevels(meta5[match(colnames(tab2), meta5$Original), ])
 # Removing reseq reduces by 18 samples
-stopifnot(sum(meta6$Original == colnames(OTUs2)) == 128)
+stopifnot(sum(meta6$Original == colnames(tab2)) == 128)
 stopifnot(sum(meta6$Original == colnames(rna2)) == 128)
-stopifnot(sum(colnames(OTUs2) == colnames(rna2)) == 128)
+stopifnot(sum(colnames(tab2) == colnames(rna2)) == 128)
 
-A <- list("RNAseq" = t(rna2), "Micro" = t(OTUs2), "Meta" = meta6)
+A <- list("RNAseq" = t(rna2), "Micro" = t(tab2), "Meta" = meta6)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
 saveRDS(meta6, "data_out/refined_meta.RDS")
 saveRDS(meta5, "data_out/refined_meta_all.RDS") # It doesn't have info about trim samples
