@@ -7,11 +7,27 @@ library("purrr")
 library("ggplot2")
 library("lubridate")
 
-tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
+# tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
+# tab <- read.delim("data/20200529_Partek_Michigan3_Kraken_Classified_phylum.txt", check.names = FALSE)
+seqtab.nochim <- readRDS("data/ASV.RDS")
+
+ASV <- colnames(seqtab.nochim)
+counts_ASV <- seqtab.nochim
+colnames(counts_ASV) <- NULL
+
+tab <- t(counts_ASV)
+
+
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
-counts <- tab[, -1]
-genus <- tab[, 1, FALSE]
-write.csv(genus, "data/genus.csv")
+colnames(tab) <- gsub("_p.*", "", colnames(tab)) # Remove trailing numbers
+microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
+#
+#
+# tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
+# colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
+# counts <- tab[, -1]
+genus <- tab[, "Genus", FALSE]
+# write.csv(genus, "data/genus.csv")
 rownames(counts) <- as.character(genus[, 1])
 
 # From the QC step (QC-sequencing.R)
