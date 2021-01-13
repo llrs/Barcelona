@@ -18,8 +18,6 @@ library("forcats")
 
 {
 # Read ####
-taxonomy <- readRDS("data_out/taxonomy_ASV.RDS")
-tax <- taxonomy$tax
 # tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
 # tab <- read.delim("data/20200529_Partek_Michigan3_Kraken_Classified_phylum.txt", check.names = FALSE)
 seqtab.nochim <- readRDS("data/ASV.RDS")
@@ -33,7 +31,6 @@ tab <- t(counts_ASV)
 
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 colnames(tab) <- gsub("_p.*", "", colnames(tab)) # Remove trailing numbers
-counts <- tab[, -1]
 # microorganism <- tab[, 1, FALSE]
 microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
 
