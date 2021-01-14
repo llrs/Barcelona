@@ -38,9 +38,9 @@ saveRDS(A2, "data_out/model3_BCN_treatment.RDS")
 shrinkage <- rep(1, 5)
 names(shrinkage) <- names(A2)
 Ab <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
-shrinkage[1:2] <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.959997006295785
-# shrinkage[1:2] <- c(0.11503779803812, 0.959997006295785)
-dput(shrinkage)
+# shrinkage[1:2] <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.959997006295785
+# dput(shrinkage)
+shrinkage[1:2] <- c(0.11503779803812, 0.959997006295785)
 
 # The design of model 3
 C <- matrix(
@@ -53,20 +53,20 @@ keep <- vapply(designs, correct, logical(1L))
 designs <- designs[keep]
 
 # Subset the designs
-# set.seed(46726279)
-# s <- sample(designs, size = min(length(designs)*.1, 1000))
-out <- sapply(designs, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+set.seed(46726279)
+s <- sample(designs, size = min(length(designs)*.1, 10000))
+out <- sapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
 out2 <- out[lengths(out) == 24]
 out2 <- simplify2array(out2)
 out2 <- as.data.frame(t(out2))
 saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
 
-# out %>%
-#   top_n(5, AVE_inner) %>%
-#   select(AVE_inner, AVE_outer, var12, var13, var23,
-#          var14, var24, var34, var15, var25, var35, var45) %>%
-#   arrange(desc(AVE_inner))
-# stop("Visual inspection of the top 5")
+out %>%
+  top_n(5, AVE_inner) %>%
+  select(AVE_inner, AVE_outer, var12, var13, var23,
+         var14, var24, var34, var15, var25, var35, var45) %>%
+  arrange(desc(AVE_inner))
+stop("Visual inspection of the top 5")
 #
 # s2 <- sample(designs, size = min(length(designs)*.1, 1000))
 #
