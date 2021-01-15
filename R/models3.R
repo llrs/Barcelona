@@ -54,37 +54,37 @@ designs <- designs[keep]
 
 # Subset the designs
 set.seed(46726279)
-s <- sample(designs, size = min(length(designs)*.1, 10000))
-out <- sapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-out2 <- out[lengths(out) == 24]
-out2 <- simplify2array(out2)
-out2 <- as.data.frame(t(out2))
-saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
-
-out %>%
-  top_n(5, AVE_inner) %>%
-  select(AVE_inner, AVE_outer, var12, var13, var23,
-         var14, var24, var34, var15, var25, var35, var45) %>%
-  arrange(desc(AVE_inner))
-stop("Visual inspection of the top 5")
-#
-# s2 <- sample(designs, size = min(length(designs)*.1, 1000))
-#
-# out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# s <- sample(designs, size = min(length(designs)*.1, 10000))
+# out <- sapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
 # out2 <- out[lengths(out) == 24]
 # out2 <- simplify2array(out2)
 # out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "data_out/sample2_model3_boot.RDS")
+# saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
+out2 <- readRDS("data_out/sample_model3_boot_treatment.RDS")
+# out %>%
+#   top_n(5, AVE_inner) %>%
+#   select(AVE_inner, AVE_outer, var12, var13, var23,
+#          var14, var24, var34, var15, var25, var35, var45) %>%
+#   arrange(desc(AVE_inner))
 # stop("Visual inspection of the top 5")
 
-out1 <- readRDS("data_out/sample_model3_boot.RDS")
-# out0 <- rbind(out1, out2)
-# out <- out0[!duplicated(out0), ]
-ggplot(out1, aes(AVE_inner, AVE_outer)) +
+s2 <- sample(designs, size = min(length(designs)*.1, 1000))
+
+out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+out2 <- out[lengths(out) == 24]
+out2 <- simplify2array(out2)
+out2 <- as.data.frame(t(out2))
+saveRDS(out2, "data_out/sample2_model3_boot.RDS")
+
+# out1 <- readRDS("data_out/sample_model3_boot.RDS")
+out0 <- rbind(out1, out2)
+out <- out0[!duplicated(out0), ]
+ggplot(out, aes(AVE_inner, AVE_outer)) +
   geom_point()
-#
+stop("Visual inspection of the top 5")
+
 # keep_best <- vapply(designs, function(x){
-#   x[1, 2] == 0 & x[2, 3] == 0
+#   x[2, 4] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0
 # }, logical(1L))
 #
 # out <- sapply(designs[keep_best], testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
