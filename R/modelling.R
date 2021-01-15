@@ -16,7 +16,7 @@ model0i <- subSymm(model0, 1, 1, 1)
 # We cannot calculate the tau.estimate for A[[1]]
 shrinkage <- rep(1, 3) #Calculated from the server for the data derived from original data
 # (shrinkage[1:2] <- sapply(A[1:2], tau.estimate))
-shrinkage[1:2] <- c(0.322297910454825, 0.584050643977808)
+shrinkage[1:2] <- c(0.322297910454825, 0.959997006295785)
 (min_shrinkage <- sapply(A, function(x) {
   1 / sqrt(ncol(x))
 }))
