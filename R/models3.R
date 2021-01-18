@@ -60,7 +60,7 @@ s <- sample(designs, size = min(length(designs)*.1, 10000))
 # out2 <- simplify2array(out2)
 # out2 <- as.data.frame(t(out2))
 # saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
-out2 <- readRDS("data_out/sample_model3_boot_treatment.RDS")
+out1 <- readRDS("data_out/sample_model3_boot_treatment.RDS")
 # out %>%
 #   top_n(5, AVE_inner) %>%
 #   select(AVE_inner, AVE_outer, var12, var13, var23,
@@ -68,44 +68,61 @@ out2 <- readRDS("data_out/sample_model3_boot_treatment.RDS")
 #   arrange(desc(AVE_inner))
 # stop("Visual inspection of the top 5")
 
-s2 <- sample(designs, size = 10000)
-
-out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-out2 <- out[lengths(out) == 24]
-out2 <- simplify2array(out2)
-out2 <- as.data.frame(t(out2))
-saveRDS(out2, "data_out/sample2_model3_boot.RDS")
+# s2 <- sample(designs, size = 10000)
+#
+# out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# out2 <- out[lengths(out) == 24]
+# out2 <- simplify2array(out2)
+# out2 <- as.data.frame(t(out2))
+# saveRDS(out2, "data_out/sample2_model3_boot.RDS")
+out2 <- readRDS("data_out/sample2_model3_boot.RDS")
 
 # out1 <- readRDS("data_out/sample_model3_boot.RDS")
 out0 <- rbind(out1, out2)
 out <- out0[!duplicated(out0), ]
-ggplot(out, aes(AVE_inner, AVE_outer)) +
-  geom_point()
-stop("Visual inspection of the top 5")
+# ggplot(out, aes(AVE_inner, AVE_outer)) +
+#   geom_point()
+out %>%
+  top_n(5, AVE_inner) %>%
+  select(AVE_inner, AVE_outer, var12, var13, var23,
+         var14, var24, var34, var15, var25, var35, var45) %>%
+  arrange(desc(AVE_inner))
+# stop("Visual inspection of the top 5")
 
-# keep_best <- vapply(designs, function(x){
-#   x[2, 4] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0
-# }, logical(1L))
-#
-# out <- sapply(designs[keep_best], testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+keep_best <- vapply(designs, function(x){
+  x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
+}, logical(1L))
+
+out <- sapply(designs[keep_best], testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
 # out2 <- out[lengths(out) == 24]
 # out2 <- simplify2array(out2)
 # out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "sample_def_model3_boot.RDS")
-#
-# out0 <- readRDS("sample_model3_boot.RDS")
-# out1 <- readRDS("sample2_model3_boot.RDS")
-# out2 <- readRDS("sample_def_model3_boot.RDS")
-# out <- rbind(out0, out1, out2)
-# out <- out[!duplicated(out), ]
-out <- out1
-ggplot(out, aes(AVE_inner, AVE_outer, color = cc1)) +
-  geom_point()
+# out <- as.data.frame(t(out))
+saveRDS(out, "data_out/sample_def_model3_boot.RDS")
+# out <- readRDS("data_out/sample_def_model3_boot.RDS")
+out0 <- readRDS("data_out/sample_model3_boot.RDS")
+out1 <- readRDS("data_out/sample2_model3_boot.RDS")
+out2 <- readRDS("data_out/sample_def_model3_boot.RDS")
+out <- rbind(out0, out1, out2)
+out <- out[!duplicated(out), ]
+# ggplot(out, aes(AVE_inner, AVE_outer, color = cc1)) +
+#   geom_point()
 best3 <- out[out$AVE_inner == max(out$AVE_inner), grep("var", colnames(out))]
-best3 <- symm(designs[[1]], best3)
+best3 <- symm(C, best3)
 colnames(best3) <- names(Ab)
 rownames(best3) <- names(Ab)
+d <- weight_design(weights = 11, size = length(Ab), which(lower.tri(best3) & best3 != 0))
+keep_best <- vapply(d, function(x){
+  x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
+}, logical(1L))
+d <- d[keep_best]
+out <- sapply(d, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+saveRDS(out, "data_out/refined_model3.RDS")
+out <- readRDS("data_out/refined_model3.RDS")
+o <- as.data.frame(t(out))
 
+best3 <- o[o$AVE_inner == max(o$AVE_inner), grep("var", colnames(o))]
+best3 <- symm(C, best3)
 model3_best <- sgcca(A = Ab, c1 = shrinkage, C = best3, ncomp = rep(2, 5), scheme = "centroid")
 model3_best <- improve.sgcca(model3_best, names(Ab))
 saveRDS(model3_best, "data_out/model3_best_treatment.RDS")
