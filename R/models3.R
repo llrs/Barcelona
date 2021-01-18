@@ -55,11 +55,11 @@ designs <- designs[keep]
 # Subset the designs
 set.seed(46726279)
 s <- sample(designs, size = min(length(designs)*.1, 10000))
-# out <- sapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-# out2 <- out[lengths(out) == 24]
-# out2 <- simplify2array(out2)
-# out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
+out <- sapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+out2 <- out[lengths(out) == 24]
+out2 <- simplify2array(out2)
+out2 <- as.data.frame(t(out2))
+saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
 out1 <- readRDS("data_out/sample_model3_boot_treatment.RDS")
 # out %>%
 #   top_n(5, AVE_inner) %>%
@@ -68,13 +68,13 @@ out1 <- readRDS("data_out/sample_model3_boot_treatment.RDS")
 #   arrange(desc(AVE_inner))
 # stop("Visual inspection of the top 5")
 
-# s2 <- sample(designs, size = 10000)
-#
-# out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-# out2 <- out[lengths(out) == 24]
-# out2 <- simplify2array(out2)
-# out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "data_out/sample2_model3_boot.RDS")
+s2 <- sample(designs, size = 10000)
+
+out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+out2 <- out[lengths(out) == 24]
+out2 <- simplify2array(out2)
+out2 <- as.data.frame(t(out2))
+saveRDS(out2, "data_out/sample2_model3_boot.RDS")
 out2 <- readRDS("data_out/sample2_model3_boot.RDS")
 
 # out1 <- readRDS("data_out/sample_model3_boot.RDS")
