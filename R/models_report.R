@@ -219,7 +219,7 @@ df %>%
   theme(panel.grid.minor = element_blank(), axis.ticks = element_blank(),
         axis.text = element_blank())
 loc <- last_plot()
-ggsave("Figures/models_location.png", plot = loc)
+ggsave("Figures/models_location_ASV.png", plot = loc)
 df %>%
   filter(!grepl(" i", Model),
          Component == "comp1") %>%
@@ -235,7 +235,7 @@ df %>%
   theme(panel.grid.minor = element_blank(), axis.ticks = element_blank(),
         axis.text = element_blank())
 dis <- last_plot()
-ggsave("Figures/models_disease.png", plot = dis)
+ggsave("Figures/models_disease_ASV.png", plot = dis)
 
 df %>%
   filter(!grepl(" i", Model),
