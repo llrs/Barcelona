@@ -33,8 +33,8 @@ A2$Location <- Localization
 A2$Time <- Time
 
 A2 <- clean_unvariable(A2)
-saveRDS(A2, "data_out/model3_BCN_treatment.RDS")
-
+# saveRDS(A2, "data_out/model3_BCN_treatment.RDS")
+#
 shrinkage <- rep(1, 5)
 names(shrinkage) <- names(A2)
 Ab <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
@@ -54,55 +54,56 @@ designs <- designs[keep]
 
 # Subset the designs
 set.seed(46726279)
-s <- sample(designs, size = min(length(designs)*.1, 10000))
-out <- sapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-out2 <- out[lengths(out) == 24]
-out2 <- simplify2array(out2)
-out2 <- as.data.frame(t(out2))
-saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
-out1 <- readRDS("data_out/sample_model3_boot_treatment.RDS")
+# s <- sample(designs, size = min(length(designs)*.1, 10000))
+# out <- sapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# out2 <- out[lengths(out) == 24]
+# out2 <- simplify2array(out2)
+# out2 <- as.data.frame(t(out2))
+# saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
+# out1 <- readRDS("data_out/sample_model3_boot_treatment.RDS")
+# # out %>%
+# #   top_n(5, AVE_inner) %>%
+# #   select(AVE_inner, AVE_outer, var12, var13, var23,
+# #          var14, var24, var34, var15, var25, var35, var45) %>%
+# #   arrange(desc(AVE_inner))
+# # stop("Visual inspection of the top 5")
+#
+# s2 <- sample(designs, size = 10000)
+#
+# out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# out2 <- out[lengths(out) == 24]
+# out2 <- simplify2array(out2)
+# out2 <- as.data.frame(t(out2))
+# saveRDS(out2, "data_out/sample2_model3_boot.RDS")
+# out2 <- readRDS("data_out/sample2_model3_boot.RDS")
+#
+# # out1 <- readRDS("data_out/sample_model3_boot.RDS")
+# out0 <- rbind(out1, out2)
+# out <- out0[!duplicated(out0), ]
+# # ggplot(out, aes(AVE_inner, AVE_outer)) +
+# #   geom_point()
 # out %>%
 #   top_n(5, AVE_inner) %>%
 #   select(AVE_inner, AVE_outer, var12, var13, var23,
 #          var14, var24, var34, var15, var25, var35, var45) %>%
 #   arrange(desc(AVE_inner))
-# stop("Visual inspection of the top 5")
-
-s2 <- sample(designs, size = 10000)
-
-out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-out2 <- out[lengths(out) == 24]
-out2 <- simplify2array(out2)
-out2 <- as.data.frame(t(out2))
-saveRDS(out2, "data_out/sample2_model3_boot.RDS")
-out2 <- readRDS("data_out/sample2_model3_boot.RDS")
-
-# out1 <- readRDS("data_out/sample_model3_boot.RDS")
-out0 <- rbind(out1, out2)
-out <- out0[!duplicated(out0), ]
-# ggplot(out, aes(AVE_inner, AVE_outer)) +
-#   geom_point()
-out %>%
-  top_n(5, AVE_inner) %>%
-  select(AVE_inner, AVE_outer, var12, var13, var23,
-         var14, var24, var34, var15, var25, var35, var45) %>%
-  arrange(desc(AVE_inner))
-# stop("Visual inspection of the top 5")
-
-keep_best <- vapply(designs, function(x){
-  x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
-}, logical(1L))
-
-out <- sapply(designs[keep_best], testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-# out2 <- out[lengths(out) == 24]
-# out2 <- simplify2array(out2)
-# out2 <- as.data.frame(t(out2))
-# out <- as.data.frame(t(out))
-saveRDS(out, "data_out/sample_def_model3_boot.RDS")
+# # stop("Visual inspection of the top 5")
+#
+# keep_best <- vapply(designs, function(x){
+#   x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
+# }, logical(1L))
+#
+# out <- sapply(designs[keep_best], testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# # out2 <- out[lengths(out) == 24]
+# # out2 <- simplify2array(out2)
+# # out2 <- as.data.frame(t(out2))
+# # out <- as.data.frame(t(out))
+# saveRDS(out, "data_out/sample_def_model3_boot.RDS")
 # out <- readRDS("data_out/sample_def_model3_boot.RDS")
 out0 <- readRDS("data_out/sample_model3_boot.RDS")
 out1 <- readRDS("data_out/sample2_model3_boot.RDS")
 out2 <- readRDS("data_out/sample_def_model3_boot.RDS")
+out2 <- as.data.frame(t(out2))
 out <- rbind(out0, out1, out2)
 out <- out[!duplicated(out), ]
 # ggplot(out, aes(AVE_inner, AVE_outer, color = cc1)) +
