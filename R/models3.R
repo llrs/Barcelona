@@ -108,22 +108,27 @@ out <- rbind(out0, out1, out2)
 out <- out[!duplicated(out), ]
 # ggplot(out, aes(AVE_inner, AVE_outer, color = cc1)) +
 #   geom_point()
-best3 <- out[out$AVE_inner == max(out$AVE_inner), grep("var", colnames(out))]
-best3 <- symm(C, best3)
-colnames(best3) <- names(Ab)
-rownames(best3) <- names(Ab)
-d <- weight_design(weights = 11, size = length(Ab), which(lower.tri(best3) & best3 != 0))
-keep_best <- vapply(d, function(x){
-  x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
-}, logical(1L))
-d <- d[keep_best]
-out <- sapply(d, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-saveRDS(out, "data_out/refined_model3.RDS")
+# best3 <- out[out$AVE_inner == max(out$AVE_inner), grep("var", colnames(out))]
+# best3 <- symm(C, best3)
+# colnames(best3) <- names(Ab)
+# rownames(best3) <- names(Ab)
+# d <- weight_design(weights = 11, size = length(Ab), which(lower.tri(best3) & best3 != 0))
+# keep_best <- vapply(d, function(x){
+#   x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
+# }, logical(1L))
+# d <- d[keep_best]
+# out <- sapply(d, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# saveRDS(out, "data_out/refined_model3.RDS")
 out <- readRDS("data_out/refined_model3.RDS")
-o <- as.data.frame(t(out))
+out <- out[lengths(out) != 1]
+o <- simplify2array(out)
+o <- as.data.frame(t(o))
 
 best3 <- o[o$AVE_inner == max(o$AVE_inner), grep("var", colnames(o))]
 best3 <- symm(C, best3)
-model3_best <- sgcca(A = Ab, c1 = shrinkage, C = best3, ncomp = rep(2, 5), scheme = "centroid")
+model3_best <- sgcca(A = Ab, c1 = shrinkage, C = best3, ncomp = rep(2, 5), scheme = "centroid",
+                     scale = FALSE)
 model3_best <- improve.sgcca(model3_best, names(Ab))
+beepr::beep()
+stopifnot(model3_best$AVE$AVE_inner[1] != max(o$AVE_inner))
 saveRDS(model3_best, "data_out/model3_best_treatment.RDS")
