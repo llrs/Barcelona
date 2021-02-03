@@ -38,9 +38,9 @@ A2 <- clean_unvariable(A2)
 shrinkage <- rep(1, 5)
 names(shrinkage) <- names(A2)
 Ab <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
-# shrinkage[1:2] <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.959997006295785
+# shrinkage[1:2] <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.322297910454825 0.959997006295785
 # dput(shrinkage)
-shrinkage[1:2] <- c(0.11503779803812, 0.959997006295785)
+shrinkage[1:2] <- c(0.322297910454825, 0.959997006295785)
 
 # The design of model 3
 C <- matrix(
@@ -108,21 +108,25 @@ out <- rbind(out0, out1, out2)
 out <- out[!duplicated(out), ]
 # ggplot(out, aes(AVE_inner, AVE_outer, color = cc1)) +
 #   geom_point()
-# best3 <- out[out$AVE_inner == max(out$AVE_inner), grep("var", colnames(out))]
-# best3 <- symm(C, best3)
+best3 <- out[out$AVE_inner == max(out$AVE_inner), grep("var", colnames(out))]
+best3 <- symm(C, best3)
 # colnames(best3) <- names(Ab)
 # rownames(best3) <- names(Ab)
-# d <- weight_design(weights = 11, size = length(Ab), which(lower.tri(best3) & best3 != 0))
-# keep_best <- vapply(d, function(x){
-#   x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
-# }, logical(1L))
-# d <- d[keep_best]
-# out <- sapply(d, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-# saveRDS(out, "data_out/refined_model3.RDS")
-out <- readRDS("data_out/refined_model3.RDS")
-out <- out[lengths(out) != 1]
-o <- simplify2array(out)
-o <- as.data.frame(t(o))
+d <- weight_design(weights = 11, size = length(Ab), which(lower.tri(best3) & best3 != 0))
+check_model <- function(x){
+  x[1, 2] != 0 & x[1, 3] != 0 & x[2, 3] == 1 & x[1, 4] == 0 & x[2, 4] == 1 & x[3, 4] == 1 &
+    x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] == 0.1
+}
+keep_best <- vapply(d, check_model, logical(1L))
+d <- d[keep_best]
+out <- sapply(d, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+saveRDS(out, "data_out/refined_model3_2.RDS")
+out <- readRDS("data_out/refined_model3_2.RDS")
+if (is.list(out)) {
+  out <- out[lengths(out) == 24]
+  out <- simplify2array(out)
+  }
+o <- as.data.frame(t(out))
 
 best3 <- o[o$AVE_inner == max(o$AVE_inner), grep("var", colnames(o))]
 best3 <- symm(C, best3)
