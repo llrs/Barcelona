@@ -52,8 +52,8 @@ bcn_samples <- meta %>%
 # Working with RNAseq
 # From Juanjo: The original counts are ok, but I need to remove the reseq samples as they
 # have different length and bias the PCA
-conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz")
-rna <- read.table(conn, sep = "\t", check.names = FALSE)
+rna <- read.delim("data/TNF.all.samples.original.counts.tsv.gz",
+                   check.names = FALSE)
 
 rna <- rna[ , !grepl(" reseq$", colnames(rna))] # Remove as said
 colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
