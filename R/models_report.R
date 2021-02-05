@@ -120,13 +120,13 @@ rock1.2 <- roc(meta$Ileum, model2_best$Y$RNAseq[, 1])
 rock2.2 <- roc(meta$Ileum, model3_best$Y$RNAseq[, 1])
 par(pty = "s")
 plot(rock0, asp = 1, xlim = c(0, 1), ylim = c(0, 1), main = "AUC", col = "red")
-lines(rock1.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "green")
-lines(rock2.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "blue")
+lines(rock1.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "green", lty = 2)
+lines(rock2.2, asp = 1, xlim = c(0, 1), ylim = c(0, 1), col = "blue", lty = 3)
 text(x = 0.5, y = 0.5, labels = paste("AUC =", round(rock0$auc, 3)), col = "red")
 text(x = 0.5, y = 0.6, labels = paste("AUC =", round(rock1.2$auc, 3)), col = "green")
 text(x = 0.5, y = 0.7, labels = paste("AUC =", round(rock2.2$auc, 3)), col = "blue")
 legend("bottomleft",
-       fill = c("red", "green", "blue"),
+       col = c("red", "green", "blue"), lty = c(1, 2, 3),
        legend = c("Model 0", "Model 1.2", "Model 2.2"))
 
 # * Aim bullet ####
