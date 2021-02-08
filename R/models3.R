@@ -18,7 +18,7 @@ testing <- function(x, ...) {
                                  scale = FALSE,
                                  ...)
     analyze(result.sgcca)}
-    , error = function(x){NA})
+    , error = function(x){print(x)})
 }
 
 meta$`Phenotype CD` <- tolower(meta$`Phenotype CD`)
@@ -56,9 +56,8 @@ designs <- designs[keep]
 
 # Subset the designs
 set.seed(46726279)
-s <- sample(designs, size = min(length(designs)*.1, 10000))
-out <- bplapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE,
-                BPPARAM = mcp)
+s <- sample(designs, size = min(length(designs)*.1, 10))
+out <- bplapply(s, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
 out2 <- out[lengths(out) == 24]
 out2 <- simplify2array(out2)
 out2 <- as.data.frame(t(out2))
@@ -73,8 +72,7 @@ stop("Visual inspection of the top 5")
 #
 # s2 <- sample(designs, size = 10000)
 #
-# out <- bplapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE,
-# BPPARAM = mcp)
+# out <- bplapply(s2, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
 # out2 <- out[lengths(out) == 24]
 # out2 <- simplify2array(out2)
 # out2 <- as.data.frame(t(out2))
@@ -97,7 +95,7 @@ stop("Visual inspection of the top 5")
 #   x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
 # }, logical(1L))
 #
-# out <- bplapply(designs[keep_best], testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE,
+# out <- bplapply(designs[keep_best], testing, A = Ab, c1 = shrinkage,
 # BPPARAM = mcp)
 # # out2 <- out[lengths(out) == 24]
 # # out2 <- simplify2array(out2)
@@ -124,10 +122,9 @@ check_model <- function(x){
 }
 keep_best <- vapply(d, check_model, logical(1L))
 d <- d[keep_best]
-out <- bplapply(d, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE,
-                 BPPARAM = mcp)
-saveRDS(out, "data_out/refined_model3_2.RDS")
-out <- readRDS("data_out/refined_model3_2.RDS")
+out <- bplapply(d, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
+saveRDS(out, "data_out/refined_model3_b.RDS")
+out <- readRDS("data_out/refined_model3_b.RDS")
 if (is.list(out)) {
   out <- out[lengths(out) == 24]
   out <- simplify2array(out)
@@ -141,4 +138,4 @@ model3_best <- sgcca(A = Ab, c1 = shrinkage, C = best3, ncomp = rep(2, 5), schem
 model3_best <- improve.sgcca(model3_best, names(Ab))
 beepr::beep()
 stopifnot(model3_best$AVE$AVE_inner[1] != max(o$AVE_inner))
-saveRDS(model3_best, "data_out/model3_best_treatment.RDS")
+saveRDS(model3_best, "data_out/model3_best_treatment_b.RDS")
