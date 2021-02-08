@@ -2,7 +2,7 @@ library("integration")
 library("RGCCA")
 library("ggplot2")
 
-A <- readRDS("data/RGCCA_data.RDS")
+A <- readRDS("data/refined_meta_wo_out.RDS")
 A2 <- A[1:2]
 
 # Basic ####
@@ -16,7 +16,7 @@ model0i <- subSymm(model0, 1, 1, 1)
 # We cannot calculate the tau.estimate for A[[1]]
 shrinkage <- rep(1, 3) #Calculated from the server for the data derived from original data
 # (shrinkage[1:2] <- sapply(A[1:2], tau.estimate))
-shrinkage[1:2] <- c(0.322297910454825, 0.959997006295785)
+shrinkage[1:2] <- c(0.322020648273615, 0.866155549496009)
 (min_shrinkage <- sapply(A, function(x) {
   1 / sqrt(ncol(x))
 }))

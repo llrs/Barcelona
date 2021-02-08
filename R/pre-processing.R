@@ -57,6 +57,8 @@ rna <- read.delim("data/TNF.all.samples.original.counts.tsv.gz",
 
 rna <- rna[ , !grepl(" reseq$", colnames(rna))] # Remove as said
 colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
+# Filter two outliers
+rna <- rna[, !startsWith(colnames(rna), "52")]
 
 correct_bcn <- function(x) {
   if (length(x) > 1) {
@@ -78,7 +80,7 @@ colnames(rna) <- colnames2
 # Filter the samples
 tab2 <- tab[, colnames(tab) %in% colnames(rna)]
 rna2 <- rna[, colnames(rna) %in% meta$Original]
-stopifnot(length(intersect(colnames(rna2), colnames(tab2))) == 128)
+stopifnot(length(intersect(colnames(rna2), colnames(tab2))) == 126)
 
 # Subset meta to all the samples that belong to the study and were sequenced
 meta0 <- meta[meta$Original %in% unique(c(colnames(rna), colnames(tab))), ]
@@ -91,7 +93,7 @@ tab2 <- norm_RNAseq(tab2)
 rna2 <- norm_RNAseq(rna2) # Omit because is already normalized
 rna2 <- filter_RNAseq(rna2)
 
-# Meta ####
+# Prepare meta ####
 db <- data.table::fread(
   "data/db_biopsies_bcn_seq16S_noTRIM.txt", sep = "\t",
   stringsAsFactors = FALSE
@@ -262,12 +264,12 @@ meta5 <- mutate(meta5,
 # Check that the metadata is in the right order
 meta6 <- droplevels(meta5[match(colnames(tab2), meta5$Original), ])
 # Removing reseq reduces by 18 samples
-stopifnot(sum(meta6$Original == colnames(tab2)) == 128)
-stopifnot(sum(meta6$Original == colnames(rna2)) == 128)
-stopifnot(sum(colnames(tab2) == colnames(rna2)) == 128)
+stopifnot(sum(meta6$Original == colnames(tab2)) == 126)
+stopifnot(sum(meta6$Original == colnames(rna2)) == 126)
+stopifnot(sum(colnames(tab2) == colnames(rna2)) == 126)
 
 A <- list("RNAseq" = t(rna2), "Micro" = t(tab2), "Meta" = meta6)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
-saveRDS(meta6, "data_out/refined_meta.RDS")
+saveRDS(meta6, "data_out/refined_meta_wo_out.RDS")
 saveRDS(meta5, "data_out/refined_meta_all.RDS") # It doesn't have info about trim samples
-saveRDS(A, "data/RGCCA_data.RDS")
+saveRDS(A, "data/RGCCA_data_wo_out.RDS")

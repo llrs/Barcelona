@@ -3,8 +3,10 @@ library("RGCCA")
 library("dplyr")
 library("inteRmodel")
 library("ggplot2")
+library("BiocParallel")
 
-A <- readRDS("data/RGCCA_data.RDS")
+mcp <- MulticoreParam(workers = 8, progressbar = TRUE)
+A <- readRDS("data/RGCCA_data_wo_out.RDS")
 meta <- A$Meta
 
 stopifnot(all(A$Meta$Original == rownames(A$RNAseq)))
@@ -40,7 +42,7 @@ names(shrinkage) <- names(A2)
 Ab <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 # shrinkage[1:2] <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.322297910454825 0.959997006295785
 # dput(shrinkage)
-shrinkage[1:2] <- c(0.322297910454825, 0.959997006295785)
+shrinkage[1:2] <- c(0.322020648273615, 0.866155549496009)
 
 # The design of model 3
 C <- matrix(
@@ -54,30 +56,32 @@ designs <- designs[keep]
 
 # Subset the designs
 set.seed(46726279)
-# s <- sample(designs, size = min(length(designs)*.1, 10000))
-# out <- sapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
-# out2 <- out[lengths(out) == 24]
-# out2 <- simplify2array(out2)
-# out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "data_out/sample_model3_boot_treatment.RDS")
-# out1 <- readRDS("data_out/sample_model3_boot_treatment.RDS")
-# # out %>%
-# #   top_n(5, AVE_inner) %>%
-# #   select(AVE_inner, AVE_outer, var12, var13, var23,
-# #          var14, var24, var34, var15, var25, var35, var45) %>%
-# #   arrange(desc(AVE_inner))
-# # stop("Visual inspection of the top 5")
+s <- sample(designs, size = min(length(designs)*.1, 10000))
+out <- bplapply(s, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE,
+                BPPARAM = mcp)
+out2 <- out[lengths(out) == 24]
+out2 <- simplify2array(out2)
+out2 <- as.data.frame(t(out2))
+saveRDS(out2, "data_out/sample_model3_boot_treatment_b.RDS")
+out1 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
+out %>%
+  top_n(5, AVE_inner) %>%
+  select(AVE_inner, AVE_outer, var12, var13, var23,
+         var14, var24, var34, var15, var25, var35, var45) %>%
+  arrange(desc(AVE_inner))
+stop("Visual inspection of the top 5")
 #
 # s2 <- sample(designs, size = 10000)
 #
-# out <- sapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# out <- bplapply(s2, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE,
+# BPPARAM = mcp)
 # out2 <- out[lengths(out) == 24]
 # out2 <- simplify2array(out2)
 # out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "data_out/sample2_model3_boot.RDS")
-# out2 <- readRDS("data_out/sample2_model3_boot.RDS")
+# saveRDS(out2, "data_out/sample2_model3_boot_b.RDS")
+# out2 <- readRDS("data_out/sample2_model3_boot_b.RDS")
 #
-# # out1 <- readRDS("data_out/sample_model3_boot.RDS")
+# # out1 <- readRDS("data_out/sample_model3_boot_b.RDS")
 # out0 <- rbind(out1, out2)
 # out <- out0[!duplicated(out0), ]
 # # ggplot(out, aes(AVE_inner, AVE_outer)) +
@@ -93,16 +97,17 @@ set.seed(46726279)
 #   x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
 # }, logical(1L))
 #
-# out <- sapply(designs[keep_best], testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+# out <- bplapply(designs[keep_best], testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE,
+# BPPARAM = mcp)
 # # out2 <- out[lengths(out) == 24]
 # # out2 <- simplify2array(out2)
 # # out2 <- as.data.frame(t(out2))
 # # out <- as.data.frame(t(out))
-# saveRDS(out, "data_out/sample_def_model3_boot.RDS")
-# out <- readRDS("data_out/sample_def_model3_boot.RDS")
-out0 <- readRDS("data_out/sample_model3_boot.RDS")
-out1 <- readRDS("data_out/sample2_model3_boot.RDS")
-out2 <- readRDS("data_out/sample_def_model3_boot.RDS")
+# saveRDS(out, "data_out/sample_def_model3_boot_b.RDS")
+# out <- readRDS("data_out/sample_def_model3_boot_b.RDS")
+out0 <- readRDS("data_out/sample_model3_boot_b.RDS")
+out1 <- readRDS("data_out/sample2_model3_boot_b.RDS")
+out2 <- readRDS("data_out/sample_def_model3_boot_b.RDS")
 out2 <- as.data.frame(t(out2))
 out <- rbind(out0, out1, out2)
 out <- out[!duplicated(out), ]
@@ -119,7 +124,8 @@ check_model <- function(x){
 }
 keep_best <- vapply(d, check_model, logical(1L))
 d <- d[keep_best]
-out <- sapply(d, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
+out <- bplapply(d, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE,
+                 BPPARAM = mcp)
 saveRDS(out, "data_out/refined_model3_2.RDS")
 out <- readRDS("data_out/refined_model3_2.RDS")
 if (is.list(out)) {
