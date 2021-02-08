@@ -56,14 +56,14 @@ designs <- designs[keep]
 
 # Subset the designs
 set.seed(46726279)
-s <- sample(designs, size = min(length(designs)*.1, 10))
+s <- sample(designs, size = min(length(designs)*.1, 10000))
 out <- bplapply(s, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
 out2 <- out[lengths(out) == 24]
 out2 <- simplify2array(out2)
 out2 <- as.data.frame(t(out2))
 saveRDS(out2, "data_out/sample_model3_boot_treatment_b.RDS")
-out1 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
-out %>%
+out2 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
+out2 %>%
   top_n(5, AVE_inner) %>%
   select(AVE_inner, AVE_outer, var12, var13, var23,
          var14, var24, var34, var15, var25, var35, var45) %>%
