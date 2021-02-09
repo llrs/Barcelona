@@ -68,29 +68,29 @@ out2 %>%
   select(AVE_inner, AVE_outer, var12, var13, var23,
          var14, var24, var34, var15, var25, var35, var45) %>%
   arrange(desc(AVE_inner))
+# stop("Visual inspection of the top 5")
+
+s2 <- sample(designs, size = 20000)
+
+out <- bplapply(s2, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
+out2 <- out[lengths(out) == 24]
+out2 <- simplify2array(out2)
+out2 <- as.data.frame(t(out2))
+saveRDS(out2, "data_out/sample2_model3_boot_b.RDS")
+out2 <- readRDS("data_out/sample2_model3_boot_b.RDS")
+out1 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
+
+out0 <- rbind(out1, out2)
+out <- out0[!duplicated(out0), ]
+# ggplot(out, aes(AVE_inner, AVE_outer)) +
+#   geom_point()
+out %>%
+  top_n(5, AVE_inner) %>%
+  select(AVE_inner, AVE_outer, var12, var13, var23,
+         var14, var24, var34, var15, var25, var35, var45) %>%
+  arrange(desc(AVE_inner))
 stop("Visual inspection of the top 5")
-#
-# s2 <- sample(designs, size = 10000)
-#
-# out <- bplapply(s2, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
-# out2 <- out[lengths(out) == 24]
-# out2 <- simplify2array(out2)
-# out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "data_out/sample2_model3_boot_b.RDS")
-# out2 <- readRDS("data_out/sample2_model3_boot_b.RDS")
-#
-# # out1 <- readRDS("data_out/sample_model3_boot_b.RDS")
-# out0 <- rbind(out1, out2)
-# out <- out0[!duplicated(out0), ]
-# # ggplot(out, aes(AVE_inner, AVE_outer)) +
-# #   geom_point()
-# out %>%
-#   top_n(5, AVE_inner) %>%
-#   select(AVE_inner, AVE_outer, var12, var13, var23,
-#          var14, var24, var34, var15, var25, var35, var45) %>%
-#   arrange(desc(AVE_inner))
-# # stop("Visual inspection of the top 5")
-#
+
 # keep_best <- vapply(designs, function(x){
 #   x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
 # }, logical(1L))
