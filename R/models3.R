@@ -110,10 +110,10 @@ out <- rbind(out0, out1, out2)
 out <- out[!duplicated(out), ]
 # ggplot(out, aes(AVE_inner, AVE_outer, color = cc1)) +
 #   geom_point()
-# best3 <- out[out$AVE_inner == max(out$AVE_inner), grep("var", colnames(out))]
-# best3 <- symm(C, best3)
-# colnames(best3) <- names(Ab)
-# rownames(best3) <- names(Ab)
+best3 <- out[out$AVE_inner == max(out$AVE_inner), grep("var", colnames(out))]
+best3 <- symm(C, best3)
+colnames(best3) <- names(Ab)
+rownames(best3) <- names(Ab)
 # stop("Check model")
 d <- weight_design(weights = 11, size = length(Ab), which(lower.tri(best3) & best3 != 0))
 out <- bplapply(d, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
