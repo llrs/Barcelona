@@ -56,27 +56,27 @@ designs <- designs[keep]
 
 # Subset the designs
 set.seed(46726279)
-s <- sample(designs, size = min(length(designs)*.1, 10000))
-out <- bplapply(s, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
-out2 <- out[lengths(out) == 24]
-out2 <- simplify2array(out2)
-out2 <- as.data.frame(t(out2))
-saveRDS(out2, "data_out/sample_model3_boot_treatment_b.RDS")
-out2 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
-out2 %>%
-  top_n(5, AVE_inner) %>%
-  select(AVE_inner, AVE_outer, var12, var13, var23,
-         var14, var24, var34, var15, var25, var35, var45) %>%
-  arrange(desc(AVE_inner))
+# s <- sample(designs, size = min(length(designs)*.1, 10000))
+# out <- bplapply(s, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
+# out2 <- out[lengths(out) == 24]
+# out2 <- simplify2array(out2)
+# out2 <- as.data.frame(t(out2))
+# saveRDS(out2, "data_out/sample_model3_boot_treatment_b.RDS")
+# out2 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
+# out2 %>%
+#   top_n(5, AVE_inner) %>%
+#   select(AVE_inner, AVE_outer, var12, var13, var23,
+#          var14, var24, var34, var15, var25, var35, var45) %>%
+#   arrange(desc(AVE_inner))
 # stop("Visual inspection of the top 5")
-
-s2 <- sample(designs, size = 20000)
-
-out <- bplapply(s2, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
-out2 <- out[lengths(out) == 24]
-out2 <- simplify2array(out2)
-out2 <- as.data.frame(t(out2))
-saveRDS(out2, "data_out/sample2_model3_boot_b.RDS")
+#
+# s2 <- sample(designs, size = 20000)
+#
+# out <- bplapply(s2, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
+# out2 <- out[lengths(out) == 24]
+# out2 <- simplify2array(out2)
+# out2 <- as.data.frame(t(out2))
+# saveRDS(out2, "data_out/sample2_model3_boot_b.RDS")
 out2 <- readRDS("data_out/sample2_model3_boot_b.RDS")
 out1 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
 
@@ -84,29 +84,28 @@ out0 <- rbind(out1, out2)
 out <- out0[!duplicated(out0), ]
 # ggplot(out, aes(AVE_inner, AVE_outer)) +
 #   geom_point()
-out %>%
-  top_n(5, AVE_inner) %>%
-  select(AVE_inner, AVE_outer, var12, var13, var23,
-         var14, var24, var34, var15, var25, var35, var45) %>%
-  arrange(desc(AVE_inner))
-stop("Visual inspection of the top 5")
+# out %>%
+#   top_n(5, AVE_inner) %>%
+#   select(AVE_inner, AVE_outer, var12, var13, var23,
+#          var14, var24, var34, var15, var25, var35, var45) %>%
+#   arrange(desc(AVE_inner))
+# stop("Visual inspection of the top 5")
 
-# keep_best <- vapply(designs, function(x){
-#   x[2, 3] == 1 & x[1, 5] == 0 & x[2, 5] == 0 & x[3, 5] == 0 & x[4, 5] != 0 & x[1, 3] != 0
-# }, logical(1L))
-#
-# out <- bplapply(designs[keep_best], testing, A = Ab, c1 = shrinkage,
-# BPPARAM = mcp)
-# # out2 <- out[lengths(out) == 24]
-# # out2 <- simplify2array(out2)
-# # out2 <- as.data.frame(t(out2))
-# # out <- as.data.frame(t(out))
-# saveRDS(out, "data_out/sample_def_model3_boot_b.RDS")
+keep_best <- vapply(designs, function(x){
+  x[1, 4] != 0 & x[2, 4] == 0 & x[4, 5] == 0
+  }, logical(1L))
+
+out <- bplapply(designs[keep_best], testing, A = Ab, c1 = shrinkage,
+                BPPARAM = mcp)
+out2 <- out[lengths(out) == 24]
+out2 <- simplify2array(out2)
+out2 <- as.data.frame(t(out2))
+saveRDS(out2, "data_out/sample_def_model3_boot_b.RDS")
 # out <- readRDS("data_out/sample_def_model3_boot_b.RDS")
-out0 <- readRDS("data_out/sample_model3_boot_b.RDS")
+# out0 <- readRDS("data_out/sample_model3_boot_b.RDS")
+out0 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
 out1 <- readRDS("data_out/sample2_model3_boot_b.RDS")
 out2 <- readRDS("data_out/sample_def_model3_boot_b.RDS")
-out2 <- as.data.frame(t(out2))
 out <- rbind(out0, out1, out2)
 out <- out[!duplicated(out), ]
 # ggplot(out, aes(AVE_inner, AVE_outer, color = cc1)) +
@@ -115,6 +114,7 @@ best3 <- out[out$AVE_inner == max(out$AVE_inner), grep("var", colnames(out))]
 best3 <- symm(C, best3)
 # colnames(best3) <- names(Ab)
 # rownames(best3) <- names(Ab)
+stop("Check model")
 d <- weight_design(weights = 11, size = length(Ab), which(lower.tri(best3) & best3 != 0))
 check_model <- function(x){
   x[1, 2] != 0 & x[1, 3] != 0 & x[2, 3] == 1 & x[1, 4] == 0 & x[2, 4] == 1 & x[3, 4] == 1 &
