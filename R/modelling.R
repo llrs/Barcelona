@@ -2,7 +2,7 @@ library("integration")
 library("RGCCA")
 library("ggplot2")
 
-A <- readRDS("data/refined_meta_wo_out.RDS")
+A <- readRDS("data/RGCCA_data_wo_out.RDS")
 A2 <- A[1:2]
 
 # Basic ####
@@ -39,7 +39,7 @@ use <- function(...){
 models0 <- list(model0, model0i)
 names(models0) <- c("model0", "model0i")
 out <- lapply(models0, use, A = Ab2, c1 = shrinkage[1:2])
-saveRDS(out, "data_out/models0.RDS")
+saveRDS(out, "data_out/models0_b.RDS")
 samples <- sapply(out[[1]]$Y, function(x) {
   x[, 1]
 })
@@ -92,7 +92,7 @@ A2$Meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", 
 A2b <- lapply(A2, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 shrinkage[seq(3, length(shrinkage))] <- 1
 out <- lapply(models2, use, A = A2b, c1 = shrinkage)
-saveRDS(out, "data_out/models2.RDS")
+saveRDS(out, "data_out/models2_b.RDS")
 
 # Complex models ####
 Localization <- model_RGCCA(A$Meta, c("Exact_location")) # With SESCD local it increase the AVE_inner
@@ -103,7 +103,7 @@ A3 <- A[1:2]
 A3$Demographics <- Demographics
 A3$Localization <- Localization
 A3$Time <- Time
-saveRDS(A3, "data_out/model3_BCN.RDS")
+saveRDS(A3, "data_out/model3_BCN_b.RDS")
 A3b <- lapply(A3, function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 
 C <- matrix(
@@ -130,7 +130,7 @@ shrinkage3 <- rep(1, length(A3b))
 shrinkage3[1:2] <- shrinkage[1:2]
 names(models3) <- c("model3", "model3i", "model3b", "model3bi")
 out <- lapply(models3, use, A = A3b, c1 = shrinkage3)
-saveRDS(out, "data_out/models3.RDS")
+saveRDS(out, "data_out/models3_b.RDS")
 
 
 models <- list.files(path = "data_out", pattern = "models[0-9].RDS", full.names = TRUE)
