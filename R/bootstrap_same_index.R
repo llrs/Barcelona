@@ -7,7 +7,7 @@ library("BiocParallel")
 
 # Index ####
 A <- readRDS("data/RGCCA_data_wo.RDS")
-boots <- 1000
+boots <- 10000
 set.seed(9876156)
 inteRmodel::boot_index(nrow(A[[1]]), boots)
 saveRDS(index, file = "data_out/index_boot2.RDS")
