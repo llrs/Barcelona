@@ -9,10 +9,10 @@ library("pROC")
 theme_set(theme_bw())
 theme_update(strip.background = element_blank())
 }
-{models0 <- readRDS("data_out/models0.RDS")
+{models0 <- readRDS("data_out/models0_b.RDS")
 model0 <- models0[[1]]
 model0i <- models0[[2]]
-models2 <- readRDS("data_out/models2.RDS")
+models2 <- readRDS("data_out/models2_b.RDS")
 model1 <- models2[[1]]
 model1i <- models2[[2]]
 model2 <- models2[[3]]
@@ -20,15 +20,15 @@ model2i <- models2[[4]]
 # bests according to TRIM
 # model2_best <- models2[[5]]
 # model2_besti <- models2[[6]]
-model2_best <- readRDS("data_out/model2b_sgcca.RDS")
-models3 <- readRDS("data_out/models3.RDS")
+model2_best <- readRDS("data_out/model2b2_sgcca_b.RDS")
+models3 <- readRDS("data_out/models3_b.RDS")
 model3 <- models3[[1]]
 model3i <- models3[[2]]
 # bests according to TRIM
 # model3_best <- models3[[3]]
 # model3_besti <- models3[[4]]
 
-model3_best <- readRDS("data_out/model3_best_treatment.RDS") # Best according to antiTNF
+model3_best <- readRDS("data_out/model3_best_treatment_b.RDS") # Best according to antiTNF
 }
 
 l <- list("0" = model0, "0 i" = model0i, "1" = model1, "1 i" = model1i,
@@ -41,7 +41,7 @@ if (any(!apply(s, 1, function(x){length(unique(x)) == 1}))) {
   stop("Different size of data => different data used for the models!")
 }
 
-A <- readRDS("data/RGCCA_data.RDS")
+A <- readRDS("data/RGCCA_data_wo_out.RDS")
 if (any(!ncol(A$RNAseq) == s[1, ])) {
   stop("Different size of data used for the models!")
 }
@@ -168,6 +168,11 @@ df3b %>%
   geom_point(aes(T, D, color = ID)) +
   scale_color_viridis_d() +
   labs(x = "Time", y = "Demographics", title = "Model 2.2")
+df3b %>%
+  ggplot() +
+  geom_point(aes(T, D, color = Age)) +
+  scale_color_viridis_c() +
+  labs(x = "Time", y = "Demographics", title = "Model 2.2")
 
 df3b %>%
   ggplot() +
@@ -186,11 +191,14 @@ df3b %>%
   ggplot() +
   geom_point(aes(L, R, color = Exact_location)) +
   scale_color_viridis_d() +
-  labs(x = "Location", y = "Microbiome", title = "Model 2.2",
+  labs(x = "Location", y = "Transcriptome", title = "Model 2.2",
        color = "Location")
 
 ggplot(df3b) +
   geom_point(aes(D, M, color = IBD)) +
+  labs(x = "Demographics", y = "Microbiome", title = "Model 2.2")
+ggplot(df3b) +
+  geom_point(aes(R, M, color = Age)) +
   labs(x = "Demographics", y = "Microbiome", title = "Model 2.2")
 df3b %>%
   ggplot() +
@@ -204,6 +212,8 @@ ggplot(df3b) +
   geom_point(aes(T, D, color = AgeDiag))
 ggplot(df3b) +
   geom_point(aes(M, D, color = AgeDiag))
+ggplot(df3b) +
+  geom_point(aes(T, D, color = Age - AgeDiag))
 
 # * All models plots ####
 df %>%
@@ -219,7 +229,7 @@ df %>%
   theme(panel.grid.minor = element_blank(), axis.ticks = element_blank(),
         axis.text = element_blank())
 loc <- last_plot()
-ggsave("Figures/models_location_ASV.png", plot = loc)
+ggsave("Figures/models_location_ASV_wo.png", plot = loc)
 df %>%
   filter(!grepl(" i", Model),
          Component == "comp1") %>%
@@ -235,7 +245,7 @@ df %>%
   theme(panel.grid.minor = element_blank(), axis.ticks = element_blank(),
         axis.text = element_blank())
 dis <- last_plot()
-ggsave("Figures/models_disease_ASV.png", plot = dis)
+ggsave("Figures/models_disease_ASV_wo.png", plot = dis)
 
 df %>%
   filter(!grepl(" i", Model),
