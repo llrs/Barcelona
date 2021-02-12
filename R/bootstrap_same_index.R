@@ -6,10 +6,10 @@ library("ggplot2")
 library("BiocParallel")
 
 # Index ####
-A <- readRDS("data/RGCCA_data_wo.RDS")
+A <- readRDS("data/RGCCA_data_wo_out.RDS")
 boots <- 10000
 set.seed(9876156)
-inteRmodel::boot_index(nrow(A[[1]]), boots)
+index <- inteRmodel::boot_index(nrow(A[[1]]), boots)
 saveRDS(index, file = "data_out/index_boot2.RDS")
 index <- readRDS("data_out/index_boot2.RDS")
 #
