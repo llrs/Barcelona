@@ -23,10 +23,10 @@ mcp <- MulticoreParam(workers = 8, progressbar = TRUE)
 b0 <- boot_index_sgcca(index, A = ab, c1 = shrinkage, scheme = "centroid",
                          scale = FALSE, verbose = FALSE, bias = TRUE,
                        BPPARAM = mcp)
-saveRDS(b0, "data_out/boot_02.RDS")
+saveRDS(b0, "data_out/boot_0_b.RDS")
 
 # * Model 1.2 ####
-model2_best <- readRDS("data_out/model2b_sgcca2.RDS")
+model2_best <- readRDS("data_out/model2b2_sgcca_b.RDS")
 C1.2 <- model2_best$C
 
 A$Meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX"))
@@ -39,11 +39,11 @@ shrinkage[1:2] <- c(0.322020648273615, 0.866155549496009)
 b1.2 <- boot_index_sgcca(index, A = Ab, c1 = shrinkage, scheme = "centroid",
                           scale = FALSE, verbose = FALSE, bias = TRUE, C = C1.2,
                          BPPARAM = mcp)
-saveRDS(b1.2, "data_out/boot_1.22.RDS")
+saveRDS(b1.2, "data_out/boot_1.2_b.RDS")
 
 # * Model 2.2 ####
-model3_best <- readRDS("data_out/model3_best_treatment.RDS")
-A <- readRDS("data_out/model3_BCN.RDS")
+model3_best <- readRDS("data_out/model3_best_treatment_b.RDS")
+A <- readRDS("data_out/model3_BCN_b.RDS")
 C2.2 <- model3_best$C
 
 shrinkage <- rep(1, 5)
@@ -56,13 +56,13 @@ ab <- clean_unvariable(Ab)
 
 b2.2 <- boot_index_sgcca(index, A = ab, C = C2.2, c1 = shrinkage,
                          scheme = "centroid", BPPARAM = mcp)
-saveRDS(b2.2, file = "boot_2.2.RDS")
+saveRDS(b2.2, file = "boot_2.2_b.RDS")
 
 
 # AVE plot ####
-b0 <- readRDS("data_out/boot_0.RDS")
-b1.2 <- readRDS("data_out/boot_1.2.RDS")
-b2.2 <- readRDS("data_out/boot_2.2.RDS")
+b0 <- readRDS("data_out/boot_0_b.RDS")
+b1.2 <- readRDS("data_out/boot_1.2_b.RDS")
+b2.2 <- readRDS("data_out/boot_2.2_b.RDS")
 
 theme_set(theme_bw())
 theme_update(strip.background = element_blank(),
@@ -103,4 +103,4 @@ p <- ggplot(b) +
   stat_ellipse(aes(inner, outer, col = model)) +
   labs(title = "AVE in bootstraps", x = "Inner AVE", y = "Outer AVE") +
   theme(legend.position = "bottom")
-ggsave(plot = p, filename = "Figures/bootstrap_same_index.png", dpi = 300)
+ggsave(plot = p, filename = "Figures/bootstrap_same_index_wo.png", dpi = 300)
