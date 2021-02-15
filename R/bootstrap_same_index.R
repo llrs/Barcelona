@@ -9,12 +9,12 @@ library("BiocParallel")
 A <- readRDS("data/RGCCA_data_wo_out.RDS")
 boots <- 10000
 set.seed(9876156)
-index <- inteRmodel::boot_index(nrow(A[[1]]), boots)
-saveRDS(index, file = "data_out/index_boot2.RDS")
+# index <- inteRmodel::boot_index(nrow(A[[1]]), boots)
+# saveRDS(index, file = "data_out/index_boot2.RDS")
 index <- readRDS("data_out/index_boot2.RDS")
 #
-# # * Model 0 ####
-shrinkage <- c(0.322297910454825, 0.584050643977808) #Calculated from the server for the data derived from original data
+# * Model 0 ####
+shrinkage <- c(0.322297910454825, 0.866155549496009) #Calculated from the server for the data derived from original data
 shrinkage[2] <- tau.estimate(A[[2]])
 Ab <- lapply(A[1:2], function(x) scale2(x, bias = TRUE)/sqrt(NCOL(x)))
 names(Ab) <- names(A[1:2])
@@ -43,7 +43,7 @@ saveRDS(b1.2, "data_out/boot_1.2_b.RDS")
 
 # * Model 2.2 ####
 model3_best <- readRDS("data_out/model3_best_treatment_b.RDS")
-A <- readRDS("data_out/model3_BCN_b.RDS")
+# A <- readRDS("data_out/model3_BCN_b.RDS")
 C2.2 <- model3_best$C
 
 shrinkage <- rep(1, 5)
