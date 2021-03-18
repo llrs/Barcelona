@@ -1,4 +1,4 @@
-# load data ####
+{# load data ####
 library("readxl")
 library("openxlsx")
 library("dplyr")
@@ -9,17 +9,48 @@ library("purrr")
 library("ggplot2")
 library("lubridate")
 library("org.Hs.eg.db")
+library("dplyr")
+}
 {
-tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv", check.names = FALSE)
-colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
-counts <- tab[, -1]
-family_all <- tab[, 1, FALSE]
-rownames(counts) <- family_all[, 1]
-write.csv(family_all, "data/family.csv")
+# ASVs
+seqtab.nochim <- readRDS("data/ASV.RDS")
+
+ASV <- colnames(seqtab.nochim)
+counts_ASV <- seqtab.nochim
+colnames(counts_ASV) <- NULL
+
+tab <- t(counts_ASV)
+# Remove trailing numbers
+colnames(tab) <- gsub("_S.*", "", colnames(tab))
+colnames(tab) <- gsub("_p.*", "", colnames(tab))
+
+# Taxonomy of the samples
+microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
+microorganism <- cbind(microorganism, "ASV" = rownames(microorganism))
+microorganism <- as.data.frame(microorganism, stringsAsFactors = FALSE)
+microorganism$rowname <- as.character(seq_len(nrow(microorganism)))
+rownames(microorganism) <- as.character(seq_len(nrow(microorganism)))
+mit <- rownames(microorganism)[microorganism[, "Family"] == "Mitochondria"]
+
+# Collapse the data so that there is one Genus per sample, not multiple
+tab2 <- tab
+colnames(tab2) <- seq_along(colnames(tab))
+tab2 <- cbind(tab2, microorganism)
+
+groups <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus")
+rm_micro <- tab2 %>%
+  group_by(!!!groups) %>%
+  summarize(across(where(is.numeric), sum)) %>%
+  as.data.frame()
+# Change the first number according to the number of columns on group_by +1
+colnames(rm_micro)[(length(groups) + 1):ncol(rm_micro)] <- colnames(tab)
+counts <- rm_micro[(length(groups) + 1):ncol(rm_micro)]
+microorganism <- rm_micro[, 1:length(groups)] # And here the same number
 
 # From the QC step
 meta <- readRDS("data_out/info_samples.RDS")
-meta$Counts <- colSums(counts)
+colnames(counts) <- gsub("\\.[0-9]", "", colnames(counts))
+meta <- meta[match(colnames(counts), meta$Name), ]
 
 # filter (keep in mind that it should be on the same order)
 if (!all(colnames(counts) == meta$Name)) {
@@ -27,13 +58,13 @@ if (!all(colnames(counts) == meta$Name)) {
 }
 bcn <- counts[, meta$Study %in% c("BCN", "Controls")]
 meta <- meta[meta$Study %in% c("BCN", "Controls"), ]
-m <- readRDS("data_out/refined_meta_all.RDS")
+meta$Counts <- colSums(tab)
 
 # Remove duplicate samples
 replicates <- table(meta$Original)
 replicate_samples <- meta[meta$Original %in% names(replicates[replicates > 1]), ]
 
-## By keeping those more sequenced
+## But keeping those more sequenced
 keepDup <- replicate_samples %>%
   group_by(Original) %>%
   filter(Counts == max(Counts)) %>%
@@ -81,12 +112,14 @@ meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
 meta3 <- readRDS("data_out/refined_meta.RDS")
 meta3$IBD <- as.character(meta3$IBD)
 meta3$IBD[meta3$IBD == "CONTROL"] <- "C"
+# If using wo outliers we removed 2 samples
 stopifnot(all(meta3$Original == meta2$Original))
 meta2 <- meta3
-OTUs2 <- OTUs2[match(colnames(rna2), colnames(OTUs2))]
+OTUs2 <- OTUs2[, match(colnames(rna2), colnames(OTUs2))]
 rownames(meta2) <- 1:nrow(meta2)
 
 OTUs2 <- as.matrix(OTUs2)
+rownames(OTUs2) <- as.character(seq_len(nrow(OTUs2)))
 rna2 <- as.matrix(rna2)
 rownames(rna2) <- trimVer(rownames(rna2))
 }
@@ -160,7 +193,7 @@ rna_all_norm <- filter_RNAseq(rna_all_norm)
 }
 {
 # Filter by model ####
-model <- readRDS("data_out/model2b_sgcca.RDS")
+model <- readRDS("data_out/model2b2_sgcca_b.RDS")
 w_rna <- model$a[[1]][, 1]
 names_rna <- trimVer(names(w_rna)[w_rna != 0])
 w_dna <- model$a[[2]][, 1]
@@ -177,6 +210,7 @@ outliers <- function(x, k = 3){
 remove_na <- function(x){
   x[!is.na(x)]
 }
+
 correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
                              meta, names_rna, families) {
 
@@ -196,7 +230,8 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   frna2 <- frna2[!is.na(s), ]
   rownames(frna2) <- s[!is.na(s)]
   # Tax family instead of numbers
-  rownames(fOTUS2) <- as.character(family_all[b != 0, 1])
+  rownames(fOTUS2) <- as.character(families[b != 0, 1])
+  rownames(otus) <- as.character(families[ , 1])
 
   # Correlations
   df <- expand.grid(family = rownames(fOTUS2), genes = rownames(frna2),
@@ -211,8 +246,14 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   pdf(paste0("Figures/", header, "correlations.pdf"))
   for (i in seq_len(nrow(df))) {
     family <- df$family[i]
+    if (is.na(family) || family == "NA" || !family %in% rownames(fOTUS2)) {
+      next
+    }
     gene <- df$genes[i]
-
+    if (is.na(gene) || gene == "NA") {
+      next
+    }
+    message("Plots family: ", family, " Gene: ", gene)
     x <- frna2[gene, ]
     y <- fOTUS2[family, ]
 
@@ -250,11 +291,12 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   saveRDS(df, paste0("data_out/", header, "correlations.RDS"))
 
   # As decided on July remove some after manually inspecting the above files.
-  skip_micro <- c("Tsukamurellaceae", "Cyclobacteriaceae", "Beutenbergiaceae",
-                  "Conexibacteriaceae", "Dermacoccaceae", "Nocardiaceae",
-                  "Thermaceae", "Thermomicrobiaceae", "Beijerinckiaceae",
-                  "Campylobacteraceae", "Halanaerobiaceae")
-  skip_gene <- c("GIMD1")
+  # skip_micro <- c("Tsukamurellaceae", "Cyclobacteriaceae", "Beutenbergiaceae",
+  #                 "Conexibacteriaceae", "Dermacoccaceae", "Nocardiaceae",
+  #                 "Thermaceae", "Thermomicrobiaceae", "Beijerinckiaceae",
+  #                 "Campylobacteraceae", "Halanaerobiaceae")
+  skip_micro <- c("Mitochondria")
+  # skip_gene <- c("GIMD1")
 
   # ** Higher correlations
   # On 10/09/2020 decided to remove the 0/lowest offset of the correlation,
@@ -265,7 +307,7 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   subDF <- df[df$p.value < 0.05, ]
   q <- quantile(abs(subDF$r), 0.95)
   subDF <- subDF[abs(subDF$r) >= q, ]
-  subDF <- subDF[!subDF$family %in% skip_micro & !subDF$genes %in% skip_gene, ]
+  subDF <- subDF[!subDF$family %in% skip_micro, ] # & !subDF$genes %in% skip_gene
   subDF <- subDF[order(subDF$family, subDF$p.value, decreasing = FALSE), ]
   write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
             na = "", row.names = FALSE)
@@ -280,13 +322,19 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   ibd <- factor(ibd, levels = c("C", "CD", "UC"))
   act <- subMeta$Activity
   act[is.na(act)] <- "INACTIVE"
-  pch <- ifelse(act == "ACTIVE", 15, 0) + as.numeric(loc) -1
+  pch <- ifelse(act == "ACTIVE", 15, 0) + as.numeric(loc) - 1
 
   pdf(paste0("Figures/", header, "high_correlations_family.pdf"))
   for (i in seq_len(nrow(subDF))) {
     family <- subDF$family[i]
+    if (is.na(family) || family == "NA") {
+      next
+    }
     gene <- subDF$genes[i]
-
+    if (is.na(gene) || gene == "NA") {
+      next
+    }
+    message("Plots high family: ", family, " Gene: ", gene)
     x <- frna2[gene, ]
     y <- fOTUS2[family, ]
     names(x) <- NULL
@@ -330,58 +378,61 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
 }
 
 # Run for each ####
+rownames(otus_all) <- microorganism[, "Genus"]
+rownames(OTUs_all_norm) <- microorganism[, "Genus"]
 date <- format(lubridate::today(), "%Y%m%d")
 df_all <- correlations_all(otus_norm = OTUs_all_norm,
                  otus = otus_all,
                  rna_norm = rna_all_norm,
                  rna = rna,
                  b = b_all,
-                 header = paste0(date, "_all_family_"),
+                 header = paste0(date, "_all_genus_"),
                  meta = meta2,
                  names_rna = names_rna,
-                 families = family_all)
+                 families = microorganism[, "Genus", drop = FALSE])
+rownames(otus_colon) <- microorganism[, "Genus"]
 df_colon <- correlations_all(otus_norm = otus_colon_norm,
                  otus = otus_colon,
                  rna_norm = rna_colon_norm,
                  rna = rna_colon,
                  b = b_colon,
-                 header = paste0(date, "_colon_family_"),
+                 header = paste0(date, "_colon_genus_"),
                  meta = meta2,
                  names_rna = names_rna,
-                 families = family_all)
+                 families = microorganism[, "Genus", drop = FALSE])
 df_colon_UC <- correlations_all(otus_norm = otus_colon_UC_norm,
                  otus = otus_colon_UC,
                  rna_norm = rna_colon_UC_norm,
                  rna = rna_colon_UC,
                  b = b_colon_UC,
-                 header = paste0(date, "_colon_UC_family_"),
+                 header = paste0(date, "_colon_UC_genus_"),
                  meta = meta2,
                  names_rna = names_rna,
-                 families = family_all)
+                 families = microorganism[, "Genus", drop = FALSE])
 df_colon_CD <- correlations_all(otus_norm = otus_colon_CD_norm,
                  otus = otus_colon_CD,
                  rna_norm = rna_colon_CD_norm,
                  rna = rna_colon_CD,
                  b = b_colon_CD,
-                 header = paste0(date, "_colon_CD_family_"),
+                 header = paste0(date, "_colon_CD_genus_"),
                  meta = meta2,
                  names_rna = names_rna,
-                 families = family_all)
+                 families = microorganism[, "Genus", drop = FALSE])
 df_ileum <- correlations_all(otus_norm = otus_ileum_norm,
                  otus = otus_ileum,
                  rna_norm = rna_ileum_norm,
                  rna = rna_ileum,
                  b = b_ileum,
-                 header = paste0(date, "_ileum_family_"),
+                 header = paste0(date, "_ileum_genus_"),
                  meta = meta2,
                  names_rna = names_rna,
-                 families = family_all)
+                 families = microorganism[, "Genus", drop = FALSE])
 
 dev.off()
 subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
 write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
           na = "", row.names = FALSE)
-}
+
 subDF %>%
   count(family, sort = TRUE) %>%
   head()
