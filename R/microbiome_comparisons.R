@@ -9,11 +9,122 @@ library("ggplot2")
 library("lubridate")
 library("org.Hs.eg.db")
 library("forcats")
-library("ggh4x") # from teunbrand/ggh4x
+library("ggh4x") # from teunbrand/ggh4x Now on CRAN
 library("ggpubr")
 library("dplyr")
 
+
+seqtab.nochim <- readRDS("data/ASV.RDS")
+
+ASV <- colnames(seqtab.nochim)
+counts_ASV <- seqtab.nochim
+colnames(counts_ASV) <- NULL
+
+tab <- t(counts_ASV)
+# Remove trailing numbers
+colnames(tab) <- gsub("_S.*", "", colnames(tab))
+colnames(tab) <- gsub("_p.*", "", colnames(tab))
+
+# Group by tax level ####
 {
+  microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
+  microorganism <- cbind(microorganism, "ASV" = rownames(microorganism))
+  microorganism <- as.data.frame(microorganism, stringsAsFactors = FALSE)
+  microorganism$rowname <- as.character(seq_len(nrow(microorganism)))
+  rownames(microorganism) <- as.character(seq_len(nrow(microorganism)))
+  mit <- rownames(microorganism)[microorganism[, "Family"] == "Mitochondria"]
+
+  # Collapse the data so that there is one Genus per sample, not multiple
+  tab2 <- tab
+  colnames(tab2) <- seq_along(colnames(tab))
+  tab2 <- cbind(tab2, microorganism)
+
+  groups <- syms(c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus"))
+  rm_micro <- tab2 %>%
+    group_by(!!!groups) %>%
+    summarize(across(where(is.numeric), sum)) %>%
+    as.data.frame()
+  # Change the first number according to the number of columns on group_by +1
+  colnames(rm_micro)[(length(groups) + 1):ncol(rm_micro)] <- colnames(tab)
+  counts <- rm_micro[(length(groups) + 1):ncol(rm_micro)]
+  microorganism <- rm_micro[, 1:(length(groups))] # And here the same number
+
+  # From the QC step
+  meta <- readRDS("data_out/info_samples.RDS")
+  colnames(counts) <- gsub("\\.[0-9]", "", colnames(counts))
+  meta <- meta[match(colnames(counts), meta$Name), ]
+
+  # filter (keep in mind that it should be on the same order)
+  if (!all(colnames(counts) == meta$Name)) {
+    stop("Reorder the samples to match the condition!!")
+  }
+  bcn <- counts[, meta$Study %in% c("BCN", "Controls")]
+  meta <- meta[meta$Study %in% c("BCN", "Controls"), ]
+  meta$Counts <- colSums(tab)
+
+  # Remove duplicate samples
+  replicates <- table(meta$Original)
+  replicate_samples <- meta[meta$Original %in% names(replicates[replicates > 1]), ]
+
+  ## But keeping those more sequenced
+  keepDup <- replicate_samples %>%
+    group_by(Original) %>%
+    filter(Counts == max(Counts)) %>%
+    arrange(desc(abs(Counts))) %>%
+    ungroup()
+
+  nam <- c(names(replicates[replicates == 1]), keepDup$Name)
+  otus <- bcn[, colnames(bcn) %in% nam]
+
+  # Working with RNAseq
+  # From Juanjo: The original counts are ok, but I need to remove the reseq samples as they
+  # have different length and bias the PCA
+  conn <- gzfile("data/TNF.all.samples.original.counts.tsv.gz")
+  rna <- read.table(conn, sep = "\t", check.names = FALSE)
+
+  rna <- rna[ , !grepl(" reseq$", colnames(rna))] # Remove as said
+  colnames(rna)[grep("[Ww]", colnames(rna))] <- tolower(colnames(rna)[grep("[Ww]", colnames(rna))])
+
+  correct_bcn <- function(x) {
+    if (length(x) > 1) {
+      a <- str_pad(x[1], width = 3, pad = "0")
+      b <- str_pad(x[2], width = 3, pad = "0")
+      x <- paste(a, b, sep = "-w")
+    }
+    x
+  }
+
+  colnames2 <- colnames(rna) %>%
+    str_split("-w") %>% # Ready for BCN
+    map(correct_bcn) %>%
+    unlist() %>%
+    gsub("-T-TR-", "-T-DM-", .) # Ready for TRIM
+  colnames(rna) <- colnames2
+
+
+  # Filter the samples ####
+  rna2 <- rna[, colnames(rna) %in% meta$Original]
+  meta2 <- droplevels(meta[meta$Original %in% colnames(rna2), ])
+  OTUs2 <- otus[, colnames(otus) %in% meta2$Name]
+
+  colnames(OTUs2) <- meta2$Original[match(colnames(OTUs2), meta2$Name)]
+
+  # Reorder samples to match!
+  meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
+  meta3 <- readRDS("data_out/refined_meta_wo_out.RDS")
+  meta3$IBD <- as.character(meta3$IBD)
+  meta3$IBD[meta3$IBD == "CONTROL"] <- "C"
+  # If using wo outliers we removed 2 samples
+  # stopifnot(all(meta3$Original == meta2$Original))
+  meta2 <- meta3
+  meta <- meta2
+  rna2 <- rna2[, match(meta$Original, colnames(rna2))]
+  OTUs2 <- OTUs2[, match(colnames(rna2), colnames(OTUs2))]
+  rownames(meta) <- meta$Original
+  OTUs3 <- OTUs2
+  OTUs3$`Sample name` <- microorganism$Genus
+}
+if (FALSE) {
 tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 counts <- tab[, -1]
@@ -41,10 +152,9 @@ meta$ileum[is.na(meta$ileum )] <- "colon"
 meta$SEX[is.na(meta$SEX) | meta$SEX == ""] <- "female"
 meta$Time[is.na(meta$Time)] <- "C"
 }
-
 # Abundance ####
 # * Family level ####
-{
+if (FALSE) {
 family <- read.delim("data/Partek_Michigan3_Kraken_Classified_family.tsv",
                      check.names = FALSE)
 family_tax <- family[, 1]
@@ -81,7 +191,7 @@ tidy_family <- family %>%
 theme_set(theme_minimal())
 }
 # Several plots
-{
+if (FALSE) {
 p1 <- tidy_family %>%
   ggplot() +
   geom_point(aes(Sample, Family, size = ratio, col = IBD)) +
@@ -144,7 +254,7 @@ p7 <- tidy_family %>%
 print(p7)
 }
 # PDFs prevalences
-{
+if (FALSE) {
 tidy_family$IBD <- as.character(tidy_family$IBD)
 ts <- tidy_family %>%
   mutate(IBD = case_when(is.na(IBD) ~ "C",
@@ -276,8 +386,8 @@ p <- tidy_family %>%
 print(p)
 }
 # * genus level ####
-
-tidy_genus <- tab %>%
+if (FALSE) {
+tidy_genus <- OTUs3 %>%
   gather(Sample, Count, -"Sample name") %>%
   mutate(Sample = str_remove(string = Sample, pattern = "_S.*"),
          # Sample = str_replace_all(Sample, "-T-DM-", "-T-TTR-"),
@@ -297,9 +407,11 @@ tidy_genus <- tab %>%
   #                        TRUE ~ IBD)) %>%
   arrange(IBD, Time, SEX) %>%
   mutate(Sample = Original)
+genus <- microorganism[, "Genus"]
 
+}
 
-fd <- AnnotatedDataFrame(genus)
+fd <- AnnotatedDataFrame(microorganism)
 # Create the object
 MR <- newMRexperiment(
   OTUs2,
@@ -366,7 +478,7 @@ summary(dt)
 
 tt <- topTable(fit2, coef = "ileum_vs_colon", number = Inf)
 rownames(tt) <- genus[rownames(tt), 1]
-write.csv(tt, "data_out/colon_vs_ileum.csv", row.names = TRUE)
+write.csv(tt, "data_out/colon_vs_ileum_ASV.csv", row.names = TRUE)
 
 # Prevalence ####
 # Functions
@@ -442,7 +554,7 @@ fam %>%
 fam %>%
   full_prevalence(meta, "IBD") %>%
   extract_rownames()
-fam_ibd <-fam %>%
+fam_ibd <- fam %>%
   full_prevalence(meta, "ileum") %>%
   filter_prev()
 fam_loc <- fam %>%
@@ -452,7 +564,8 @@ fam_loc <- fam %>%
 
 
 #### * Genus level ####
-rownames(OTUs2) <- genus[, 1]
+{
+rownames(OTUs2) <- genus
 
 gen <- filter_prev(comb_prevalence(OTUs2, meta, c("Time")))
 gen_se <- comb_prevalence(OTUs2, meta, c("Time", "SEX")) %>% filter_prev()
@@ -494,7 +607,6 @@ genus_time_t6 <- extract_rownames(full_prevalence(OTUs2, meta2, "t6"))
 (loc_genus <- extract_rownames(loc))
 
 # So basically I need to plot for ibdm and ibd_genus
-
 {
 count_prevalence(tidy_genus, ibdm_genus, ileum, Time) %>%
   ggplot() +
@@ -532,6 +644,7 @@ count_prevalence(tidy_genus, genus_study, Study) %>%
   geom_text(aes(y = pos + 3, x = Study, label = label)) +
   labs(x = element_blank(), y = "Samples", title = genus_study)
 ggsave("Figures/Ralstonia_study.png")
+}
 }
 # * Family level ####
 rownames(fam2) <- family_tax
