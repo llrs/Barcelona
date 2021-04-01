@@ -12,6 +12,7 @@ library("forcats")
 library("ggh4x") # from teunbrand/ggh4x Now on CRAN
 library("ggpubr")
 library("dplyr")
+library("rstatix") # To compare several groups the tidy way
 
 # microbiome data ####
 {
@@ -98,6 +99,7 @@ system2("gzip", args = "-kf data_out/GETS_ASV_genus.tsv") # Compress it to uploa
 
 meta2$sample_location[is.na(meta2$sample_location)] <- ifelse(meta2$Exact_location[is.na(meta2$sample_location)] == "ileum", "ileum", "colon")
 
+# ** Plots of interesting results ####
 gen <- genus$counts
 rs <- rowSums(gen)
 gen <- apply(gen[rs != 0, ], 2, function(x){x/sum(x, na.rm = TRUE)})
@@ -124,6 +126,7 @@ m %>%
   ggplot() +
   geom_point(aes(IBD, y, group = Genus, col = Genus)) +
   geom_errorbar(aes(IBD, y, group = Genus, col = Genus, ymin = ymin, ymax = ymax)) +
+  scale_y_continuous(labels = scales::percent) +
   facet_wrap(~sample_location, scales = "free") + labs(y = "%") +
   theme_minimal()
 ggsave("Figures/species_location.png")
@@ -138,9 +141,11 @@ m %>%
   ggplot() +
   geom_point(aes(IBD, y, group = Genus, col = Genus)) +
   geom_errorbar(aes(IBD, y, group = Genus, col = Genus, ymin = ymin, ymax = ymax)) +
+  scale_y_continuous(labels = scales::percent) +
   facet_grid(Ulcers~sample_location, scales = "free_y", drop = TRUE) +
   labs(y = "%") +
   theme_minimal()
+ggsave("Figures/species_location_ulcers.png")
 
 fms <- c("Christensenellaceae", "Ruminococcaceae")
 m %>%
@@ -153,6 +158,7 @@ m %>%
   geom_point(aes(IBD, y, group = Family, col = Family)) +
   geom_errorbar(aes(IBD, y, group = Family, col = Family, ymin = ymin, ymax = ymax)) +
   facet_wrap(~sample_location, scales = "free_y", drop = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
   labs(y = "%") +
   theme_minimal()
 ggsave("Figures/family_location.png")
@@ -166,10 +172,37 @@ m %>%
   ggplot() +
   geom_point(aes(IBD, y, group = Family, col = Family)) +
   geom_errorbar(aes(IBD, y, group = Family, col = Family, ymin = ymin, ymax = ymax)) +
+  scale_y_continuous(labels = scales::percent) +
   facet_grid(Ulcers~sample_location, drop = TRUE) +
   labs(y = "%") +
   theme_minimal()
 ggsave("Figures/family_location_ulcers.png")
+# ** Statitics ####
+# Compare location and family vs control
+m %>%
+  filter(Family %in% fms ) %>%
+  mutate(Ulcers = case_when(IBD == "CONTROL" ~ "no", TRUE ~ Ulcers)) %>%
+  group_by(sample_location, Family) %>% # Can't use ulcers here
+  t_test(percentage~IBD, ref.group = "CONTROL")
+# Compare no ulcers, on colon and ileum vs controls
+m %>%
+  filter(Family %in% fms ) %>%
+  mutate(Ulcers = case_when(IBD == "CONTROL" ~ "no", TRUE ~ Ulcers)) %>%
+  filter(Ulcers == "no") %>%
+  group_by(sample_location, Family, Ulcers) %>% # Can't use ulcers here
+  t_test(percentage~IBD, ref.group = "CONTROL")
+# Compare between families
+m %>%
+  filter(Family %in% fms ) %>%
+  mutate(Ulcers = case_when(IBD == "CONTROL" ~ "no", TRUE ~ Ulcers)) %>%
+  group_by(sample_location, Ulcers, IBD) %>% # Can't use ulcers here
+  t_test(percentage~Family, ref.group = "Christensenellaceae")
+
+m %>%
+  filter(Family %in% fms ) %>%
+  mutate(Ulcers = case_when(IBD == "CONTROL" ~ "no", TRUE ~ Ulcers)) %>%
+  group_by(sample_location, Family, Ulcers) %>%
+  t_test(percentage~IBD, ref.group = "all")
 
 # * Classes #####
 class <- group_taxa(taxonomy = readRDS("data_out/taxonomy_ASV.RDS")$tax,
