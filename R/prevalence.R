@@ -127,7 +127,7 @@ m %>%
   geom_point(aes(IBD, y, group = Genus, col = Genus)) +
   geom_errorbar(aes(IBD, y, group = Genus, col = Genus, ymin = ymin, ymax = ymax)) +
   scale_y_continuous(labels = scales::percent) +
-  facet_wrap(~sample_location, scales = "free") + labs(y = "%") +
+  facet_wrap(~sample_location) + labs(y = "%") +
   theme_minimal()
 ggsave("Figures/species_location.png")
 
@@ -142,7 +142,7 @@ m %>%
   geom_point(aes(IBD, y, group = Genus, col = Genus)) +
   geom_errorbar(aes(IBD, y, group = Genus, col = Genus, ymin = ymin, ymax = ymax)) +
   scale_y_continuous(labels = scales::percent) +
-  facet_grid(Ulcers~sample_location, scales = "free_y", drop = TRUE) +
+  facet_grid(Ulcers~sample_location, drop = TRUE) +
   labs(y = "%") +
   theme_minimal()
 ggsave("Figures/species_location_ulcers.png")
@@ -157,7 +157,7 @@ m %>%
   ggplot() +
   geom_point(aes(IBD, y, group = Family, col = Family)) +
   geom_errorbar(aes(IBD, y, group = Family, col = Family, ymin = ymin, ymax = ymax)) +
-  facet_wrap(~sample_location, scales = "free_y", drop = TRUE) +
+  facet_wrap(~sample_location, drop = TRUE) +
   scale_y_continuous(labels = scales::percent) +
   labs(y = "%") +
   theme_minimal()
@@ -177,32 +177,58 @@ m %>%
   labs(y = "%") +
   theme_minimal()
 ggsave("Figures/family_location_ulcers.png")
-# ** Statitics ####
+# ** Statistics ####
+# *** Family ####
 # Compare location and family vs control
 m %>%
   filter(Family %in% fms ) %>%
   mutate(Ulcers = case_when(IBD == "CONTROL" ~ "no", TRUE ~ Ulcers)) %>%
   group_by(sample_location, Family) %>% # Can't use ulcers here
-  t_test(percentage~IBD, ref.group = "CONTROL")
+  t_test(percentage~IBD, ref.group = "CONTROL") %>%
+  select(Family, sample_location, group1, group2, p, p.adj) %>%
+  xlsx::write.xlsx(file = "data_out/statistics_family_sample_location_controls.xlsx")
 # Compare no ulcers, on colon and ileum vs controls
 m %>%
   filter(Family %in% fms ) %>%
   mutate(Ulcers = case_when(IBD == "CONTROL" ~ "no", TRUE ~ Ulcers)) %>%
   filter(Ulcers == "no") %>%
   group_by(sample_location, Family, Ulcers) %>% # Can't use ulcers here
-  t_test(percentage~IBD, ref.group = "CONTROL")
+  t_test(percentage~IBD, ref.group = "CONTROL") %>%
+  select(Family, Ulcers, sample_location, group1, group2, p, p.adj) %>%
+  xlsx::write.xlsx(file = "data_out/statistics_family_sample_location_ulcers.xlsx")
 # Compare between families
 m %>%
   filter(Family %in% fms ) %>%
   mutate(Ulcers = case_when(IBD == "CONTROL" ~ "no", TRUE ~ Ulcers)) %>%
   group_by(sample_location, Ulcers, IBD) %>% # Can't use ulcers here
-  t_test(percentage~Family, ref.group = "Christensenellaceae")
+  t_test(percentage~Family, ref.group = "Christensenellaceae") %>%
+  mutate(p.adj = p.adjust(p)) %>%
+  select(IBD, Ulcers, sample_location, group1, group2, p, p.adj) %>%
+  xlsx::write.xlsx(file = "data_out/statistics_family_sample_location_ulcers_IBD.xlsx")
 
 m %>%
   filter(Family %in% fms ) %>%
   mutate(Ulcers = case_when(IBD == "CONTROL" ~ "no", TRUE ~ Ulcers)) %>%
   group_by(sample_location, Family, Ulcers) %>%
   t_test(percentage~IBD, ref.group = "all")
+# *** Genus ####
+
+m %>%
+  filter(Genus %in% sps ) %>%
+  mutate(Ulcers = case_when(IBD == "CONTROL" ~ "no", TRUE ~ Ulcers)) %>%
+  filter(Ulcers == "no") %>%
+  group_by(sample_location, Genus, Ulcers) %>% # Can't use ulcers here
+  t_test(percentage~IBD, ref.group = "CONTROL") %>%
+  select(Genus, Ulcers, sample_location, group1, group2, p, p.adj) %>%
+  xlsx::write.xlsx(file = "data_out/statistics_genus_sample_location_ulcers.xlsx")
+
+m %>%
+  filter(Genus %in% sps ) %>%
+  mutate(Ulcers = case_when(IBD == "CONTROL" ~ "no", TRUE ~ Ulcers)) %>%
+  group_by(sample_location, Genus) %>% # Can't use ulcers here
+  t_test(percentage~IBD, ref.group = "CONTROL") %>%
+  select(Genus, sample_location, group1, group2, p, p.adj) %>%
+  xlsx::write.xlsx(file = "data_out/statistics_genus_sample_location_controls.xlsx")
 
 # * Classes #####
 class <- group_taxa(taxonomy = readRDS("data_out/taxonomy_ASV.RDS")$tax,
