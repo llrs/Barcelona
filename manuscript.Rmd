@@ -1,0 +1,66 @@
+---
+title: "Microbiome and transcriptome changes in inflammatory bowel disease"
+author: "Lluís Revilla Sancho"
+date: "4/23/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Journal: ?
+
+
+# Abstract
+
+Introduction to disease and microbiome
+
+Introduction to relationships
+
+Results and methods
+
+Conclusions
+
+
+# Introduction
+
+Description of the disease
+
+Observed microbiome changes
+
+Observed transcriptome changes
+
+Previous integrations (our own paper)
+
+
+# Methods
+
+Description of cohort 
+
+Table of patients
+
+## Microbiome
+
+ASV version of database
+
+## Transcriptomics
+
+Standard default to CELEST. 
+
+
+## Analysis
+
+Integration steps and check out correlations.
+
+Matched samples, removed outliers.
+
+
+# Results
+
+# Discussion
+
+# Conclusion
+
+# References
