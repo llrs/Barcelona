@@ -25,7 +25,7 @@ colnames(tab) <- gsub("_S.*", "", colnames(tab))
 colnames(tab) <- gsub("_p.*", "", colnames(tab))
 
 # Taxonomy of the samples
-microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
+microorganism <-  readRDS("output/taxonomy_ASV.RDS")$tax
 microorganism <- cbind(microorganism, "ASV" = rownames(microorganism))
 microorganism <- as.data.frame(microorganism, stringsAsFactors = FALSE)
 microorganism$rowname <- as.character(seq_len(nrow(microorganism)))
@@ -48,7 +48,7 @@ counts <- rm_micro[(length(groups) + 1):ncol(rm_micro)]
 microorganism <- rm_micro[, 1:length(groups)] # And here the same number
 
 # From the QC step
-meta <- readRDS("data_out/info_samples.RDS")
+meta <- readRDS("output/info_samples.RDS")
 colnames(counts) <- gsub("\\.[0-9]", "", colnames(counts))
 meta <- meta[match(colnames(counts), meta$Name), ]
 
@@ -109,7 +109,7 @@ colnames(OTUs2) <- meta2$Original[match(colnames(OTUs2), meta2$Name)]
 
 # Reorder samples to match!
 meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
-meta3 <- readRDS("data_out/refined_meta.RDS")
+meta3 <- readRDS("output/refined_meta.RDS")
 meta3$IBD <- as.character(meta3$IBD)
 meta3$IBD[meta3$IBD == "CONTROL"] <- "C"
 # If using wo outliers we removed 2 samples
@@ -193,7 +193,7 @@ rna_all_norm <- filter_RNAseq(rna_all_norm)
 }
 {
 # Filter by model ####
-model <- readRDS("data_out/model2b2_sgcca_b.RDS")
+model <- readRDS("output/model2b2_sgcca_b.RDS")
 w_rna <- model$a[[1]][, 1]
 names_rna <- trimVer(names(w_rna)[w_rna != 0])
 w_dna <- model$a[[2]][, 1]
@@ -288,7 +288,7 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   }
   dev.off()
   df <- df[!is.na(df$r), ]
-  saveRDS(df, paste0("data_out/", header, "correlations.RDS"))
+  saveRDS(df, paste0("output/", header, "correlations.RDS"))
 
   # As decided on July remove some after manually inspecting the above files.
   # skip_micro <- c("Tsukamurellaceae", "Cyclobacteriaceae", "Beutenbergiaceae",
@@ -309,9 +309,9 @@ correlations_all <- function(otus_norm, otus, rna_norm, rna, b, header,
   subDF <- subDF[abs(subDF$r) >= q, ]
   subDF <- subDF[!subDF$family %in% skip_micro, ] # & !subDF$genes %in% skip_gene
   subDF <- subDF[order(subDF$family, subDF$p.value, decreasing = FALSE), ]
-  write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
+  write.csv(subDF, paste0("output/", header, "high_correlations_family.csv"),
             na = "", row.names = FALSE)
-  write.xlsx(subDF, file = paste0("data_out/", header, "high_correlations_family.xlsx"),
+  write.xlsx(subDF, file = paste0("output/", header, "high_correlations_family.xlsx"),
              colNames = TRUE)
 
   subMeta <- meta2[match(colnames(frna2), meta2$Original), ]
@@ -430,7 +430,7 @@ df_ileum <- correlations_all(otus_norm = otus_ileum_norm,
 
 dev.off()
 subDF <- df[abs(df$r) > q & !is.na(df$p.value), ]
-write.csv(subDF, paste0("data_out/", header, "high_correlations_family.csv"),
+write.csv(subDF, paste0("output/", header, "high_correlations_family.csv"),
           na = "", row.names = FALSE)
 
 subDF %>%

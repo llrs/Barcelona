@@ -21,8 +21,8 @@ out_model <- search_model(A = Ab, c1 = shrinkage, scheme = "centroid",
                           bias = TRUE, nWeights = 11,
                           BPPARAM = mcp)
 
-saveRDS(out_model, "data_out/model2_optimization_b.RDS")
-out2 <- readRDS("data_out/model2_optimization_b.RDS")
+saveRDS(out_model, "output/model2_optimization_b.RDS")
+out2 <- readRDS("output/model2_optimization_b.RDS")
 C <- matrix(0, nrow = 3, ncol = 3)
 model2b <- symm(C, out2[out2$AVE_inner == max(out2$AVE_inner),
                         grep("^var", colnames(out2))])
@@ -31,8 +31,8 @@ model2b_sgcca <- sgcca(A = Ab, c1 = shrinkage, scheme = "centroid", C = model2b,
                        verbose = FALSE, scale = FALSE, ncomp = rep(2, length(Ab)))
 
 model2b_sgcca <- improve.sgcca(model2b_sgcca, names(A))
-saveRDS(model2b_sgcca, "data_out/model2b_sgcca_b.RDS")
-model2b_sgcca <- readRDS("data_out/model2b_sgcca_b.RDS")
+saveRDS(model2b_sgcca, "output/model2b_sgcca_b.RDS")
+model2b_sgcca <- readRDS("output/model2b_sgcca_b.RDS")
 plot(model2b_sgcca$Y$RNAseq[, 1], model2b_sgcca$Y$Micro[, 1], col = as.factor(meta$Exact_location))
 
 A3 <- model_RGCCA(meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX", "IBD"))
@@ -48,22 +48,22 @@ model1.1_sgcca <- sgcca(A = Ab, c1 = shrinkage, scheme = "centroid", C = model1.
                        verbose = FALSE, scale = FALSE, ncomp = rep(2, length(Ab)))
 
 model1.1_sgcca <- improve.sgcca(model1.1_sgcca, names(A))
-saveRDS(model1.1_sgcca, "data_out/model1.1_sgcca_b.RDS")
+saveRDS(model1.1_sgcca, "output/model1.1_sgcca_b.RDS")
 
 # Estimated time of 1 hours
 out_model <- search_model(A = Ab, c1 = shrinkage, scheme = "centroid",
                           scale = FALSE, verbose = FALSE,
                           bias = TRUE, nWeights = 11)
 
-saveRDS(out_model, "data_out/model2_optimization_IBD_b.RDS")
-out2 <- readRDS("data_out/model2_optimization_IBD_b.RDS")
+saveRDS(out_model, "output/model2_optimization_IBD_b.RDS")
+out2 <- readRDS("output/model2_optimization_IBD_b.RDS")
 model2b2 <- symm(C, out2[out2$AVE_inner == max(out2$AVE_inner),
                         grep("^var", colnames(out2))])
 
 model2b2_sgcca <- sgcca(A = Ab, c1 = shrinkage, scheme = "centroid", C = model2b,
                        verbose = FALSE, scale = FALSE, ncomp = rep(2, length(Ab)))
 model2b2_sgcca <- improve.sgcca(model2b2_sgcca, names(A))
-saveRDS(model2b2_sgcca, "data_out/model2b2_sgcca_b.RDS")
+saveRDS(model2b2_sgcca, "output/model2b2_sgcca_b.RDS")
 
 plot(model2b2_sgcca$Y$RNAseq[, 1], model2b2_sgcca$Y$Micro[, 1], col = as.factor(meta$IBD))
 plot(model2b2_sgcca$Y$RNAseq[, 1], model2b2_sgcca$Y$Micro[, 1], col = as.factor(ifelse(meta$Exact_location == "ileum", "ileum", "colon")))

@@ -11,7 +11,7 @@ library("metagenomeSeq")
   microorganism <- tab[, 1, FALSE]
 
   # From the QC step
-  meta <- readRDS("data_out/refined_meta.RDS")
+  meta <- readRDS("output/refined_meta.RDS")
   otus <- tab[, colnames(tab) %in% meta$Name]
   colnames(otus) <- meta$Original[match(colnames(otus), meta$Name)]
   {
@@ -87,10 +87,10 @@ library("metagenomeSeq")
 # ASV ####
 {
   # * Read ####
-  ASV <- readRDS("data_out/refined_ASV.RDS")
+  ASV <- readRDS("output/refined_ASV.RDS")
 
   # From the QC step
-  meta <- readRDS("data_out/refined_meta.RDS")
+  meta <- readRDS("output/refined_meta.RDS")
   ASV <- ASV[, colnames(ASV) %in% meta$Name]
   colnames(ASV) <- meta$Original[match(colnames(ASV), meta$Name)]
   {

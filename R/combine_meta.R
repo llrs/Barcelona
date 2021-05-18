@@ -8,7 +8,7 @@ library("purrr")
 library("tidyr")
 
 # From the QC step
-meta <- readRDS("data_out/info_samples.RDS")
+meta <- readRDS("output/info_samples.RDS")
 
 # Remove duplicate samples
 replicates <- table(meta$Original)
@@ -197,4 +197,4 @@ meta6$Transcriptome <- ifelse(meta6$Original %in% samples, "Yes", "No")
 meta6$Microbiome <- ifelse(meta6$Name %in% dna_samples, "Yes", "No")
 
 write.csv(meta6[(meta6$Transcriptome == "Yes" | meta6$Microbiome == "Yes"), ],
-          "data_out/pheno_data.csv")
+          "output/pheno_data.csv")

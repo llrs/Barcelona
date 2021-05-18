@@ -10,8 +10,8 @@ A <- readRDS("data/RGCCA_data_wo_out.RDS")
 boots <- 10000
 set.seed(9876156)
 # index <- inteRmodel::boot_index(nrow(A[[1]]), boots)
-# saveRDS(index, file = "data_out/index_boot2.RDS")
-index <- readRDS("data_out/index_boot2.RDS")
+# saveRDS(index, file = "output/index_boot2.RDS")
+index <- readRDS("output/index_boot2.RDS")
 
 # * Model 0 ####
 shrinkage <- c(0.322297910454825, 0.866155549496009) #Calculated from the server for the data derived from original data
@@ -24,10 +24,10 @@ mcp <- MulticoreParam(workers = 8, progressbar = TRUE)
 b0 <- boot_index_sgcca(index, A = ab, c1 = shrinkage, scheme = "centroid",
                          scale = FALSE, verbose = FALSE, bias = TRUE, C = C0,
                        BPPARAM = mcp)
-saveRDS(b0, "data_out/boot_0_b.RDS")
+saveRDS(b0, "output/boot_0_b.RDS")
 
 # * Model 1.2 ####
-model2_best <- readRDS("data_out/model2b2_sgcca_b.RDS")
+model2_best <- readRDS("output/model2b2_sgcca_b.RDS")
 C1.2 <- model2_best$C
 
 A$Meta <- model_RGCCA(A$Meta, c("ID", "AgeDiag", "diagTime", "Exact_location", "SEX"))
@@ -40,11 +40,11 @@ shrinkage[1:2] <- c(0.322020648273615, 0.866155549496009)
 b1.2 <- boot_index_sgcca(index, A = Ab, c1 = shrinkage, scheme = "centroid",
                           scale = FALSE, verbose = FALSE, bias = TRUE, C = C1.2,
                          BPPARAM = mcp)
-saveRDS(b1.2, "data_out/boot_1.2_b.RDS")
+saveRDS(b1.2, "output/boot_1.2_b.RDS")
 
 # * Model 2.2 ####
-model3_best <- readRDS("data_out/model3_best_treatment_b.RDS")
-# A <- readRDS("data_out/model3_BCN_b.RDS")
+model3_best <- readRDS("output/model3_best_treatment_b.RDS")
+# A <- readRDS("output/model3_BCN_b.RDS")
 C2.2 <- model3_best$C
 meta <- A$Meta
 
@@ -68,13 +68,13 @@ ab <- clean_unvariable(Ab)
 
 b2.2 <- boot_index_sgcca(index, A = ab, C = C2.2, c1 = shrinkage,
                          scheme = "centroid", BPPARAM = mcp)
-saveRDS(b2.2, file = "data_out/boot_2.2_b.RDS")
+saveRDS(b2.2, file = "output/boot_2.2_b.RDS")
 
 
 # AVE plot ####
-b0 <- readRDS("data_out/boot_0_b.RDS")
-b1.2 <- readRDS("data_out/boot_1.2_b.RDS")
-b2.2 <- readRDS("data_out/boot_2.2_b.RDS")
+b0 <- readRDS("output/boot_0_b.RDS")
+b1.2 <- readRDS("output/boot_1.2_b.RDS")
+b2.2 <- readRDS("output/boot_2.2_b.RDS")
 
 theme_set(theme_bw())
 theme_update(strip.background = element_blank(),
@@ -88,7 +88,7 @@ b <- rbind.data.frame(cbind.data.frame(AVE0, model = "0"),
                       cbind.data.frame(AVE2.2, model = "2.2"))
 b$index <- rep(seq_len(10000), 3)
 
-models0 <- readRDS("data_out/models0_b.RDS")
+models0 <- readRDS("output/models0_b.RDS")
 model0 <- models0[[1]]
 
 # This index doesn't converge

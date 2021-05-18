@@ -1,9 +1,9 @@
 library("openxlsx")
 
 # Read
-colon_CD <- read_xls("data_out/results_060420_antiTNF/colon.CD.xls")
-colon_UC <- read_xls("data_out/results_060420_antiTNF/colon.UC.xls")
-ileum_CD <- read_xls("data_out/results_060420_antiTNF/ileum.CD.xls")
+colon_CD <- read_xls("output/results_060420_antiTNF/colon.CD.xls")
+colon_UC <- read_xls("output/results_060420_antiTNF/colon.UC.xls")
+ileum_CD <- read_xls("output/results_060420_antiTNF/ileum.CD.xls")
 
 # Clean names
 clean_names <- function(x) {
@@ -21,7 +21,7 @@ s_colon_UC <- clean_names(colon_UC[4, 2:51])
 s_ileum_CD <- clean_names(ileum_CD[5, 2:40])
 
 
-meta <- readRDS("data_out/refined_meta.RDS")
+meta <- readRDS("output/refined_meta.RDS")
 meta$ileum <- ifelse(meta$Exact_location == "ileum", "ileum", "colon")
 
 scUC <- meta$Original[meta$IBD %in% c("CONTROL", "UC") & meta$ileum == "colon"]

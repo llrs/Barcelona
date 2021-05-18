@@ -1,5 +1,5 @@
 # Read files to copy ####
-meta <- readRDS("data_out/refined_meta.RDS")
+meta <- readRDS("output/refined_meta.RDS")
 samples <- meta$Name
 stopifnot(length(samples) == 128)
 

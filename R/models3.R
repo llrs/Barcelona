@@ -35,7 +35,7 @@ A2$Location <- Localization
 A2$Time <- Time
 
 A2 <- clean_unvariable(A2)
-# saveRDS(A2, "data_out/model3_BCN_treatment.RDS")
+# saveRDS(A2, "output/model3_BCN_treatment.RDS")
 #
 shrinkage <- rep(1, 5)
 names(shrinkage) <- names(A2)
@@ -61,8 +61,8 @@ set.seed(46726279)
 # out2 <- out[lengths(out) == 24]
 # out2 <- simplify2array(out2)
 # out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "data_out/sample_model3_boot_treatment_b.RDS")
-# out2 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
+# saveRDS(out2, "output/sample_model3_boot_treatment_b.RDS")
+# out2 <- readRDS("output/sample_model3_boot_treatment_b.RDS")
 # out2 %>%
 #   top_n(5, AVE_inner) %>%
 #   select(AVE_inner, AVE_outer, var12, var13, var23,
@@ -76,9 +76,9 @@ set.seed(46726279)
 # out2 <- out[lengths(out) == 24]
 # out2 <- simplify2array(out2)
 # out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "data_out/sample2_model3_boot_b.RDS")
-# out2 <- readRDS("data_out/sample2_model3_boot_b.RDS")
-# out1 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
+# saveRDS(out2, "output/sample2_model3_boot_b.RDS")
+# out2 <- readRDS("output/sample2_model3_boot_b.RDS")
+# out1 <- readRDS("output/sample_model3_boot_treatment_b.RDS")
 #
 # out0 <- rbind(out1, out2)
 # out <- out0[!duplicated(out0), ]
@@ -100,12 +100,12 @@ set.seed(46726279)
 # out2 <- out[lengths(out) == 24]
 # out2 <- simplify2array(out2)
 # out2 <- as.data.frame(t(out2))
-# saveRDS(out2, "data_out/sample_def_model3_boot_b.RDS")
-# out <- readRDS("data_out/sample_def_model3_boot_b.RDS")
-# out0 <- readRDS("data_out/sample_model3_boot_b.RDS")
-out0 <- readRDS("data_out/sample_model3_boot_treatment_b.RDS")
-out1 <- readRDS("data_out/sample2_model3_boot_b.RDS")
-out2 <- readRDS("data_out/sample_def_model3_boot_b.RDS")
+# saveRDS(out2, "output/sample_def_model3_boot_b.RDS")
+# out <- readRDS("output/sample_def_model3_boot_b.RDS")
+# out0 <- readRDS("output/sample_model3_boot_b.RDS")
+out0 <- readRDS("output/sample_model3_boot_treatment_b.RDS")
+out1 <- readRDS("output/sample2_model3_boot_b.RDS")
+out2 <- readRDS("output/sample_def_model3_boot_b.RDS")
 out <- rbind(out0, out1, out2)
 out <- out[!duplicated(out), ]
 # ggplot(out, aes(AVE_inner, AVE_outer, color = cc1)) +
@@ -117,8 +117,8 @@ rownames(best3) <- names(Ab)
 # stop("Check model")
 d <- weight_design(weights = 11, size = length(Ab), which(lower.tri(best3) & best3 != 0))
 out <- bplapply(d, testing, A = Ab, c1 = shrinkage, BPPARAM = mcp)
-saveRDS(out, "data_out/refined_model3_b.RDS")
-out <- readRDS("data_out/refined_model3_b.RDS")
+saveRDS(out, "output/refined_model3_b.RDS")
+out <- readRDS("output/refined_model3_b.RDS")
 if (is.list(out)) {
   out <- out[lengths(out) == 24]
   out <- simplify2array(out)
@@ -132,4 +132,4 @@ model3_best <- sgcca(A = Ab, c1 = shrinkage, C = best3, ncomp = rep(2, 5), schem
 model3_best <- improve.sgcca(model3_best, names(Ab))
 beepr::beep()
 stopifnot(model3_best$AVE$AVE_inner[1] != max(o$AVE_inner))
-saveRDS(model3_best, "data_out/model3_best_treatment_b.RDS")
+saveRDS(model3_best, "output/model3_best_treatment_b.RDS")

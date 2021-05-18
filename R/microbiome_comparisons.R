@@ -27,7 +27,7 @@ colnames(tab) <- gsub("_p.*", "", colnames(tab))
 
 # Group by tax level ####
 {
-  microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
+  microorganism <-  readRDS("output/taxonomy_ASV.RDS")$tax
   microorganism <- cbind(microorganism, "ASV" = rownames(microorganism))
   microorganism <- as.data.frame(microorganism, stringsAsFactors = FALSE)
   microorganism$rowname <- as.character(seq_len(nrow(microorganism)))
@@ -50,7 +50,7 @@ colnames(tab) <- gsub("_p.*", "", colnames(tab))
   microorganism <- rm_micro[, 1:(length(groups))] # And here the same number
 
   # From the QC step
-  meta <- readRDS("data_out/info_samples.RDS")
+  meta <- readRDS("output/info_samples.RDS")
   colnames(counts) <- gsub("\\.[0-9]", "", colnames(counts))
   meta <- meta[match(colnames(counts), meta$Name), ]
 
@@ -111,7 +111,7 @@ colnames(tab) <- gsub("_p.*", "", colnames(tab))
 
   # Reorder samples to match!
   meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
-  meta3 <- readRDS("data_out/refined_meta_wo_out.RDS")
+  meta3 <- readRDS("output/refined_meta_wo_out.RDS")
   meta3$IBD <- as.character(meta3$IBD)
   meta3$IBD[meta3$IBD == "CONTROL"] <- "C"
   # If using wo outliers we removed 2 samples
@@ -131,7 +131,7 @@ counts <- tab[, -1]
 genus <- tab[, 1, FALSE]
 
 # From the QC step
-meta <- readRDS("data_out/refined_meta.RDS")
+meta <- readRDS("output/refined_meta.RDS")
 ccounts <- colSums(counts)
 meta <- meta[meta$Name %in% colnames(counts), ]
 
@@ -333,7 +333,7 @@ colnames(df)[2:ncol(df)] <- c("IBD (p.val)", "Time (p.val)", "Activity (p.val)",
 df2 <- apply(df[, 2:ncol(df)], 2, p.adjust)
 colnames(df2) <- gsub(pattern = "p.val", replacement = "adj.p.val", x = colnames(df2))
 df3 <- cbind(df, df2)
-write.csv(x = df3, file = "data_out/abundance_p_values.csv",
+write.csv(x = df3, file = "output/abundance_p_values.csv",
           row.names = FALSE)
 pdf("Figures/Time_IBD_abundance.pdf")
 for (i in seq_len(nrow(ts))) {
@@ -478,7 +478,7 @@ summary(dt)
 
 tt <- topTable(fit2, coef = "ileum_vs_colon", number = Inf)
 rownames(tt) <- genus[rownames(tt), 1]
-write.csv(tt, "data_out/colon_vs_ileum_ASV.csv", row.names = TRUE)
+write.csv(tt, "output/colon_vs_ileum_ASV.csv", row.names = TRUE)
 
 # Prevalence ####
 # Functions
@@ -575,7 +575,7 @@ std <- comb_prevalence(OTUs2, meta, c("Study")) %>% filter_prev()
 ibdm <- comb_prevalence(OTUs2, meta, c("IBD", "Time", "ileum")) %>% filter_prev()
 ibd <- comb_prevalence(OTUs2, meta, c("IBD", "ileum")) %>% filter_prev()
 loc <- comb_prevalence(OTUs2, meta, c("ileum")) %>% filter_prev()
-write.csv(ibd, "data_out/prevalence_disease_location.csv", row.names = TRUE)
+write.csv(ibd, "output/prevalence_disease_location.csv", row.names = TRUE)
 
 p <- full_prevalence(OTUs2, meta, "Time")
 p <- full_prevalence(OTUs2, meta, "ileum")
@@ -657,7 +657,7 @@ std <- comb_prevalence(fam2, meta, c("Study")) %>% filter_prev()
 ibdm <- comb_prevalence(fam2, meta, c("IBD", "Time", "ileum")) %>% filter_prev()
 ibd <- comb_prevalence(fam2, meta, c("IBD", "ileum")) %>% filter_prev()
 loc <- comb_prevalence(fam2, meta, c("ileum")) %>% filter_prev()
-write.csv(ibd, "data_out/prevalence_disease_family_location.csv", row.names = TRUE)
+write.csv(ibd, "output/prevalence_disease_family_location.csv", row.names = TRUE)
 }
 (p <- extract_genus(full_prevalence(fam2, meta, "Time")))
 (p <- extract_genus(full_prevalence(fam2, meta, "ileum")))

@@ -33,7 +33,7 @@ A2$Time <- Time
 
 A2 <- clean_unvariable(A2)
 A2 <- A2[-4] # Location don't have any variable as all are from the ileum
-saveRDS(A2, "data_out/model3_BCN_ileum.RDS")
+saveRDS(A2, "output/model3_BCN_ileum.RDS")
 
 # shrinkage <- vapply(A2[1:2], tau.estimate, numeric(1L)) # 0.11503779803812 0.318145965316924
 shrinkage <- rep(1, 4)
@@ -60,9 +60,9 @@ designs <- designs[keep]
 # s <- sample(designs, size = min(length(designs)*.1, 1000))
 out <- sapply(designs, testing, A = Ab, c1 = shrinkage, USE.NAMES = FALSE)
 out2 <- as.data.frame(t(out))
-saveRDS(out2, "data_out/sample_model3_ileum_boot.RDS")
+saveRDS(out2, "output/sample_model3_ileum_boot.RDS")
 
-out1 <- readRDS("data_out/sample_model3_ileum_boot.RDS")
+out1 <- readRDS("output/sample_model3_ileum_boot.RDS")
 ggplot(out1, aes(AVE_inner, AVE_outer)) +
   geom_point()
 

@@ -1,4 +1,4 @@
-' ---
+#' ---
 #' title: "Experimental design of Michigan sequencing"
 #' author: "Lluís Revilla"
 #' date: "r `date() `"

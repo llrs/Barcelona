@@ -16,14 +16,14 @@ tab <- t(counts_ASV)
 colnames(tab) <- gsub("_S.*", "", colnames(tab))
 colnames(tab) <- gsub("_p.*", "", colnames(tab))
 
-microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
+microorganism <-  readRDS("output/taxonomy_ASV.RDS")$tax
 microorganism <- cbind(microorganism, "ASV" = rownames(microorganism))
 microorganism <- as.data.frame(microorganism, stringsAsFactors = FALSE)
 microorganism$rowname <- as.character(seq_len(nrow(microorganism)))
 rownames(microorganism) <- as.character(seq_len(nrow(microorganism)))
 
 # From the QC step
-meta <- readRDS("data_out/info_samples.RDS")
+meta <- readRDS("output/info_samples.RDS")
 meta <- meta[match(colnames(tab), meta$Name), ]
 
 # filter (keep in mind that it should be on the same order)
@@ -83,7 +83,7 @@ colnames(OTUs2) <- meta2$Original[match(colnames(OTUs2), meta2$Name)]
 
 # Reorder samples to match!
 meta2 <- meta2[match(colnames(rna2), meta2$Original), ]
-meta3 <- readRDS("data_out/refined_meta_wo_out.RDS")
+meta3 <- readRDS("output/refined_meta_wo_out.RDS")
 meta3$IBD <- as.character(meta3$IBD)
 meta3$IBD[meta3$IBD == "CONTROL"] <- "C"
 meta3$sample_location[meta3$IBD == "CONTROL"] <- "colon"
@@ -115,12 +115,12 @@ OTUs2 <- OTUs2[, match(colnames(rna2), colnames(OTUs2))]
 
 
 write.table(m2,
-            file = "data_out/GETS_sample.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = " ")
+            file = "output/GETS_sample.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = " ")
 df <- data.frame(type = c("SAMPLEINFO", "SAMPLEINFO", "SAMPLEINFO", "SAMPLEINFO", "SAMPLEINFO", "SAMPLEINFO", "SAMPLEINFO"),
                  column = c("IBD", "SEX", "Ulcers", "Age", "diagTime", "AgeDiag", "sample_location"),
                  value = c("", "male", "yes", "", "", "", "ileum"),
                  color = c("AUTO", "ORANGE", "RED", "GRADIENT_RED", "GRADIENT_RED", "GRADIENT_RED", "MAGENTA"))
-write.table(df, file = "data_out/GETS_colors.tsv", quote = FALSE, sep = "\t", col.names = FALSE, row.names = FALSE)
+write.table(df, file = "output/GETS_colors.tsv", quote = FALSE, sep = "\t", col.names = FALSE, row.names = FALSE)
 
 # RNASeq ####
 
@@ -131,10 +131,10 @@ out <- data.frame(ensembl = trimVer(rownames(rna3)), gene = out)
 
 
 cm <- cbind(genes = rownames(rna3), integration::norm_RNAseq(rna3))
-write.table(cm, file = "data_out/GETS_matrix_RNASeq.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
-system2("gzip", args = "-kf data_out/GETS_matrix_RNASeq.tsv") # Compress it to upload to website
-write.table(out, file = "data_out/GETS_gene_RNASeq.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = "")
-system2("gzip", args = "-kf data_out/GETS_gene_RNASeq.tsv") # Compress it to upload to website
+write.table(cm, file = "output/GETS_matrix_RNASeq.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+system2("gzip", args = "-kf output/GETS_matrix_RNASeq.tsv") # Compress it to upload to website
+write.table(out, file = "output/GETS_gene_RNASeq.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = "")
+system2("gzip", args = "-kf output/GETS_gene_RNASeq.tsv") # Compress it to upload to website
 
 
 # Microbiome ####
@@ -145,7 +145,7 @@ rownames(OTUs2) <- as.character(seq_len(nrow(OTUs2)))
 out <- out[k, ]
 OTUs3 <- OTUs2[k, ]
 cm <- cbind(genes = rownames(OTUs3), integration::norm_RNAseq(OTUs3))
-write.table(cm, file = "data_out/GETS_matrix_ASV.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
-system2("gzip", args = "-kf data_out/GETS_matrix_ASV.tsv") # Compress it to upload to website
-write.table(out, file = "data_out/GETS_ASV.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = "")
-system2("gzip", args = "-kf data_out/GETS_ASV.tsv") # Compress it to upload to website
+write.table(cm, file = "output/GETS_matrix_ASV.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+system2("gzip", args = "-kf output/GETS_matrix_ASV.tsv") # Compress it to upload to website
+write.table(out, file = "output/GETS_ASV.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = "")
+system2("gzip", args = "-kf output/GETS_ASV.tsv") # Compress it to upload to website

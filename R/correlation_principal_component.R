@@ -15,11 +15,11 @@ library("xlsx")
 
 # Load data ####
 A <- readRDS("data/RGCCA_data_wo_out.RDS")
-models0 <- readRDS("data_out/models0_b.RDS")
+models0 <- readRDS("output/models0_b.RDS")
 model0 <- models0[[1]]
-model2_best <- readRDS("data_out/model2b2_sgcca_b.RDS")
-model3_best <- readRDS("data_out/model3_best_treatment_b.RDS")
-microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
+model2_best <- readRDS("output/model2b2_sgcca_b.RDS")
+model3_best <- readRDS("output/model3_best_treatment_b.RDS")
+microorganism <-  readRDS("output/taxonomy_ASV.RDS")$tax
 microorganism <- cbind(microorganism, "ASV" = rownames(microorganism))
 microorganism <- as.data.frame(microorganism, stringsAsFactors = FALSE)
 microorganism$rowname <- as.character(seq_len(nrow(microorganism)))
@@ -49,8 +49,8 @@ cPC_m0 <- cor_PC(A[1:2], model0$Y, model0$a)
 cPC_m1.2 <- cor_PC(A[1:2], model2_best$Y, model2_best$a)
 cPC_m2.2 <- cor_PC(A[1:2], model3_best$Y, model3_best$a)
 l <- list(m0 = cPC_m0, m1.2 = cPC_m1.2, m2.2 = cPC_m2.2)
-saveRDS(l, "data_out/cPC2.RDS")
-l <- readRDS("data_out/cPC2.RDS")
+saveRDS(l, "output/cPC2.RDS")
+l <- readRDS("output/cPC2.RDS")
 
 # *Select genes and microorganisms ####
 # Parameter to control the code below #
@@ -98,12 +98,12 @@ micro <- apply(microorganism[, c("Family", "Genus")], 1, paste, collapse = " ")
 names(micro) <- rownames(microorganism)
 corr_models$name[corr_models$Type != "Gene"] <- micro[corr_models$rowname[corr_models$Type != "Gene"]]
 corr_models$name[corr_models$name == "NA "] <- NA
-saveRDS(corr_models, paste0("data_out/correlations_", p, "perc.RDS"))
+saveRDS(corr_models, paste0("output/correlations_", p, "perc.RDS"))
 }
 {
 corr_models %>%
   filter(!is.na(name)) %>%
-  xlsx::write.xlsx(paste0("data_out/correlations_", p, "perc.xlsx"), sheetName = "Sheet1",
+  xlsx::write.xlsx(paste0("output/correlations_", p, "perc.xlsx"), sheetName = "Sheet1",
                  col.names = TRUE, row.names = FALSE, append = FALSE)
 
 entrez <- mapIds(org.Hs.eg.db, keys = corr_models$rowname, keytype = "ENSEMBL", column = "ENTREZID")
@@ -196,9 +196,9 @@ plot_cor_PC <- function(x, y, name, filter_x) {
   dev.off()
 }
 
-plot_cor_PC(A[1:2], model0$Y, "data_out/correlations_PC_m0_log10.pdf", corr_models$rowname[corr_models$Model == "m0"])
-plot_cor_PC(A[1:2], model2_best$Y, "data_out/correlations_PC_m1.2_log10.pdf", corr_models$rowname[corr_models$Model == "m1.2"])
-plot_cor_PC(A[1:2], model3_best$Y, "data_out/correlations_PC_m2.2_log10.pdf", corr_models$rowname[corr_models$Model == "m2.2"])
+plot_cor_PC(A[1:2], model0$Y, "output/correlations_PC_m0_log10.pdf", corr_models$rowname[corr_models$Model == "m0"])
+plot_cor_PC(A[1:2], model2_best$Y, "output/correlations_PC_m1.2_log10.pdf", corr_models$rowname[corr_models$Model == "m1.2"])
+plot_cor_PC(A[1:2], model3_best$Y, "output/correlations_PC_m2.2_log10.pdf", corr_models$rowname[corr_models$Model == "m2.2"])
 
 pc01 <- cor_PC(model0$Y, model2_best$Y)
 pc02 <- cor_PC(model0$Y, model3_best$Y)
@@ -206,10 +206,10 @@ pc12 <- cor_PC(model2_best$Y[1:2], model3_best$Y)
 
 # Correlation tests ####
 # corr <- corr.test(A$RNAseq, A$Micro, method = "spearman", ci = FALSE)
-# saveRDS(corr, "data_out/correlations_genes_ASV.RDS")
+# saveRDS(corr, "output/correlations_genes_ASV.RDS")
 # corr2 <- corr[c("r", "p")]
-# saveRDS(corr2, "data_out/correlations_genes_pvalue_ASV.RDS")
-corr2 <- readRDS("data_out/correlations_genes_pvalue_ASV.RDS")
+# saveRDS(corr2, "output/correlations_genes_pvalue_ASV.RDS")
+corr2 <- readRDS("output/correlations_genes_pvalue_ASV.RDS")
 r2 <- corr2$r %>%
   as.data.frame() %>%
   tibble::rownames_to_column() %>%
@@ -300,13 +300,13 @@ to_long <- function(x, yx) {
 }
 
 to_long(w0b, microorganism) %>%
-  write.xlsx(file = "data_out/m0_correlations_influence_log10.xlsx", sheetName = "Sheet1",
+  write.xlsx(file = "output/m0_correlations_influence_log10.xlsx", sheetName = "Sheet1",
              col.names = TRUE, row.names = FALSE, append = FALSE)
 to_long(w1.2b, microorganism) %>%
-  write.xlsx(file = "data_out/m1.2_correlations_influence_log10.xlsx", sheetName = "Sheet1",
+  write.xlsx(file = "output/m1.2_correlations_influence_log10.xlsx", sheetName = "Sheet1",
              col.names = TRUE, row.names = FALSE, append = FALSE)
 to_long(w2.2b, microorganism) %>%
-  write.xlsx(file = "data_out/m2.2_correlations_influence_log10.xlsx", sheetName = "Sheet1",
+  write.xlsx(file = "output/m2.2_correlations_influence_log10.xlsx", sheetName = "Sheet1",
              col.names = TRUE, row.names = FALSE, append = FALSE)
 
 variables_plots <- function(vc, w, gene_name, micro_ref) {

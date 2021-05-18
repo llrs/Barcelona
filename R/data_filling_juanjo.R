@@ -5,7 +5,7 @@ library("dplyr")
 
 
 nom <- read_xls("~/Documents/users/juanjo_lozano/aTNF/noms.xls")
-pheno <- read.csv("data_out/pheno_data.csv", row.names = 1)
+pheno <- read.csv("output/pheno_data.csv", row.names = 1)
 nam <- gsub(" reseq", "", nom$nom)
 bcn <- grep("-[wW]", nam)
 nam[bcn] <- tolower(nam[bcn])
@@ -35,4 +35,4 @@ m %>%
     z[!is.na(z)]
 
   })
-write.csv(m[, c("nam", "Exact_location", "Segmento", "IBD")], "data_out/nams.csv", row.names = FALSE)
+write.csv(m[, c("nam", "Exact_location", "Segmento", "IBD")], "output/nams.csv", row.names = FALSE)

@@ -11,7 +11,7 @@ seqtab.nochim <- readRDS("data/ASV.RDS")
 
 sample_names <- gsub("_.*", "", rownames(seqtab.nochim))
 rownames(seqtab.nochim) <- sample_names
-taxonomy <- readRDS("data_out/taxonomy_ASV.RDS")
+taxonomy <- readRDS("output/taxonomy_ASV.RDS")
 taxa <- taxonomy$tax
 A <- readRDS("data/RGCCA_data.RDS")
 samdf <- A$Meta

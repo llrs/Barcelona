@@ -25,7 +25,7 @@ library("rstatix") # To compare several groups the tidy way
   colnames(tab) <- gsub("_S.*", "", colnames(tab))
   colnames(tab) <- gsub("_p.*", "", colnames(tab))
 
-  meta <- readRDS("data_out/info_samples.RDS")
+  meta <- readRDS("output/info_samples.RDS")
   depth <- colSums(tab)
   # Remove duplicate samples and keep the ones with more sequencing depth
   replicates <- table(colnames(tab))
@@ -48,7 +48,7 @@ library("rstatix") # To compare several groups the tidy way
 
 # Group by tax level ####
 group_taxa <- function(taxonomy, data, groups) {
-  microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
+  microorganism <-  readRDS("output/taxonomy_ASV.RDS")$tax
   microorganism <- cbind(microorganism, "ASV" = rownames(microorganism))
   microorganism <- as.data.frame(microorganism, stringsAsFactors = FALSE)
   microorganism$rowname <- as.character(seq_len(nrow(microorganism)))
@@ -78,7 +78,7 @@ A <- readRDS("data/RGCCA_data_wo_out.RDS")
 meta_f <- A$Meta
 
 # * Genus #####
-genus <- group_taxa(taxonomy = readRDS("data_out/taxonomy_ASV.RDS")$tax,
+genus <- group_taxa(taxonomy = readRDS("output/taxonomy_ASV.RDS")$tax,
                     data = micros,
                     groups = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus"))
 
@@ -87,21 +87,21 @@ genus_prev <- apply(genus$counts[rS != 0, ], 2, function(x){x/sum(x, na.rm = TRU
 meta2 <- meta_f[match(colnames(genus_prev), meta_f$Original), c("Original", "IBD", "SEX", "Exact_location", "Ulcers", "sample_location", "diagTime", "Age", "AgeDiag", "Time")] %>%
   arrange(IBD, sample_location, SEX, Age)
 
-write.table(meta2, file = "data_out/GETS_ASV_samples.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = " ")
+write.table(meta2, file = "output/GETS_ASV_samples.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = " ")
 genus_prev <- genus_prev[, match(meta2$Original, colnames(genus_prev))]
 stopifnot("Some Nas present" = !anyNA(genus_prev))
 micro_norm <- norm_RNAseq(genus$counts[rS != 0, ])
 micro_norm <- micro_norm[, meta2$Original]
 matrix_norm <- cbind(rownames = rownames(micro_norm), micro_norm)
-write.table(matrix_norm, file = "data_out/GETS_matrix_ASV_norm.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
-system2("gzip", args = "-kf data_out/GETS_matrix_ASV_norm.tsv") # Compress it to upload to website
+write.table(matrix_norm, file = "output/GETS_matrix_ASV_norm.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+system2("gzip", args = "-kf output/GETS_matrix_ASV_norm.tsv") # Compress it to upload to website
 
 tax <- genus$genus[rS != 0, ]
 matrix_out <- cbind(rownames = rownames(genus_prev), genus_prev)
-write.table(matrix_out, file = "data_out/GETS_matrix_ASV_prev.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
-system2("gzip", args = "-kf data_out/GETS_matrix_ASV_prev.tsv") # Compress it to upload to website
-write.table(tax, file = "data_out/GETS_ASV_genus.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = "")
-system2("gzip", args = "-kf data_out/GETS_ASV_genus.tsv") # Compress it to upload to website
+write.table(matrix_out, file = "output/GETS_matrix_ASV_prev.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+system2("gzip", args = "-kf output/GETS_matrix_ASV_prev.tsv") # Compress it to upload to website
+write.table(tax, file = "output/GETS_ASV_genus.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = "")
+system2("gzip", args = "-kf output/GETS_ASV_genus.tsv") # Compress it to upload to website
 
 meta2$sample_location[is.na(meta2$sample_location)] <- ifelse(meta2$Exact_location[is.na(meta2$sample_location)] == "ileum", "ileum", "colon")
 
@@ -194,14 +194,14 @@ m %>%
   group_by(sample_location, Family) %>% # Can't use ulcers here
   t_test(percentage~IBD, ref.group = "CONTROL") %>%
   select(Family, sample_location, group1, group2, p, p.adj) %>%
-  xlsx::write.xlsx(file = "data_out/statistics_family_sample_location_controls.xlsx")
+  xlsx::write.xlsx(file = "output/statistics_family_sample_location_controls.xlsx")
 # Compare no ulcers, on colon and ileum vs controls
 m %>%
   filter(Family %in% fms ) %>%
   group_by(sample_location, Family, Ulcers) %>% # Can't use ulcers here
   t_test(percentage~IBD, ref.group = "CONTROL") %>%
   select(Family, Ulcers, sample_location, group1, group2, p, p.adj) %>%
-  xlsx::write.xlsx(file = "data_out/statistics_family_sample_location_ulcers.xlsx")
+  xlsx::write.xlsx(file = "output/statistics_family_sample_location_ulcers.xlsx")
 # Compare between families
 m %>%
   filter(Family %in% fms ) %>%
@@ -209,7 +209,7 @@ m %>%
   t_test(percentage~Family, ref.group = "Christensenellaceae") %>%
   mutate(p.adj = p.adjust(p)) %>%
   select(IBD, Ulcers, sample_location, group1, group2, p, p.adj) %>%
-  xlsx::write.xlsx(file = "data_out/statistics_family_sample_location_ulcers_IBD.xlsx")
+  xlsx::write.xlsx(file = "output/statistics_family_sample_location_ulcers_IBD.xlsx")
 
 m %>%
   filter(Family %in% fms ) %>%
@@ -222,17 +222,17 @@ m %>%
   group_by(sample_location, Genus, Ulcers) %>%
   t_test(percentage~IBD, ref.group = "CONTROL") %>%
   select(Genus, Ulcers, sample_location, group1, group2, p, p.adj) %>%
-  xlsx::write.xlsx(file = "data_out/statistics_genus_sample_location_ulcers.xlsx")
+  xlsx::write.xlsx(file = "output/statistics_genus_sample_location_ulcers.xlsx")
 
 m %>%
   filter(Genus %in% sps ) %>%
   group_by(sample_location, Genus) %>% # Can't use ulcers here
   t_test(percentage~IBD, ref.group = "CONTROL") %>%
   select(Genus, sample_location, group1, group2, p, p.adj) %>%
-  xlsx::write.xlsx(file = "data_out/statistics_genus_sample_location_controls.xlsx")
+  xlsx::write.xlsx(file = "output/statistics_genus_sample_location_controls.xlsx")
 
 # * Classes #####
-class <- group_taxa(taxonomy = readRDS("data_out/taxonomy_ASV.RDS")$tax,
+class <- group_taxa(taxonomy = readRDS("output/taxonomy_ASV.RDS")$tax,
                     data = micros,
                     groups = c("Kingdom", "Phylum", "Class"))
 
@@ -242,7 +242,7 @@ genus_prev <- genus_prev[, match(meta2$Original, colnames(genus_prev))]
 stopifnot("Some Nas present" = !anyNA(genus_prev))
 tax <- class$genus[rS != 0, ]
 matrix_out <- cbind(rownames = rownames(genus_prev), genus_prev)
-write.table(matrix_out, file = "data_out/GETS_matrix_ASV_prev_fam.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
-system2("gzip", args = "-kf data_out/GETS_matrix_ASV_prev_fam.tsv") # Compress it to upload to website
-write.table(tax, file = "data_out/GETS_ASV_fam.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = "")
-system2("gzip", args = "-kf data_out/GETS_ASV_fam.tsv") # Compress it to upload to website
+write.table(matrix_out, file = "output/GETS_matrix_ASV_prev_fam.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+system2("gzip", args = "-kf output/GETS_matrix_ASV_prev_fam.tsv") # Compress it to upload to website
+write.table(tax, file = "output/GETS_ASV_fam.tsv", quote = FALSE, sep = "\t", row.names = FALSE, na = "")
+system2("gzip", args = "-kf output/GETS_ASV_fam.tsv") # Compress it to upload to website

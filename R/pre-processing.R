@@ -20,7 +20,7 @@ tab <- t(counts_ASV)
 # Remove trailing numbers
 colnames(tab) <- gsub("_S.*", "", colnames(tab))
 colnames(tab) <- gsub("_p.*", "", colnames(tab))
-microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
+microorganism <-  readRDS("output/taxonomy_ASV.RDS")$tax
 
 # tab <- read.delim("data/Partek_Michigan3_Kraken_Classified_genus.tsv", check.names = FALSE)
 # colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
@@ -30,7 +30,7 @@ microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
 # rownames(counts) <- as.character(genus[, 1])
 
 # From the QC step (QC-sequencing.R)
-meta <- readRDS("data_out/info_samples.RDS")
+meta <- readRDS("output/info_samples.RDS")
 meta <- meta[match(colnames(tab), meta$Original), ]
 meta$Counts <- colSums(tab)
 
@@ -270,6 +270,6 @@ stopifnot(sum(colnames(tab2) == colnames(rna2)) == 126)
 
 A <- list("RNAseq" = t(rna2), "Micro" = t(tab2), "Meta" = meta6)
 A[1:2] <- clean_unvariable(A[1:2]) # Just the numeric ones
-saveRDS(meta6, "data_out/refined_meta_wo_out.RDS")
-saveRDS(meta5, "data_out/refined_meta_all.RDS") # It doesn't have info about trim samples
+saveRDS(meta6, "output/refined_meta_wo_out.RDS")
+saveRDS(meta5, "output/refined_meta_all.RDS") # It doesn't have info about trim samples
 saveRDS(A, "data/RGCCA_data_wo_out.RDS")

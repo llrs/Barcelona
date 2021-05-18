@@ -19,7 +19,7 @@ counts <- tab[, -1]
 genus <- tab[, 1, FALSE]
 
 # From the QC step
-meta <- readRDS("data_out/info_samples.RDS")
+meta <- readRDS("output/info_samples.RDS")
 meta$Counts <- colSums(counts)
 }
 {

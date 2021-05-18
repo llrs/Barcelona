@@ -35,7 +35,7 @@ RNAseq <- A$RNAseq
 micro <- A$micro
 
 RNAseq2 <- RNAseq[, trimVer(colnames(RNAseq)) %in% GOI2]
-corr2 <- readRDS("data_out/correlations_genes_pvalue_ASV.RDS")
+corr2 <- readRDS("output/correlations_genes_pvalue_ASV.RDS")
 # p <- corr.test(RNAseq2, micro)
 
 corr3 <- lapply(corr2, function(x, y) {x[y, ]}, y = colnames(RNAseq2))

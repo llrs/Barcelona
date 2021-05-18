@@ -32,10 +32,10 @@ tab <- t(counts_ASV)
 colnames(tab) <- gsub("_S.*", "", colnames(tab)) # Remove trailing numbers
 colnames(tab) <- gsub("_p.*", "", colnames(tab)) # Remove trailing numbers
 # microorganism <- tab[, 1, FALSE]
-microorganism <-  readRDS("data_out/taxonomy_ASV.RDS")$tax
+microorganism <-  readRDS("output/taxonomy_ASV.RDS")$tax
 
 # From the QC step
-meta <- readRDS("data_out/refined_meta.RDS")
+meta <- readRDS("output/refined_meta.RDS")
 otus <- tab[, colnames(tab) %in% meta$Original]
 colnames(otus) <- meta$Original[match(colnames(otus), meta$Original)]
 {
@@ -229,7 +229,7 @@ dev.off()}
 
 # * Comparing beta diversity ####
 # Using refined meta because we want only those that were used on the integration
-{m <- readRDS("data_out/refined_meta.RDS")
+{m <- readRDS("output/refined_meta.RDS")
 m$IBD <- as.character(m$IBD)
 m$IBD[is.na(m$IBD)] <- "CONTROL"
 b <- as.matrix(beta)
