@@ -9,9 +9,7 @@ output: word_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
 Journal: ?
-
 
 # Abstract
 
@@ -23,39 +21,51 @@ Results and methods
 
 Conclusions
 
-
 # Introduction
 
 Description of the disease
 
+IBD is comprised of Crohn's disease (CD) and ulcerative colitis (UC) characterized by a chronic inflammation of the gastro intestinal tract.
+Several studies support the concept that CD arises from an exacerbated immune response against commensal gut microorganisms in genetically predisposed individuals.
+
 Observed microbiome changes
+
+It has been observed that often there is difference in microbial composition on IBD patients compared to non-IBD patients, called dysbiosis.
 
 Observed transcriptome changes
 
+Cite: Immunoglobulin A Targets a unique subset of the microbiota in inflammatory bowel disease, Shaphiro et al 2021
+
 Previous integrations (our own paper)
 
+To find which microorganisms and genes are relevant on the disease several methods have been used.
+Correlations, and other more complex methods
+
+Mini summary of the article
 
 # Methods
 
-Description of cohort 
+Description of cohort
+
+IBD patients, both UC and CD patients, receiving aTNF treatment, biopsis always from the same site.
+In addition some non-IBD samples were also collected.
 
 Table of patients
 
 ## Microbiome
 
-ASV version of database
+DNA extracted and 16S RNA region V3 to V4 was sequenced using primers X and Y.
+They were later processed on ASV version of database for taxonomy imputation.
 
 ## Transcriptomics
 
-Standard default to CELEST. 
-
+Standard check to CELEST.
 
 ## Analysis
 
 Integration steps and check out correlations.
 
 Matched samples, removed outliers.
-
 
 # Results
 
