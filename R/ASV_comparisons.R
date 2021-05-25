@@ -35,6 +35,9 @@ colnames(ASV_counts) <- meta$Original
 # Filter low abundance taxa
 # abundance_ASV <- apply(ASV_counts, 2, function(x){x/sum(x) < 0.5/100})
 # keep_ASV <- rowSums(abundance_ASV) < 120
+# Filter low mapped samples
+ASV_counts_filtered <- ASV_counts[, colSums(ASV_counts) > 3000]
+ASV_counts_filtered <- ASV_counts_filtered[rowSums(ASV_counts_filtered) != 0, ]
 
 # Diversity ####
 ASV_counts_filtered <- ASV_counts[, !startsWith(colnames(ASV_counts), "C")]
