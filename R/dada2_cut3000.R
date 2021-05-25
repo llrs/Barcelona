@@ -45,7 +45,8 @@ seqtab.nochim <- removeBimeraDenovo(seqtab, verbose = FALSE)
 
 # The exact same results as without matchID = TRUE on filterAndTrim
 # saveRDS(seqtab.nochim, file = "data/ASV_matchID.RDS")
-saveRDS(seqtab.nochim, file = "output/ASV_cut3000.RDS")
+# saveRDS(seqtab.nochim, file = "output/ASV_cut3000.RDS")
+seqtab.nochim <- readRDS("output/ASV_cut3000.RDS")
 # seqtab.nochim <- readRDS("data/ASV.RDS")
 
 ASV <- colnames(seqtab.nochim)
@@ -99,9 +100,11 @@ ggplot(richness_rel, aes(Loc, effective, col = ANTITNF_responder)) +
   geom_boxplot(alpha = 0, outlier.size = 0) +
   geom_point(position = position_jitterdodge(jitter.height = 0, jitter.width = 1/4)) +
   facet_wrap(~ `Alpha diversity` , scales = "free_y", drop = TRUE) +
-  labs(y = "Alpha diversity", x = element_blank(), title = "Phylum diversity",
+  labs(y = "Alpha diversity", x = element_blank(), title = "ASV diversity",
        subtitle = "cutoff 3000 reads") +
   theme_minimal()
+
+
 richness_rel %>%
   filter(`Alpha diversity` == "Shannon") %>%
   ggplot(aes(Activity, effective, col = IBD)) +

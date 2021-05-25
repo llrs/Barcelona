@@ -31,7 +31,7 @@ meta <- readRDS("output/refined_meta_all.RDS")
 meta <- meta[match(colnames(otus), meta$Original), ]
 rownames(meta) <- colnames(otus)
 meta$Loc <- ifelse(meta$Exact_location == "ileum", "ileum", "colon")
-
+meta$Activity <- ifelse(is.na(meta$Activity), "INACTIVE", meta$Activity)
 phyloseq <- phyloseq(otu_table(otus, taxa_are_rows = TRUE),
                      sample_data(meta)
                      # tax_table(as.matrix(family))
@@ -39,6 +39,7 @@ phyloseq <- phyloseq(otu_table(otus, taxa_are_rows = TRUE),
 theme_set(theme_bw())
 beta <- estimate_richness(phyloseq)
 res <- cbind(beta, meta)
+res <- mutate(res, IBD = forcats::fct_relevel(IBD, c("CONTROL", "CD", "UC")))
 res <- pivot_longer(res, cols = Chao1:Fisher, names_to = "Alpha diversity")
 richness_rel <- filter(res, `Alpha diversity` %in% c("Shannon", "Simpson")) %>%
   mutate(effective = case_when(
@@ -53,3 +54,15 @@ ggplot(richness_rel, aes(Loc, effective, col = ANTITNF_responder)) +
        subtitle = "cutoff 3000 reads") +
   theme_minimal()
 ggsave("Figures/diversity_phylum_cut_3000_kraken.png")
+
+richness_rel %>%
+  filter(`Alpha diversity` == "Shannon") %>%
+  ggplot(aes(Activity, effective, col = IBD)) +
+  geom_boxplot(alpha = 0, outlier.size = 0) +
+  geom_point(position = position_jitterdodge(jitter.height = 0, jitter.width = 1/4)) +
+  facet_wrap( ~ Loc, drop = TRUE) +
+  labs(y = "Shannon alpha diversity", x = element_blank(), title = "Diversity kraken",
+       subtitle = "cutoff 3000 reads") +
+  theme_minimal() +
+  scale_y_continuous(limits = c(0, NA))
+ggsave("Figures/cut3000_kraken_phylum_diversity.png")
