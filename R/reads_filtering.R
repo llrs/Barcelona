@@ -5,8 +5,8 @@
 # Read file and read
 seqs <- read.delim("output/reads.txt", sep = " ",header = FALSE)
 pdf("Figures/read_sequences2.pdf")
-barplot(sort(seqs$V2), ylim = c(0, 10 ^5))
-barplot(log10(sort(seqs$V2)), ylim = c(0, 5))
+barplot(sort(unique(seqs$V2)), ylim = c(0, 10 ^5), col = "black")
+barplot(log10(sort(unique(seqs$V2))), ylim = c(0, 5), col = "black")
 dev.off()
 
 # Filter by the agreed threshold
