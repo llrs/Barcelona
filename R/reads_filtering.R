@@ -1,6 +1,6 @@
 
 # I used a one liner bash script from biostars: https://www.biostars.org/p/139006/#332214
-# for i in `ls *.fastq.gz`; do echo "$i"; echo $($(zcat ${i} | wc -l)/4|bc); done
+# for i in `ls *.fastq.gz`; do printf "$i "; echo $(zcat ${i} | wc -l)/4 | bc; done
 # It was modified from a question from biostars
 # Read file and read
 seqs <- read.delim("output/reads.txt", sep = " ",header = FALSE)
