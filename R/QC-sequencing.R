@@ -17,6 +17,35 @@ not_empty <- function(x) {
 sp <- apply(counts, 2, not_empty)
 ctrls <- grepl("^500_", colnames(counts))
 
+
+seqs <- read.delim("output/reads.txt", sep = " ", header = FALSE)
+colnames(seqs) <- c("file", "reads")
+fs <- strcapture("(([0-9]{3}-w[0-9]{3}|C[0-9]+-T.+[GAIH]|[0-9]+-?[DS]?0?-T.*[GAIH]|500)_?(p[0-9][A-Z]?[0-9]*)?_(S[0-9]+)?_L001_R[12]_001.fastq.gz*)", seqs$file,
+                 proto = data.frame(file = character(),
+                                    sample = character(),
+                                    replicate = character(),
+                                    S = character(),
+                                    stringsAsFactors = FALSE))
+fs2 <- merge(fs, seqs, all = TRUE)
+stopifnot(nrow(seqs) == nrow(fs2))
+f <- function(x){
+  if (any(!is.na(x))) {
+    plates <- paste0("p", 1:4)
+    x[is.na(x)] <- plates[!plates %in% x]
+  }
+  x
+}
+fs3 <- fs2 %>%
+  mutate(Study = case_when(
+    startsWith(sample, "500") ~ "water",
+    startsWith(sample, "C") ~ "Controls",
+    grepl("-w", sample) ~ "BCN",
+    TRUE ~ "TRIM")) %>%
+  mutate(replicate = ifelse(replicate == "", NA, replicate)) %>%
+  group_by(sample) %>%
+  mutate(replicate= f(replicate))
+
+
 # For some reason (too big?) this is failing
 # library("vegan")
 # S <- specnumber(counts)
@@ -52,7 +81,7 @@ meta <- meta %>%
 
 # Input about the concentration used and location on the plates
 # From the post-sequencing.R files
-location <- readRDS("Samples_concentration_distribution.RDS")
+location <- readRDS("output/Samples_concentration_distribution.RDS")
 # Add the study and separate name
 location <- location %>%
   mutate(
@@ -133,7 +162,7 @@ ggplot(all_data) +
 out$Concentr[is.na(out$Concentr)] <- 0.0005
 out$Exact_location[out$Exact_location == ""] <- NA
 out <- droplevels(out)
-saveRDS(out, "info_samples.RDS")
+saveRDS(out, "output/info_samples.RDS")
 
 # Rename the columns and rows
 colnames(counts) <- paste0("a", as.character(seq_len(ncol(counts))))
