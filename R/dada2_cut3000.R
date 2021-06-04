@@ -1,4 +1,8 @@
 library("dada2")
+library("dplyr")
+library("tidyr")
+library("phyloseq")
+library("ggplot2")
 
 # Code from http://bioconductor.org/packages/3.10/bioc/vignettes/dada2/inst/doc/dada2-intro.html
 # And http://benjjneb.github.io/dada2/tutorial.html
@@ -6,7 +10,7 @@ samplesR1 <- list.files(path = "data/fastq_ASV",  pattern = "_R1_", full.names =
 samplesR2 <- list.files(path = "data/fastq_ASV",  pattern = "_R2_", full.names = TRUE)
 
 files <- read.table("output/reads.txt", sep = " ", row.names = NULL)
-keep_files <- files$V1[files$V2 > 3000]
+keep_files <- files$V1[files$V2 > 3000 & files$V2 < 2*sd(files$V2)+mean(files$V2)]
 samplesR1 <- samplesR1[samplesR1 %in% paste0("data/fastq_ASV/", keep_files)]
 samplesR2 <- samplesR2[samplesR2 %in% paste0("data/fastq_ASV/", keep_files)]
 plotQualityProfile(samplesR1[1]) # Forward
@@ -45,8 +49,8 @@ seqtab.nochim <- removeBimeraDenovo(seqtab, verbose = FALSE)
 
 # The exact same results as without matchID = TRUE on filterAndTrim
 # saveRDS(seqtab.nochim, file = "data/ASV_matchID.RDS")
-# saveRDS(seqtab.nochim, file = "output/ASV_cut3000.RDS")
-seqtab.nochim <- readRDS("output/ASV_cut3000.RDS")
+saveRDS(seqtab.nochim, file = "output/ASV_cut3000_up.RDS")
+seqtab.nochim <- readRDS("output/ASV_cut3000_up.RDS")
 # seqtab.nochim <- readRDS("data/ASV.RDS")
 
 ASV <- colnames(seqtab.nochim)
@@ -87,6 +91,7 @@ phyloseq <- phyloseq(otu_table(ASV_count_f, taxa_are_rows = TRUE),
                      # tax_table(as.matrix(family))
 )
 theme_set(theme_bw())
+
 beta <- estimate_richness(phyloseq)
 res <- cbind(beta, meta)
 res <- mutate(res, IBD = forcats::fct_relevel(IBD, c("CONTROL", "CD", "UC")))
@@ -112,7 +117,7 @@ richness_rel %>%
   geom_point(position = position_jitterdodge(jitter.height = 0, jitter.width = 1/4)) +
   facet_wrap( ~ Loc, drop = TRUE) +
   labs(y = "Shannon alpha diversity", x = element_blank(), title = "Diversity ASV",
-       subtitle = "cutoff 3000 reads") +
+       subtitle = "cutoff top and bottom reads") +
   theme_minimal() +
   scale_y_continuous(limits = c(0, NA))
-ggsave("Figures/cut3000_ASV_diversity.png")
+ggsave("Figures/cut3000_up_ASV_diversity.png")

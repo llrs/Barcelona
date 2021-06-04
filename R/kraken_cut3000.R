@@ -4,7 +4,7 @@ library("dplyr")
 library("tidyr")
 # Species ####
 ## cut 3000 ####
-pcut3000 <- read.delim("data/20210520_Partek_BCN_cut3000_Kraken_Classified_species.txt",
+pcut3000 <- read.delim("data/20210526_Partek_BCN_cut3000_up_Kraken_Classified_species.txt",
                        check.names = FALSE, row.names = 1,
                        stringsAsFactors = FALSE)
 pcut3000 <- as.matrix(pcut3000)
@@ -25,7 +25,7 @@ fs2 <- group_by(fs, sample) %>%
   filter(OTUs == max(OTUs))
 otus <- pcut3000[, fs2$file]
 colnames(otus) <- fs2$sample
-saveRDS(fs2, "output/samples_cut3000.RDS")
+saveRDS(fs2, "output/samples_cut3000_up.RDS")
 
 meta <- readRDS("output/refined_meta_all.RDS")
 meta <- meta[match(colnames(otus), meta$Original), ]
@@ -50,10 +50,10 @@ ggplot(richness_rel, aes(Loc, effective, col = ANTITNF_responder)) +
   geom_boxplot(alpha = 0, outlier.size = 0) +
   geom_point(position = position_jitterdodge(jitter.height = 0, jitter.width = 1/4)) +
   facet_wrap(~ `Alpha diversity` , scales = "free_y", drop = TRUE) +
-  labs(y = "Alpha diversity", x = element_blank(), title = "Phylum diversity",
-       subtitle = "cutoff 3000 reads") +
+  labs(y = "Alpha diversity", x = element_blank(), title = "Species diversity",
+       subtitle = "cutoff on top and bottom reads") +
   theme_minimal()
-ggsave("Figures/diversity_phylum_cut_3000_kraken.png")
+ggsave("Figures/diversity_cut3000_up_kraken.png")
 
 richness_rel %>%
   filter(`Alpha diversity` == "Shannon") %>%
@@ -62,7 +62,7 @@ richness_rel %>%
   geom_point(position = position_jitterdodge(jitter.height = 0, jitter.width = 1/4)) +
   facet_wrap( ~ Loc, drop = TRUE) +
   labs(y = "Shannon alpha diversity", x = element_blank(), title = "Diversity kraken",
-       subtitle = "cutoff 3000 reads") +
+       subtitle = "cutoff on top and bottom reads") +
   theme_minimal() +
   scale_y_continuous(limits = c(0, NA))
-ggsave("Figures/cut3000_kraken_phylum_diversity.png")
+ggsave("Figures/cut3000_up_kraken_species_diversity.png")
