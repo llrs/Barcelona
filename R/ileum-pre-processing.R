@@ -13,7 +13,7 @@ counts <- tab[, -1]
 genus <- tab[, 1, FALSE]
 
 # From the QC step
-meta <- readRDS("info_samples.RDS")
+meta <- readRDS("output/info_samples.RDS")
 meta$Counts <- colSums(counts)
 
 # filter (keep in mind that it should be on the same order)
