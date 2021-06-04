@@ -3,6 +3,15 @@ library("ggplot2")
 library("tidyverse")
 ASV <- readRDS("data/ASV.RDS")
 
+pdf("Figures/rarefaction_ASV_uncut.pdf")
+v2 <- vegan::rarecurve(ASV, sample = min(rowSums(ASV)), step = 200, label = FALSE,
+                       main = "Rarefaction ASV")
+v2 <- vegan::rarecurve(ASV, sample = median(rowSums(ASV)), step = 200, label = FALSE,
+                       main = "Rarefaction ASV median")
+dev.off()
+rs <- vegan::rareslope(ASV, median(rowSums(ASV)))
+rs2 <- vegan::rareslope(ASV, min(rowSums(ASV)))
+
 
 counts_ASV <- ASV
 colnames(counts_ASV) <- NULL
@@ -140,7 +149,15 @@ ggplot(richness_rel, aes(ANTITNF_responder, effective, col = IBD, shape = IBD)) 
   facet_grid(`Alpha diversity` ~ ileum, scales = "free") +
   labs(y = "Alpha diversity", x = element_blank(), title = "Responders")
 ggsave(paste0("Figures/", date, "_ASV_alpha_responders_ibd2.png"))
-
+richness_rel %>%
+  filter(`Alpha diversity` == "Shannon") %>%
+  ggplot(aes(active, effective, col = IBD)) +
+  geom_boxplot(alpha = 0, outlier.size = 0) +
+  geom_point(position = position_jitterdodge( jitter.height = 0)) +
+  facet_grid(~ ileum, scales = "free") +
+  labs(y = "Shannon diversity", x = element_blank(),
+       title = "Activity ASV uncut")
+ggsave("Figures/20210525_uncut_ASV_diversity.png")
 ggplot(richness_rel, aes(active, effective, col = IBD)) +
   geom_boxplot(alpha = 0, outlier.size = 0) +
   geom_point(position = position_jitterdodge( jitter.height = 0)) +
