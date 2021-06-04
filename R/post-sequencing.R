@@ -58,7 +58,7 @@ out <- merge(nam, plates) %>%
 any(duplicated(out$Name))
 index <- grep("^22-T52-T-DM", out$Name)
 out$Name[index] <- paste0(out$Name[index], "_p", out$Plate[index])
-saveRDS(out, "Samples_concentration_distribution.RDS")
+saveRDS(out, "output/Samples_concentration_distribution.RDS")
 
 theme_set(theme_bw())
 

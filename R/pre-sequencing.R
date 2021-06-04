@@ -63,7 +63,7 @@ stopifnot(nrow(pheno) == 380)
 table(pheno$IBD, pheno$Study)
 
 # Add the phenotype
-bcn.responders <- read.csv("bcn_responders.csv")
+bcn.responders <- read.csv("data/bcn_responders.csv")
 
 bcn.responders <- bcn.responders[match(pheno$`Sample Name_RNA`, bcn.responders$muestra),]
 bcn.responders$Responder <- as.character(bcn.responders$Responder)
@@ -78,4 +78,4 @@ pheno$HSCT_responder[!is.na(bcn.subset$Responder)] <- bcn.subset$Responder[!is.n
 
 
 
-saveRDS(pheno, "samples2sequence.RDS")
+saveRDS(pheno, "output/samples2sequence.RDS")

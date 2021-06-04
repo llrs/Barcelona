@@ -6,7 +6,7 @@ library("ggplot2")
 
 theme_set(theme_bw())
 
-location <- readRDS("Samples_concentration_distribution.RDS")
+location <- readRDS("output/Samples_concentration_distribution.RDS")
 location$Name <- gsub("-TTR-", "-T-DM-", location$Name)
 counts <- readRDS("Samples_counts.RDS")
 counts$Sample <- gsub("-TTR-", "-T-DM-", counts$Sample)
